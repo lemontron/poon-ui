@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBus, useBus } from 'focus-router/util.js';
+import { createBus, useBus } from '@poon/router/util.js';
 import { c } from './util';
 import { Touchable } from './Touchable';
 import { ScrollView } from './ScrollView';

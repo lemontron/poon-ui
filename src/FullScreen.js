@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { navigation } from 'focus-router';
+import { navigation } from '@poon/router';
 import { useAnimatedValue } from './util/animated';
 import { ScreenHeader } from './ScreenHeader';
 import { ScrollView } from './ScrollView';

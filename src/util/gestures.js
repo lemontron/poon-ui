@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { randomId } from 'focus-router/util.js';
+import { randomId } from '@poon/router/util.js';
 
 export const FLICK_SPEED = .25; // pixels per ms
 const CUTOFF_INTERVAL = 50; // ms
