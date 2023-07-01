@@ -28,9 +28,11 @@
     "@rollup/plugin-node-resolve": "^15.1.0",
     "@rollup/plugin-terser": "^0.4.3"
   },
-  "dependencies": {
-  },
   "workspaces": [
     "../router"
-  ]
+  ],
+  "bugs": {
+    "url": "https://github.com/jamesloper/poon-ui/issues"
+  },
+  "homepage": "https://github.com/jamesloper/poon-ui#readme"
 }
