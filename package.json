@@ -1,0 +1,24 @@
+{
+  "name": "@poon/ui",
+  "version": "1.0.0",
+  "description": "A native feeling UI framework for fancy Web Apps",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "rollup": "rollup -c"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/cli": "^7.22.5",
+    "@babel/core": "^7.22.5",
+    "@babel/preset-env": "^7.22.5",
+    "@babel/preset-react": "^7.22.5",
+    "@rollup/plugin-babel": "^6.0.3",
+    "@rollup/plugin-multi-entry": "^6.0.0",
+    "@rollup/plugin-node-resolve": "^15.1.0",
+    "@rollup/plugin-terser": "^0.4.3"
+  },
+  "dependencies": {
+  }
+}
