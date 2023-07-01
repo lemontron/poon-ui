@@ -1,6 +1,171 @@
-import React, { useState, useEffect, useRef, useMemo, forwardRef, Fragment, useImperativeHandle, Children } from 'react';
+import React, { useMemo, useState, useRef, useEffect, forwardRef, Fragment, useImperativeHandle, Children } from 'react';
 import { randomId, createBus, useBus } from '@poon/router/util.js';
 import { navigation } from '@poon/router';
+
+const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
+const bounce = (num, min, max) => {
+  if (num > max) return max + (max + num) / 50;
+  if (num < min) return min - (min - num) / 50;
+  return num;
+};
+const easeOutCubic = t => --t * t * t + 1;
+class AnimatedValue {
+  constructor(initialValue) {
+    this.listeners = [];
+    this.value = initialValue;
+    this.checkpoint = initialValue;
+  }
+  setValue = (value, stopAnimations = true) => {
+    if (stopAnimations) delete this.id;
+    this.value = value;
+    this.listeners.forEach(fn => fn(value));
+  };
+  spring = (finalValue, duration = 300) => new Promise(resolve => {
+    if (finalValue === this.value) return; // cancel unnecessary animation
+
+    const t0 = this.id = performance.now(); // a unique id for this animation lifecycle
+    const oldValue = this.value;
+    const animate = t => {
+      if (t0 !== this.id) return;
+      const elapsed = Math.max(0, t - t0); // time hack
+      if (elapsed >= duration) {
+        this.setValue(finalValue);
+        resolve();
+      } else {
+        const d = (finalValue - oldValue) * easeOutCubic(elapsed / duration);
+        // if (this.name === 'sidebar') console.log('delta:', d, 'elapsed:', elapsed, 'duration:', duration, 'ease:', ease);
+        this.setValue(oldValue + d, false);
+        requestAnimationFrame(animate);
+      }
+    };
+    animate(t0);
+  });
+  on = fn => {
+    this.listeners.push(fn);
+    return () => this.listeners = this.listeners.filter(i => i !== fn);
+  };
+  saveCheckpoint = () => {
+    this.checkpoint = this.value;
+  };
+}
+const useAnimatedValue = initialValue => useMemo(() => {
+  return new AnimatedValue(initialValue);
+}, []);
+
+const c = (...rest) => rest.filter(Boolean).join(' ');
+
+const Touchable = ({
+  href,
+  onClick,
+  className,
+  target,
+  children,
+  disableMenu
+}) => {
+  const [touched, setTouched] = useState(false);
+  const moved = useRef(false);
+  const clickButton = e => {
+    if (moved.current) return e.preventDefault();
+    if (onClick) {
+      if (!href) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      onClick(e);
+    }
+  };
+  const touch = e => {
+    if (e.button && e.button !== 0) return; // If mouse, only process left clicks
+    e.stopPropagation();
+    moved.current = false;
+    setTouched(true);
+  };
+  const leave = () => {
+    setTouched(false);
+  };
+  return /*#__PURE__*/React.createElement(href ? 'a' : 'button', {
+    'href': href,
+    'onTouchStart': touch,
+    'onTouchMove': leave,
+    'onTouchEnd': leave,
+    'onMouseDown': touch,
+    'onMouseUp': leave,
+    'onMouseLeave': leave,
+    'onClick': clickButton,
+    'className': c('touchable', className, touched && 'active', disableMenu && 'disable-menu'),
+    'target': target,
+    'draggable': false,
+    'onContextMenu': disableMenu ? e => {
+      e.preventDefault();
+      return false;
+    } : undefined
+  }, children);
+};
+
+const iOS = /iPad|iPhone|iPod/.test(navigator.platform);
+const iconMap = {
+  'os:back': iOS ? 'arrow_back_ios' : 'arrow_back',
+  'os:share': iOS ? 'ios_share' : 'share',
+  'os:close': iOS ? 'keyboard_arrow_down' : 'close'
+};
+const Icon = ({
+  icon,
+  className,
+  color,
+  title,
+  size,
+  onClick
+}) => /*#__PURE__*/React.createElement("i", {
+  className: c('material-icons', className),
+  style: {
+    color,
+    fontSize: size
+  },
+  title: title,
+  onClick: onClick,
+  children: iconMap[icon] || icon
+});
+
+const TouchableRow = ({
+  title,
+  meta,
+  leftIcon,
+  href,
+  onClick,
+  onPressMore,
+  target,
+  children,
+  caret,
+  disabled,
+  RightComponent
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: c('touchable-row', disabled && 'disabled'),
+  onClick: onClick,
+  href: href,
+  target: target
+}, /*#__PURE__*/React.createElement("div", {
+  className: "touchable-row-left"
+}, typeof leftIcon === 'string' ? /*#__PURE__*/React.createElement("div", {
+  className: "touchable-row-icon"
+}, /*#__PURE__*/React.createElement(Icon, {
+  icon: leftIcon
+})) : null, typeof leftIcon === 'object' ? /*#__PURE__*/React.createElement("div", {
+  className: "touchable-row-icon"
+}, leftIcon) : null, /*#__PURE__*/React.createElement("div", {
+  className: "touchable-row-content"
+}, title ? /*#__PURE__*/React.createElement("div", {
+  className: "touchable-row-title",
+  children: title
+}) : null, meta ? /*#__PURE__*/React.createElement("div", {
+  className: "meta",
+  children: meta
+}) : null, children)), RightComponent, onPressMore ? /*#__PURE__*/React.createElement(Touchable, {
+  onClick: onPressMore
+}, /*#__PURE__*/React.createElement(Icon, {
+  icon: "more_vert"
+})) : null, caret ? /*#__PURE__*/React.createElement(Icon, {
+  icon: "chevron_right"
+}) : null);
 
 const FLICK_SPEED = .25; // pixels per ms
 const CUTOFF_INTERVAL = 50; // ms
@@ -191,8 +356,6 @@ const usePanGestures = (el, opts = {}, deps) => {
   };
 };
 
-const c = (...rest) => rest.filter(Boolean).join(' ');
-
 const BottomSheet = /*#__PURE__*/forwardRef(({
   className,
   visible,
@@ -252,188 +415,41 @@ const BottomSheet = /*#__PURE__*/forwardRef(({
   }) : null, children));
 });
 
-const iOS = /iPad|iPhone|iPod/.test(navigator.platform);
-const iconMap = {
-  'os:back': iOS ? 'arrow_back_ios' : 'arrow_back',
-  'os:share': iOS ? 'ios_share' : 'share',
-  'os:close': iOS ? 'keyboard_arrow_down' : 'close'
-};
-const Icon = ({
-  icon,
-  className,
-  color,
-  title,
-  size,
-  onClick
-}) => /*#__PURE__*/React.createElement("i", {
-  className: c('material-icons', className),
-  style: {
-    color,
-    fontSize: size
-  },
-  title: title,
-  onClick: onClick,
-  children: iconMap[icon] || icon
-});
-
-const Spinner = () => /*#__PURE__*/React.createElement("div", {
-  className: "spinner"
-});
-
-const Touchable = ({
-  href,
-  onClick,
-  className,
-  target,
-  children,
-  disableMenu
-}) => {
-  const [touched, setTouched] = useState(false);
-  const moved = useRef(false);
-  const clickButton = e => {
-    if (moved.current) return e.preventDefault();
-    if (onClick) {
-      if (!href) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      onClick(e);
-    }
-  };
-  const touch = e => {
-    if (e.button && e.button !== 0) return; // If mouse, only process left clicks
-    e.stopPropagation();
-    moved.current = false;
-    setTouched(true);
-  };
-  const leave = () => {
-    setTouched(false);
-  };
-  return /*#__PURE__*/React.createElement(href ? 'a' : 'button', {
-    'href': href,
-    'onTouchStart': touch,
-    'onTouchMove': leave,
-    'onTouchEnd': leave,
-    'onMouseDown': touch,
-    'onMouseUp': leave,
-    'onMouseLeave': leave,
-    'onClick': clickButton,
-    'className': c('touchable', className, touched && 'active', disableMenu && 'disable-menu'),
-    'target': target,
-    'draggable': false,
-    'onContextMenu': disableMenu ? e => {
-      e.preventDefault();
-      return false;
-    } : undefined
-  }, children);
-};
-
-const Button = ({
-  className,
-  title,
-  onClick,
-  onDown,
-  icon,
-  href,
-  tabIndex,
-  color,
-  textColor,
-  disabled,
-  width,
-  download,
-  iconImageUrl,
-  loading,
-  submit,
-  pop
-}) => {
-  const classes = ['btn'];
-  if (className) classes.push(className);
-  if (disabled) classes.push('disabled');
-  const style = {
-    background: color,
-    width,
-    color: textColor
-  };
-  const renderInner = () => {
-    if (loading) return /*#__PURE__*/React.createElement(Spinner, null);
-    return /*#__PURE__*/React.createElement(Fragment, null, iconImageUrl ? /*#__PURE__*/React.createElement("img", {
-      src: iconImageUrl,
-      alt: title
-    }) : null, icon ? /*#__PURE__*/React.createElement(Icon, {
-      icon: icon
-    }) : null, title ? /*#__PURE__*/React.createElement("span", null, title) : null);
-  };
-  if (href) return /*#__PURE__*/React.createElement("a", {
-    onClick: e => {
-      if (download) e.stopPropagation();
-    },
-    href: href,
-    target: href && pop ? '_blank' : null,
-    className: classes.join(' '),
-    tabIndex: tabIndex,
-    style: style,
-    children: renderInner()
-  });
-  return /*#__PURE__*/React.createElement(Touchable, {
-    type: submit ? 'submit' : 'button',
-    className: classes.join(' '),
-    onClick: onClick,
-    onTouchStart: onDown,
-    tabIndex: tabIndex,
-    style: style,
-    children: renderInner()
-  });
-};
-
-const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
-const bounce = (num, min, max) => {
-  if (num > max) return max + (max + num) / 50;
-  if (num < min) return min - (min - num) / 50;
-  return num;
-};
-const easeOutCubic = t => --t * t * t + 1;
-class AnimatedValue {
-  constructor(initialValue) {
-    this.listeners = [];
-    this.value = initialValue;
-    this.checkpoint = initialValue;
-  }
-  setValue = (value, stopAnimations = true) => {
-    if (stopAnimations) delete this.id;
-    this.value = value;
-    this.listeners.forEach(fn => fn(value));
-  };
-  spring = (finalValue, duration = 300) => new Promise(resolve => {
-    if (finalValue === this.value) return; // cancel unnecessary animation
-
-    const t0 = this.id = performance.now(); // a unique id for this animation lifecycle
-    const oldValue = this.value;
-    const animate = t => {
-      if (t0 !== this.id) return;
-      const elapsed = Math.max(0, t - t0); // time hack
-      if (elapsed >= duration) {
-        this.setValue(finalValue);
-        resolve();
-      } else {
-        const d = (finalValue - oldValue) * easeOutCubic(elapsed / duration);
-        // if (this.name === 'sidebar') console.log('delta:', d, 'elapsed:', elapsed, 'duration:', duration, 'ease:', ease);
-        this.setValue(oldValue + d, false);
-        requestAnimationFrame(animate);
-      }
+const bus = createBus(null);
+const pan = new AnimatedValue(0);
+const ActionSheet = () => {
+  const sheet = useBus(bus);
+  const renderOption = (option, i) => {
+    const clickOption = e => {
+      if (option.onClick) option.onClick();
+      if (sheet.callback) sheet.callback(option.value);
+      pan.spring(0).then(() => bus.update(0));
     };
-    animate(t0);
-  });
-  on = fn => {
-    this.listeners.push(fn);
-    return () => this.listeners = this.listeners.filter(i => i !== fn);
+    return /*#__PURE__*/React.createElement(TouchableRow, {
+      key: i,
+      title: option.name,
+      leftIcon: option.icon,
+      onClick: clickOption,
+      disabled: option.disabled,
+      target: option.target,
+      href: option.href
+    });
   };
-  saveCheckpoint = () => {
-    this.checkpoint = this.value;
-  };
-}
-const useAnimatedValue = initialValue => useMemo(() => {
-  return new AnimatedValue(initialValue);
-}, []);
+  if (!sheet) return null;
+  return /*#__PURE__*/React.createElement(BottomSheet, {
+    pan: pan,
+    visible: !!sheet,
+    onClose: () => bus.update(null),
+    showShade: true
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "action-sheet-title"
+  }, sheet && sheet.title), /*#__PURE__*/React.createElement("hr", null), sheet.options.map(renderOption));
+};
+const showActionSheet = (title, options, callback) => bus.update({
+  title,
+  options,
+  callback
+});
 
 const PullIndicator = /*#__PURE__*/forwardRef(({
   pull
@@ -593,83 +609,6 @@ const showAlert = (title, message, options = [{
   }]);
 });
 
-const TouchableRow = ({
-  title,
-  meta,
-  leftIcon,
-  href,
-  onClick,
-  onPressMore,
-  target,
-  children,
-  caret,
-  disabled,
-  RightComponent
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: c('touchable-row', disabled && 'disabled'),
-  onClick: onClick,
-  href: href,
-  target: target
-}, /*#__PURE__*/React.createElement("div", {
-  className: "touchable-row-left"
-}, typeof leftIcon === 'string' ? /*#__PURE__*/React.createElement("div", {
-  className: "touchable-row-icon"
-}, /*#__PURE__*/React.createElement(Icon, {
-  icon: leftIcon
-})) : null, typeof leftIcon === 'object' ? /*#__PURE__*/React.createElement("div", {
-  className: "touchable-row-icon"
-}, leftIcon) : null, /*#__PURE__*/React.createElement("div", {
-  className: "touchable-row-content"
-}, title ? /*#__PURE__*/React.createElement("div", {
-  className: "touchable-row-title",
-  children: title
-}) : null, meta ? /*#__PURE__*/React.createElement("div", {
-  className: "meta",
-  children: meta
-}) : null, children)), RightComponent, onPressMore ? /*#__PURE__*/React.createElement(Touchable, {
-  onClick: onPressMore
-}, /*#__PURE__*/React.createElement(Icon, {
-  icon: "more_vert"
-})) : null, caret ? /*#__PURE__*/React.createElement(Icon, {
-  icon: "chevron_right"
-}) : null);
-
-const bus = createBus(null);
-const pan = new AnimatedValue(0);
-const ActionSheet = () => {
-  const sheet = useBus(bus);
-  const renderOption = (option, i) => {
-    const clickOption = e => {
-      if (option.onClick) option.onClick();
-      if (sheet.callback) sheet.callback(option.value);
-      pan.spring(0).then(() => bus.update(0));
-    };
-    return /*#__PURE__*/React.createElement(TouchableRow, {
-      key: i,
-      title: option.name,
-      leftIcon: option.icon,
-      onClick: clickOption,
-      disabled: option.disabled,
-      target: option.target,
-      href: option.href
-    });
-  };
-  if (!sheet) return null;
-  return /*#__PURE__*/React.createElement(BottomSheet, {
-    pan: pan,
-    visible: !!sheet,
-    onClose: () => bus.update(null),
-    showShade: true
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "action-sheet-title"
-  }, sheet && sheet.title), /*#__PURE__*/React.createElement("hr", null), sheet.options.map(renderOption));
-};
-const showActionSheet = (title, options, callback) => bus.update({
-  title,
-  options,
-  callback
-});
-
 const BreadCrumbs = ({
   path,
   onClickPath
@@ -689,6 +628,67 @@ const BreadCrumbs = ({
     icon: "home",
     onClick: () => onClickPath('/')
   }), /*#__PURE__*/React.createElement("span", null, " / "), slugs.map(renderSlug));
+};
+
+const Spinner = () => /*#__PURE__*/React.createElement("div", {
+  className: "spinner"
+});
+
+const Button = ({
+  className,
+  title,
+  onClick,
+  onDown,
+  icon,
+  href,
+  tabIndex,
+  color,
+  textColor,
+  disabled,
+  width,
+  download,
+  iconImageUrl,
+  loading,
+  submit,
+  pop
+}) => {
+  const classes = ['btn'];
+  if (className) classes.push(className);
+  if (disabled) classes.push('disabled');
+  const style = {
+    background: color,
+    width,
+    color: textColor
+  };
+  const renderInner = () => {
+    if (loading) return /*#__PURE__*/React.createElement(Spinner, null);
+    return /*#__PURE__*/React.createElement(Fragment, null, iconImageUrl ? /*#__PURE__*/React.createElement("img", {
+      src: iconImageUrl,
+      alt: title
+    }) : null, icon ? /*#__PURE__*/React.createElement(Icon, {
+      icon: icon
+    }) : null, title ? /*#__PURE__*/React.createElement("span", null, title) : null);
+  };
+  if (href) return /*#__PURE__*/React.createElement("a", {
+    onClick: e => {
+      if (download) e.stopPropagation();
+    },
+    href: href,
+    target: href && pop ? '_blank' : null,
+    className: classes.join(' '),
+    tabIndex: tabIndex,
+    style: style,
+    children: renderInner()
+  });
+  return /*#__PURE__*/React.createElement(Touchable, {
+    type: submit ? 'submit' : 'button',
+    className: classes.join(' '),
+    onClick: onClick,
+    onTouchStart: onDown,
+    tabIndex: tabIndex,
+    style: style,
+    children: renderInner()
+  });
 };
 
 const closeImage = {
@@ -771,15 +771,15 @@ const Card = ({
   disableGestures,
   onDrop,
   isVisible = true,
-  showHeader = true,
   animateIn = true,
-  ShadeComponent = Shade
+  ShadeComponent = Shade,
+  HeaderComponent
 }) => {
   const allowBack = useRef(history.length > 1).current;
   const [dropping, setDropping] = useState(false);
   const shadeEl = useRef();
   const el = useRef();
-  const pan = useAnimatedValue(document.body.clientWidth);
+  const pan = useAnimatedValue(animateIn ? document.body.clientWidth : 0);
   const close = () => pan.spring(width).then(() => {
     if (allowBack) navigation.goBack();
   });
@@ -787,6 +787,7 @@ const Card = ({
     width
   } = usePanGestures(el, {
     onCapture: e => {
+      if (!allowBack) return;
       if (disableGestures) return;
       return e.locked === 'h' && e.d.x > 0;
     },
@@ -804,13 +805,13 @@ const Card = ({
 
   // Trigger animation on visibility change
   useEffect(() => {
-    if (!width) return;
+    if (!width || !animateIn) return;
     if (isVisible) {
       pan.spring(0);
     } else {
       pan.spring(width);
     }
-  }, [isVisible, width]);
+  }, [animateIn, isVisible, width]);
   useEffect(() => {
     return pan.on(value => {
       if (el.current) el.current.style.transform = `translateX(${value}px)`;
@@ -835,13 +836,15 @@ const Card = ({
   }, /*#__PURE__*/React.createElement(ShadeComponent, {
     ref: shadeEl
   }), /*#__PURE__*/React.createElement("div", {
-    className: "card",
+    className: c('card', animateIn && 'animate'),
     ref: el,
     onDragOver: onDrop && dragOver,
     onDragEnter: onDrop && startDrag,
     onDragLeave: onDrop && cancelDrag,
     onDrop: onDrop && drop
-  }, /*#__PURE__*/React.createElement(ScreenHeader, {
+  }, HeaderComponent ? /*#__PURE__*/React.createElement("div", {
+    className: "header-container"
+  }, HeaderComponent) : /*#__PURE__*/React.createElement(ScreenHeader, {
     title: title,
     subtitle: subtitle,
     presentation: "card",
@@ -861,7 +864,47 @@ const Card = ({
     title: "Upload"
   }) : null));
 };
-Card.defaultProps = {};
+
+const CornerDialog = ({
+  title,
+  children,
+  isVisible,
+  onClose
+}) => {
+  if (!isVisible) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "corner-dialog"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "corner-dialog-title"
+  }, title, /*#__PURE__*/React.createElement(Icon, {
+    icon: "close",
+    onClick: onClose
+  })), children);
+};
+
+const ConnectionIndicator = ({
+  status
+}) => {
+  if (status === 'connected') return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "connection-indicator"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bubble"
+  }, /*#__PURE__*/React.createElement(Spinner, null), status));
+};
+
+const DashboardIcon = ({
+  title,
+  icon,
+  href
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  href: href,
+  className: "springboard-icon"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "icon-frame"
+}, /*#__PURE__*/React.createElement(Icon, {
+  icon: icon
+})), /*#__PURE__*/React.createElement("div", null, title));
 
 const Dropdown = ({
   position,
@@ -897,34 +940,6 @@ const Dropdown = ({
   })));
 };
 
-const ConnectionIndicator = ({
-  status
-}) => {
-  if (status === 'connected') return null;
-  return /*#__PURE__*/React.createElement("div", {
-    className: "connection-indicator"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "bubble"
-  }, /*#__PURE__*/React.createElement(Spinner, null), status));
-};
-
-const CornerDialog = ({
-  title,
-  children,
-  isVisible,
-  onClose
-}) => {
-  if (!isVisible) return null;
-  return /*#__PURE__*/React.createElement("div", {
-    className: "corner-dialog"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "corner-dialog-title"
-  }, title, /*#__PURE__*/React.createElement(Icon, {
-    icon: "close",
-    onClick: onClose
-  })), children);
-};
-
 const DropdownItem = ({
   title,
   icon,
@@ -943,19 +958,6 @@ const DropdownItem = ({
   leftIcon: icon,
   title: title
 });
-
-const DashboardIcon = ({
-  title,
-  icon,
-  href
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  href: href,
-  className: "springboard-icon"
-}, /*#__PURE__*/React.createElement("div", {
-  className: "icon-frame"
-}, /*#__PURE__*/React.createElement(Icon, {
-  icon: icon
-})), /*#__PURE__*/React.createElement("div", null, title));
 
 const FullScreen = ({
   title,
@@ -1040,21 +1042,6 @@ const List = ({
   }, renderList(), Children.map(children, renderChild)) : ListEmptyComponent);
 };
 
-const modalState = createBus([]);
-const renderModal = modal => /*#__PURE__*/React.createElement("div", {
-  key: modal.id,
-  className: "absolute",
-  children: modal.children
-});
-const Modal = () => useBus(modalState).map(renderModal);
-const showModal = children => modalState.update([...modalState.state, {
-  'id': Math.random(),
-  'children': children
-}]);
-const hideModal = () => {
-  modalState.update([]);
-};
-
 const Image = ({
   ar,
   url,
@@ -1100,6 +1087,21 @@ const PercentBar = ({
     width: `${percent * 100}%`
   }
 }));
+
+const modalState = createBus([]);
+const renderModal = modal => /*#__PURE__*/React.createElement("div", {
+  key: modal.id,
+  className: "absolute",
+  children: modal.children
+});
+const Modal = () => useBus(modalState).map(renderModal);
+const showModal = children => modalState.update([...modalState.state, {
+  'id': Math.random(),
+  'children': children
+}]);
+const hideModal = () => {
+  modalState.update([]);
+};
 
 const state = createBus();
 const Toast = () => {
@@ -1186,13 +1188,6 @@ const SearchInput = ({
   size: 16
 }), loading ? /*#__PURE__*/React.createElement(Spinner, null) : null);
 
-const SegmentedController = ({
-  children
-}) => /*#__PURE__*/React.createElement("div", {
-  className: "segmented",
-  children: children
-});
-
 const Select = ({
   options,
   value,
@@ -1206,16 +1201,12 @@ const Select = ({
   children: options[key]
 })));
 
-const TabularRow = ({
-  leftText,
-  rightText
+const SegmentedController = ({
+  children
 }) => /*#__PURE__*/React.createElement("div", {
-  className: "tabular-row"
-}, /*#__PURE__*/React.createElement("div", {
-  className: "tabular-row-left"
-}, leftText), /*#__PURE__*/React.createElement("div", {
-  className: "tabular-row-right"
-}, rightText));
+  className: "segmented",
+  children: children
+});
 
 const TextInput = ({
   value,
@@ -1232,6 +1223,17 @@ const TextInput = ({
     onChange(e.target.value);
   }
 });
+
+const TabularRow = ({
+  leftText,
+  rightText
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "tabular-row"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "tabular-row-left"
+}, leftText), /*#__PURE__*/React.createElement("div", {
+  className: "tabular-row-right"
+}, rightText));
 
 const Window = /*#__PURE__*/forwardRef(({
   children,

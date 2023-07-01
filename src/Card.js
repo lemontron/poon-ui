@@ -6,6 +6,7 @@ import { ScrollView } from './ScrollView';
 import { ScreenHeader } from './ScreenHeader';
 import { Placeholder } from './Placeholder';
 import { Shade } from './Shade';
+import { c } from './util/index.js';
 
 export const Card = ({
 	title,
@@ -19,15 +20,15 @@ export const Card = ({
 	disableGestures,
 	onDrop,
 	isVisible = true,
-	showHeader = true,
 	animateIn = true,
 	ShadeComponent = Shade,
+	HeaderComponent,
 }) => {
 	const allowBack = useRef(history.length > 1).current;
 	const [dropping, setDropping] = useState(false);
 	const shadeEl = useRef();
 	const el = useRef();
-	const pan = useAnimatedValue(document.body.clientWidth);
+	const pan = useAnimatedValue(animateIn ? document.body.clientWidth : 0);
 
 	const close = () => pan.spring(width).then(() => {
 		if (allowBack) navigation.goBack();
@@ -35,6 +36,7 @@ export const Card = ({
 
 	const {width} = usePanGestures(el, {
 		onCapture: e => {
+			if (!allowBack) return;
 			if (disableGestures) return;
 			return (e.locked === 'h' && e.d.x > 0);
 		},
@@ -52,14 +54,14 @@ export const Card = ({
 
 	// Trigger animation on visibility change
 	useEffect(() => {
-		if (!width) return;
+		if (!width || !animateIn) return;
 
 		if (isVisible) {
 			pan.spring(0);
 		} else {
 			pan.spring(width);
 		}
-	}, [isVisible, width]);
+	}, [animateIn, isVisible, width]);
 
 	useEffect(() => {
 		return pan.on(value => {
@@ -89,21 +91,25 @@ export const Card = ({
 		<div className="layer">
 			<ShadeComponent ref={shadeEl}/>
 			<div
-				className="card"
+				className={c('card', animateIn && 'animate')}
 				ref={el}
 				onDragOver={onDrop && dragOver}
 				onDragEnter={onDrop && startDrag}
 				onDragLeave={onDrop && cancelDrag}
 				onDrop={onDrop && drop}
 			>
-				<ScreenHeader
-					title={title}
-					subtitle={subtitle}
-					presentation="card"
-					SearchComponent={SearchComponent}
-					onClose={close}
-					headerRight={headerRight}
-				/>
+				{HeaderComponent ? (
+					<div className="header-container">{HeaderComponent}</div>
+				) : (
+					<ScreenHeader
+						title={title}
+						subtitle={subtitle}
+						presentation="card"
+						SearchComponent={SearchComponent}
+						onClose={close}
+						headerRight={headerRight}
+					/>
+				)}
 				{hasScrollView ? (
 					<ScrollView className="card-body" ref={scrollerRef} children={children}/>
 				) : (
@@ -117,5 +123,3 @@ export const Card = ({
 		</div>
 	);
 };
-
-Card.defaultProps = {};
