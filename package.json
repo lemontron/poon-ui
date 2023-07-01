@@ -1,14 +1,23 @@
 {
   "name": "@poon/ui",
   "version": "1.0.0",
-  "description": "A native feeling UI framework for fancy Web Apps",
+  "description": "The provocative UI framework that's so native it's indecent!",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "rollup": "rollup -c"
   },
-  "author": "",
+  "keywords": [
+    "react",
+    "ui",
+    "framework"
+  ],
+  "author": "James Loper",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jamesloper/poon-ui"
+  },
   "devDependencies": {
     "@babel/cli": "^7.22.5",
     "@babel/core": "^7.22.5",
@@ -20,5 +29,8 @@
     "@rollup/plugin-terser": "^0.4.3"
   },
   "dependencies": {
-  }
+  },
+  "workspaces": [
+    "../router"
+  ]
 }
