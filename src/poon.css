@@ -7,7 +7,7 @@
     100% {opacity:1;}
 }
 @keyframes alert {
-    0% {opacity:0; transform:scale(0.8);}
+    0% {opacity:0; transform:scale(0.9);}
     100% {opacity:1; transform:scale(1);}
 }
 
@@ -113,10 +113,6 @@ img, svg {display:block;}
     .card .card-body {padding:40px;}
 
     .card .header {padding:40px;}
-
-    .card .header-title {font-size:32px;}
-
-    .card .header-close {display:none;}
 }
 
 /* DROPDOWNS */
@@ -187,10 +183,11 @@ img, svg {display:block;}
 .icon-frame {height:40px; width:40px; display:flex; justify-content:center; align-items:center; background:#fff; border-radius:20px;}
 
 /* ALERT */
-.alert-container {display:flex; align-items:center; justify-content:center; pointer-events:all; background:rgba(1, 1, 1, .8);}
-.alert-container.visible {opacity:1;}
-.alert {width:280px; background:#111; transition:all .2s; opacity:0; transform:scale(.8);}
-.alert-container.visible .alert {opacity:1; transform:scale(1); animation:alert .2s;}
+.alert-backdrop {pointer-events:all; background:rgba(1, 1, 1, 0); transition:all .2s;}
+.alert-backdrop.visible {opacity:1; background:rgba(1, 1, 1, .8)}
+.alert-container {display:flex; align-items:center; justify-content:center; position:absolute; top:0; left:0; bottom:0; right:0;}
+.alert {width:280px; background:#111; transition:all .2s; opacity:0; transform:scale(.9); pointer-events:none;}
+.alert.visible {opacity:1; transform:scale(1); animation:alert .2s; pointer-events:all;}
 
 .alert-top {padding:10px; text-align:center; gap:10px; display:flex; flex-direction:column;}
 .alert-title {font-size:15px;}
