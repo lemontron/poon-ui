@@ -6,22 +6,25 @@ import { ScrollView } from './ScrollView';
 
 const alertsStore = createBus([]);
 
-const dismissAlert = (callback, val) => {
-	alertsStore.update(alertsStore.state.map(a => { // Hide alert
-		if (a.callback === callback) a.visible = false;
+const dismissAlert = (alert, val) => {
+	// Hide alert
+	alertsStore.update(alertsStore.state.map(a => {
+		if (a === alert) a.visible = false;
 		return a;
 	}));
-	setTimeout(() => { // Remove alert
-		alertsStore.update(alertsStore.state.filter(a => a.callback !== callback));
-		callback(val);
+
+	// Remove alert when animation completes
+	setTimeout(() => {
+		alert.callback(val);
+		alertsStore.update(alertsStore.state.filter(a => a !== alert));
 	}, 200);
 };
 
-const SingleAlert = ({key, title, message, options, visible, callback}) => {
+const SingleAlert = ({alert, isLast}) => {
 	const renderButton = (option, i) => {
 		const pressButton = () => {
 			if (option.onPress) option.onPress();
-			dismissAlert(callback, option._id || option.value);
+			dismissAlert(alert, option._id || option.value);
 		};
 		return (
 			<Touchable
@@ -35,16 +38,19 @@ const SingleAlert = ({key, title, message, options, visible, callback}) => {
 	};
 
 	return (
-		<div key={key} className="alert-container">
-			<div key={key} className={c('alert', visible && 'visible')} onClick={e => e.stopPropagation()}>
+		<div className="alert-container">
+			<div
+				className={c('alert', isLast && alert.visible && 'visible')}
+				onClick={e => e.stopPropagation()}
+			>
 				<div className="alert-top">
-					<div className="alert-title">{title}</div>
-					<div className="alert-message">{message}</div>
+					<div className="alert-title">{alert.title}</div>
+					<div className="alert-message">{alert.message}</div>
 				</div>
-				{options.length ? (
+				{alert.options.length ? (
 					<ScrollView
-						className={c('alert-buttons', options.length <= 2 && 'alert-buttons-horizontal')}
-						children={options.map(renderButton)}
+						className={c('alert-buttons', alert.options.length <= 2 && 'alert-buttons-horizontal')}
+						children={alert.options.map(renderButton)}
 					/>
 				) : null}
 			</div>
@@ -54,19 +60,16 @@ const SingleAlert = ({key, title, message, options, visible, callback}) => {
 
 export const Alert = () => {
 	const alerts = useBus(alertsStore);
-	const visible = alerts.some(a => a.visible);
-
-	const dismissOne = () => {
-		const last = alertsStore.state.filter(alert => alert.visible).pop();
-		dismissAlert(last.callback);
-	};
+	const last = alerts.filter(alert => alert.visible).pop();
 
 	if (alerts.length === 0) return null;
 	return (
 		<div
-			className={c('layer alert-backdrop', visible && 'visible')}
-			onClick={dismissOne}
-			children={alerts.map(SingleAlert)}
+			className={c('layer alert-backdrop', alerts.some(a => a.visible) && 'visible')}
+			onClick={() => dismissAlert(last)}
+			children={alerts.map(alert => (
+				<SingleAlert key={alert.key} alert={alert} isLast={last === alert}/>
+			))}
 		/>
 	);
 };

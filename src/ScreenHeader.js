@@ -2,12 +2,12 @@ import React, { Fragment } from 'react';
 import { Touchable } from './Touchable';
 import { Icon } from './Icon';
 
-const closeImage = {'card': 'os:back', 'modal': 'os:close'};
+const closeImage = {'card': 'os:back', 'modal': 'os:close', 'reveal': 'home'};
 
 export const ScreenHeader = ({
 	title,
 	subtitle,
-	presentation,
+	presentation = 'card',
 	onClose,
 	headerRight,
 	SearchComponent,

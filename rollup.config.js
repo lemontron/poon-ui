@@ -19,11 +19,12 @@ export default {
 	plugins: [
 		resolve(),
 		babel({
+			babelHelpers: 'bundled',
 			presets: [
 				['@babel/preset-react', {'useBuiltIns': true}],
 			],
 		}),
 		multiEntry(),
 	],
-	external: ['@poon/router', '@poon/router/util.js'],
+	external: ['@poon/router', '@poon/router/util.js', 'react'],
 };

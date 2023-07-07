@@ -23,6 +23,7 @@ export const Card = ({
 	animateIn = true,
 	ShadeComponent = Shade,
 	HeaderComponent,
+	className,
 }) => {
 	const allowBack = useRef(history.length > 1).current;
 	const [dropping, setDropping] = useState(false);
@@ -87,29 +88,33 @@ export const Card = ({
 		onDrop(e);
 	};
 
+	const renderHeader = () => {
+		if (HeaderComponent === null) return null;
+		if (HeaderComponent) return HeaderComponent;
+		return (
+			<ScreenHeader
+				title={title}
+				subtitle={subtitle}
+				presentation="card"
+				SearchComponent={SearchComponent}
+				onClose={close}
+				headerRight={headerRight}
+			/>
+		);
+	};
+
 	return (
 		<div className="layer">
-			<ShadeComponent ref={shadeEl}/>
+			{ShadeComponent ? <ShadeComponent ref={shadeEl}/> : null}
 			<div
-				className={c('card', animateIn && 'animate')}
+				className={c('card', animateIn && 'animate', className)}
 				ref={el}
 				onDragOver={onDrop && dragOver}
 				onDragEnter={onDrop && startDrag}
 				onDragLeave={onDrop && cancelDrag}
 				onDrop={onDrop && drop}
 			>
-				{HeaderComponent ? (
-					<div className="header-container">{HeaderComponent}</div>
-				) : (
-					<ScreenHeader
-						title={title}
-						subtitle={subtitle}
-						presentation="card"
-						SearchComponent={SearchComponent}
-						onClose={close}
-						headerRight={headerRight}
-					/>
-				)}
+				{renderHeader()}
 				{hasScrollView ? (
 					<ScrollView className="card-body" ref={scrollerRef} children={children}/>
 				) : (

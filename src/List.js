@@ -9,6 +9,7 @@ export const List = ({
 	loading,
 	className,
 	ListEmptyComponent,
+	HeaderComponent,
 	children,
 }) => {
 	const renderList = () => {
@@ -37,6 +38,7 @@ export const List = ({
 					<hr/>
 				</Fragment>
 			) : null}
+			{HeaderComponent}
 			{(items.length || children) ? (
 				<div className="list-body">
 					{renderList()}

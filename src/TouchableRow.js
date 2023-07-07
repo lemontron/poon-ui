@@ -2,6 +2,7 @@ import React from 'react';
 import { Touchable } from './Touchable';
 import { Icon } from './Icon';
 import { c } from './util';
+import { CheckBox } from './CheckBox.js';
 
 export const TouchableRow = ({
 	title,
