@@ -38,14 +38,14 @@ const SingleAlert = ({alert, isLast}) => {
 	};
 
 	return (
-		<div className="alert-container">
+		<div className={c('alert-container', isLast && alert.visible && alert.className)}>
 			<div
 				className={c('alert', isLast && alert.visible && 'visible')}
 				onClick={e => e.stopPropagation()}
 			>
 				<div className="alert-top">
-					<div className="alert-title">{alert.title}</div>
-					<div className="alert-message">{alert.message}</div>
+					{alert.title ? <div className="alert-title">{alert.title}</div> : null}
+					{alert.message ? <div className="alert-message">{alert.message}</div> : null}
 				</div>
 				{alert.options.length ? (
 					<ScrollView
@@ -74,13 +74,12 @@ export const Alert = () => {
 	);
 };
 
-export const showAlert = (title, message, options = [{name: 'Close'}]) => new Promise(resolve => {
+export const showAlert = (alert, options = [{name: 'Close'}]) => new Promise(resolve => {
 	alertsStore.update([...alertsStore.state, {
 		'key': randomId(),
-		title,
-		message,
-		options,
 		'callback': resolve,
 		'visible': true,
+		'options': options,
+		...alert,
 	}]);
 });

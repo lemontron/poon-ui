@@ -2,7 +2,7 @@ import React, { Fragment } from 'react';
 import { Touchable } from './Touchable';
 import { Icon } from './Icon';
 
-const closeImage = {'card': 'os:back', 'modal': 'os:close', 'reveal': 'home'};
+const closeImage = {'card': 'os:back', 'modal': 'os:close', 'reveal': 'close'};
 
 export const ScreenHeader = ({
 	title,

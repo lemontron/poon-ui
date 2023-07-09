@@ -12,7 +12,6 @@ export const Fab = ({icon, title, loading, disabled, active = true, href, onPres
 		active={active}
 		onClick={onPress}
 		href={href}
-		interactive
 	>
 		{loading ? <ActivityIndicator size={24}/> : (
 			<Fragment>

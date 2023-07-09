@@ -3,6 +3,22 @@ import { usePanGestures } from './util/gestures';
 import { clamp, useAnimatedValue } from './util/animated';
 import { c } from './util';
 
+const PagerDot = ({pan, i, width}) => {
+	const el = useRef();
+	useEffect(() => {
+		if (!width) return;
+		const stop = (i * width);
+		const tabWidth = (width / 3);
+
+		return pan.on(value => {
+			const d = Math.min(Math.abs(stop - value), tabWidth);
+			el.current.style.opacity = 1.5 - (d / tabWidth);
+		});
+	}, [width]);
+
+	return <div className="pager-dot" ref={el}/>;
+};
+
 const PagerTabTitle = ({title, i, pan, width, onPress}) => {
 	const el = useRef();
 	useEffect(() => {
@@ -25,7 +41,7 @@ const PagerTabTitle = ({title, i, pan, width, onPress}) => {
 	);
 };
 
-export const ViewPager = forwardRef(({titles, children, vertical}, ref) => {
+export const ViewPager = forwardRef(({titles, children, vertical, dots}, ref) => {
 	const pan = useAnimatedValue(0);
 	const indicatorEl = useRef();
 	const scrollerEl = useRef();
@@ -141,6 +157,13 @@ export const ViewPager = forwardRef(({titles, children, vertical}, ref) => {
 					))}
 				</div>
 			</div>
+			{dots ? (
+				<div className="pager-dots">
+					{React.Children.map(children, (child, i) => (
+						<PagerDot key={i} pan={pan} width={width} i={i}/>
+					))}
+				</div>
+			) : null}
 		</div>
 	);
 });

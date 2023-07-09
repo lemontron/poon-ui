@@ -603,17 +603,17 @@ const SingleAlert = ({
     });
   };
   return /*#__PURE__*/React.createElement("div", {
-    className: "alert-container"
+    className: c('alert-container', isLast && alert.visible && alert.className)
   }, /*#__PURE__*/React.createElement("div", {
     className: c('alert', isLast && alert.visible && 'visible'),
     onClick: e => e.stopPropagation()
   }, /*#__PURE__*/React.createElement("div", {
     className: "alert-top"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, alert.title ? /*#__PURE__*/React.createElement("div", {
     className: "alert-title"
-  }, alert.title), /*#__PURE__*/React.createElement("div", {
+  }, alert.title) : null, alert.message ? /*#__PURE__*/React.createElement("div", {
     className: "alert-message"
-  }, alert.message)), alert.options.length ? /*#__PURE__*/React.createElement(ScrollView, {
+  }, alert.message) : null), alert.options.length ? /*#__PURE__*/React.createElement(ScrollView, {
     className: c('alert-buttons', alert.options.length <= 2 && 'alert-buttons-horizontal'),
     children: alert.options.map(renderButton)
   }) : null));
@@ -632,16 +632,15 @@ const Alert = () => {
     }))
   });
 };
-const showAlert = (title, message, options = [{
+const showAlert = (alert, options = [{
   name: 'Close'
 }]) => new Promise(resolve => {
   alertsStore.update([...alertsStore.state, {
     'key': randomId(),
-    title,
-    message,
-    options,
     'callback': resolve,
-    'visible': true
+    'visible': true,
+    'options': options,
+    ...alert
   }]);
 });
 
@@ -666,71 +665,10 @@ const BreadCrumbs = ({
   }), /*#__PURE__*/React.createElement("span", null, " / "), slugs.map(renderSlug));
 };
 
-const Spinner = () => /*#__PURE__*/React.createElement("div", {
-  className: "spinner"
-});
-
-const Button = ({
-  className,
-  title,
-  onClick,
-  onDown,
-  icon,
-  href,
-  tabIndex,
-  color,
-  textColor,
-  disabled,
-  width,
-  download,
-  iconImageUrl,
-  loading,
-  submit,
-  pop
-}) => {
-  const classes = ['btn'];
-  if (className) classes.push(className);
-  if (disabled) classes.push('disabled');
-  const style = {
-    background: color,
-    width,
-    color: textColor
-  };
-  const renderInner = () => {
-    if (loading) return /*#__PURE__*/React.createElement(Spinner, null);
-    return /*#__PURE__*/React.createElement(Fragment, null, iconImageUrl ? /*#__PURE__*/React.createElement("img", {
-      src: iconImageUrl,
-      alt: title
-    }) : null, icon ? /*#__PURE__*/React.createElement(Icon, {
-      icon: icon
-    }) : null, title ? /*#__PURE__*/React.createElement("span", null, title) : null);
-  };
-  if (href) return /*#__PURE__*/React.createElement("a", {
-    onClick: e => {
-      if (download) e.stopPropagation();
-    },
-    href: href,
-    target: href && pop ? '_blank' : null,
-    className: classes.join(' '),
-    tabIndex: tabIndex,
-    style: style,
-    children: renderInner()
-  });
-  return /*#__PURE__*/React.createElement(Touchable, {
-    type: submit ? 'submit' : 'button',
-    className: classes.join(' '),
-    onClick: onClick,
-    onTouchStart: onDown,
-    tabIndex: tabIndex,
-    style: style,
-    children: renderInner()
-  });
-};
-
 const closeImage = {
   'card': 'os:back',
   'modal': 'os:close',
-  'reveal': 'home'
+  'reveal': 'close'
 };
 const ScreenHeader = ({
   title,
@@ -906,6 +844,10 @@ const Card = ({
   }) : null));
 };
 
+const Spinner = () => /*#__PURE__*/React.createElement("div", {
+  className: "spinner"
+});
+
 const ConnectionIndicator = ({
   status
 }) => {
@@ -915,6 +857,63 @@ const ConnectionIndicator = ({
   }, /*#__PURE__*/React.createElement("div", {
     className: "bubble"
   }, /*#__PURE__*/React.createElement(Spinner, null), status));
+};
+
+const Button = ({
+  className,
+  title,
+  onClick,
+  onDown,
+  icon,
+  href,
+  tabIndex,
+  color,
+  textColor,
+  disabled,
+  width,
+  download,
+  iconImageUrl,
+  loading,
+  submit,
+  pop
+}) => {
+  const classes = ['btn'];
+  if (className) classes.push(className);
+  if (disabled) classes.push('disabled');
+  const style = {
+    background: color,
+    width,
+    color: textColor
+  };
+  const renderInner = () => {
+    if (loading) return /*#__PURE__*/React.createElement(Spinner, null);
+    return /*#__PURE__*/React.createElement(Fragment, null, iconImageUrl ? /*#__PURE__*/React.createElement("img", {
+      src: iconImageUrl,
+      alt: title
+    }) : null, icon ? /*#__PURE__*/React.createElement(Icon, {
+      icon: icon
+    }) : null, title ? /*#__PURE__*/React.createElement("span", null, title) : null);
+  };
+  if (href) return /*#__PURE__*/React.createElement("a", {
+    onClick: e => {
+      if (download) e.stopPropagation();
+    },
+    href: href,
+    target: href && pop ? '_blank' : null,
+    className: classes.join(' '),
+    tabIndex: tabIndex,
+    style: style,
+    children: renderInner()
+  });
+  return /*#__PURE__*/React.createElement(Touchable, {
+    type: submit ? 'submit' : 'button',
+    className: classes.join(' '),
+    onClick: onClick,
+    onTouchStart: onDown,
+    tabIndex: tabIndex,
+    style: style,
+    children: renderInner()
+  });
 };
 
 const CornerDialog = ({
@@ -940,7 +939,8 @@ const Reveal = /*#__PURE__*/forwardRef(({
   title,
   headerRight,
   onClose,
-  isVisible
+  isVisible,
+  className
 }, ref) => {
   const el = useRef();
   const innerEl = useRef();
@@ -983,7 +983,7 @@ const Reveal = /*#__PURE__*/forwardRef(({
   return /*#__PURE__*/React.createElement("div", {
     className: "layer"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "reveal",
+    className: c('reveal', className),
     ref: el
   }, /*#__PURE__*/React.createElement("div", {
     className: "reveal-content",
@@ -1088,8 +1088,7 @@ const Fab = ({
   disabled: disabled,
   active: active,
   onClick: onPress,
-  href: href,
-  interactive: true
+  href: href
 }, loading ? /*#__PURE__*/React.createElement(ActivityIndicator, {
   size: 24
 }) : /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(Icon, {
@@ -1097,6 +1096,28 @@ const Fab = ({
 }), title && /*#__PURE__*/React.createElement("div", {
   className: "fab-title"
 }, title)));
+
+const HeaderButton = ({
+  icon,
+  title,
+  badge,
+  loading,
+  disabled,
+  onClick,
+  active,
+  href
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: c('header-button center', title === 'Cancel' && 'header-cancel'),
+  onClick: onClick,
+  loading: loading,
+  disabled: disabled,
+  active: active,
+  href: href
+}, icon ? /*#__PURE__*/React.createElement(Icon, {
+  icon: icon
+}) : null, title ? /*#__PURE__*/React.createElement("span", null, title) : null, badge ? /*#__PURE__*/React.createElement("span", {
+  className: "badge"
+}, badge) : null);
 
 const FullScreen = ({
   title,
@@ -1129,28 +1150,6 @@ const FullScreen = ({
     className: "card-body"
   }, children), footer);
 };
-
-const HeaderButton = ({
-  icon,
-  title,
-  badge,
-  loading,
-  disabled,
-  onClick,
-  active,
-  href
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: c('header-button center', title === 'Cancel' && 'header-cancel'),
-  onClick: onClick,
-  loading: loading,
-  disabled: disabled,
-  active: active,
-  href: href
-}, icon ? /*#__PURE__*/React.createElement(Icon, {
-  icon: icon
-}) : null, title ? /*#__PURE__*/React.createElement("span", null, title) : null, badge ? /*#__PURE__*/React.createElement("span", {
-  className: "badge"
-}, badge) : null);
 
 const Image = ({
   ar,
@@ -1266,6 +1265,26 @@ const PillButton = ({
   active: checked
 }));
 
+const state = createBus();
+const Toast = () => {
+  const message = useBus(state);
+  useEffect(() => {
+    if (!message) return;
+    const timeout = setTimeout(() => state.update(null), 2000);
+    return () => clearTimeout(timeout);
+  }, [message]);
+  if (!message) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "toast-container"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "toast",
+    children: message
+  }));
+};
+const toast = state.update;
+
+const PoonOverlays = () => /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(Modal, null), /*#__PURE__*/React.createElement(ActionSheet, null), /*#__PURE__*/React.createElement(Alert, null), /*#__PURE__*/React.createElement(Toast, null));
+
 const ProgressRing = ({
   color = '#fff',
   size = 20,
@@ -1307,26 +1326,6 @@ const ProgressRing = ({
     cy: r
   }));
 };
-
-const state = createBus();
-const Toast = () => {
-  const message = useBus(state);
-  useEffect(() => {
-    if (!message) return;
-    const timeout = setTimeout(() => state.update(null), 2000);
-    return () => clearTimeout(timeout);
-  }, [message]);
-  if (!message) return null;
-  return /*#__PURE__*/React.createElement("div", {
-    className: "toast-container"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "toast",
-    children: message
-  }));
-};
-const toast = state.update;
-
-const PoonOverlays = () => /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(Modal, null), /*#__PURE__*/React.createElement(ActionSheet, null), /*#__PURE__*/React.createElement(Alert, null), /*#__PURE__*/React.createElement(Toast, null));
 
 const SearchInput = ({
   value,
@@ -1432,6 +1431,26 @@ const TextInput = ({
   }
 });
 
+const PagerDot = ({
+  pan,
+  i,
+  width
+}) => {
+  const el = useRef();
+  useEffect(() => {
+    if (!width) return;
+    const stop = i * width;
+    const tabWidth = width / 3;
+    return pan.on(value => {
+      const d = Math.min(Math.abs(stop - value), tabWidth);
+      el.current.style.opacity = 1.5 - d / tabWidth;
+    });
+  }, [width]);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "pager-dot",
+    ref: el
+  });
+};
 const PagerTabTitle = ({
   title,
   i,
@@ -1459,7 +1478,8 @@ const PagerTabTitle = ({
 const ViewPager = /*#__PURE__*/forwardRef(({
   titles,
   children,
-  vertical
+  vertical,
+  dots
 }, ref) => {
   const pan = useAnimatedValue(0);
   const indicatorEl = useRef();
@@ -1574,7 +1594,14 @@ const ViewPager = /*#__PURE__*/forwardRef(({
     key: i,
     className: "pager-page",
     children: child
-  })))));
+  })))), dots ? /*#__PURE__*/React.createElement("div", {
+    className: "pager-dots"
+  }, React.Children.map(children, (child, i) => /*#__PURE__*/React.createElement(PagerDot, {
+    key: i,
+    pan: pan,
+    width: width,
+    i: i
+  }))) : null);
 });
 
 const Window = /*#__PURE__*/forwardRef(({

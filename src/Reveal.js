@@ -3,7 +3,7 @@ import { navigation } from '@poon/router';
 import { usePanGestures } from './util/gestures';
 import { useAnimatedValue } from './util/animated';
 import { ScreenHeader } from './ScreenHeader';
-import { toPercent } from './util/index.js';
+import { c, toPercent } from './util/index.js';
 
 let origin = {};
 
@@ -13,6 +13,7 @@ export const Reveal = forwardRef(({
 	headerRight,
 	onClose,
 	isVisible,
+	className,
 }, ref) => {
 	const el = useRef();
 	const innerEl = useRef();
@@ -59,7 +60,7 @@ export const Reveal = forwardRef(({
 
 	return (
 		<div className="layer">
-			<div className="reveal" ref={el}>
+			<div className={c('reveal', className)} ref={el}>
 				<div className="reveal-content" ref={innerEl}>
 					<ScreenHeader
 						title={title}
