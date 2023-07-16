@@ -108,7 +108,7 @@ img, svg {display:block;}
 .header-title {font-size:16px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;}
 .header-subtitle {margin-top:3px;}
 .header-spacer {min-width:44px; display:flex; justify-content:center; align-items:center;}
-.header-search {padding:0 10px; background:var(--header-bg);}
+.header-search {padding:0 10px 10px 10px; background:var(--header-bg);}
 .pager-page .header-search {padding:10px;}
 .header-button {display:flex; font-size:16px; color:#fff; min-width:var(--header-height); height:var(--header-height); position:relative; justify-content:center; align-items:center;}
 .header-button.active {color:#f00;}
@@ -236,3 +236,6 @@ i.pill-caret {margin:0 -4px; font-size:18px;}
 
 /* TAG */
 .tag {border:1px solid #fff; border-radius:20px; height:24px; padding:0 10px; display:inline-block; line-height:22px; align-items:center; color:#fff; vertical-align:middle; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+
+/* EMOJI */
+.emoji {font-family:"Apple Color Emoji", sans-serif; font-size:24px;}
