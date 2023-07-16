@@ -5,6 +5,7 @@ import { c } from './util';
 
 const PagerDot = ({pan, i, width}) => {
 	const el = useRef();
+
 	useEffect(() => {
 		if (!width) return;
 		const stop = (i * width);
@@ -12,11 +13,11 @@ const PagerDot = ({pan, i, width}) => {
 
 		return pan.on(value => {
 			const d = Math.min(Math.abs(stop - value), tabWidth);
-			el.current.style.opacity = 1.5 - (d / tabWidth);
+			el.current.style.opacity = Math.min(1, 1.5 - (d / tabWidth));
 		});
 	}, [width]);
 
-	return <div className="pager-dot" ref={el}/>;
+	return <div className="pager-dot" ref={el} style={{opacity: pan.value === i ? 1 : .5}}/>;
 };
 
 const PagerTabTitle = ({title, i, pan, width, onPress}) => {

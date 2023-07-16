@@ -1,5 +1,5 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { navigation } from '@poon/router';
+import { navigation } from 'poon-router';
 import { usePanGestures } from './util/gestures';
 import { useAnimatedValue } from './util/animated';
 import { ScrollView } from './ScrollView';

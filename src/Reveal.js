@@ -1,5 +1,5 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { navigation } from '@poon/router';
+import { navigation } from 'poon-router';
 import { usePanGestures } from './util/gestures';
 import { useAnimatedValue } from './util/animated';
 import { ScreenHeader } from './ScreenHeader';
@@ -43,7 +43,8 @@ export const Reveal = forwardRef(({
 	useEffect(() => {
 		return pan.on(value => {
 			const inverse = (1 - value);
-			const revealX = (origin.x * inverse), revealY = (origin.y * inverse);
+			const revealX = (origin.x * inverse);
+			const revealY = (origin.y * inverse);
 
 			if (el.current) {
 				el.current.style.opacity = value * 2;
@@ -52,8 +53,7 @@ export const Reveal = forwardRef(({
 				el.current.style.height = toPercent(value);
 			}
 			if (innerEl.current) {
-				const slide = 20 - (value * 20);
-				innerEl.current.style.transform = `translate(${-1 * revealX}px, ${slide - revealY}px)`;
+				innerEl.current.style.transform = `translate(${-1 * revealX}px, ${-1 * revealY}px)`;
 			}
 		});
 	}, [width, height]);
@@ -66,7 +66,7 @@ export const Reveal = forwardRef(({
 						title={title}
 						onClose={close}
 						headerRight={headerRight}
-						presentation="reveal"
+						presentation="card"
 					/>
 					<div className="card-body" children={children}/>
 				</div>

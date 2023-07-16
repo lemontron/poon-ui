@@ -14,6 +14,6 @@ const setOrigin = (e) => {
 export const DashboardIcon = ({title, icon, href}) => (
 	<Touchable href={href} className="springboard-icon" onClick={setOrigin}>
 		<div className="icon-frame"><Icon icon={icon}/></div>
-		<div>{title}</div>
+		<div className="springboard-icon-name">{title}</div>
 	</Touchable>
 );

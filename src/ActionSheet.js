@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBus, useBus } from '@poon/router/util.js';
+import { createBus, useBus } from 'poon-router/util.js';
 import { AnimatedValue } from './util/animated';
 import { TouchableRow } from './TouchableRow';
 import { BottomSheet } from './BottomSheet';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBus, useBus, randomId } from '@poon/router/util.js';
+import { createBus, useBus, randomId } from 'poon-router/util.js';
 import { c } from './util';
 import { Touchable } from './Touchable';
 import { ScrollView } from './ScrollView';
@@ -17,7 +17,7 @@ const dismissAlert = (alert, val) => {
 	setTimeout(() => {
 		alert.callback(val);
 		alertsStore.update(alertsStore.state.filter(a => a !== alert));
-	}, 200);
+	}, 300);
 };
 
 const SingleAlert = ({alert, isLast}) => {

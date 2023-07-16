@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { navigation } from '@poon/router';
+import React, { useEffect, useRef, useState, forwardRef } from 'react';
+import { navigation } from 'poon-router';
 import { useAnimatedValue } from './util/animated';
 import { usePanGestures } from './util/gestures';
 import { ScrollView } from './ScrollView';
@@ -8,7 +8,7 @@ import { Placeholder } from './Placeholder';
 import { Shade } from './Shade';
 import { c } from './util/index.js';
 
-export const Card = ({
+export const Card = forwardRef(({
 	title,
 	subtitle,
 	children,
@@ -24,11 +24,10 @@ export const Card = ({
 	ShadeComponent = Shade,
 	HeaderComponent,
 	className,
-}) => {
+}, el) => {
 	const allowBack = useRef(history.length > 1).current;
 	const [dropping, setDropping] = useState(false);
 	const shadeEl = useRef();
-	const el = useRef();
 	const pan = useAnimatedValue(animateIn ? document.body.clientWidth : 0);
 
 	const close = () => pan.spring(width).then(() => {
@@ -127,4 +126,4 @@ export const Card = ({
 			</div>
 		</div>
 	);
-};
+});

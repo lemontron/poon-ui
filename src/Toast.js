@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { createBus, useBus } from '@poon/router/util.js';
+import { createBus, useBus } from 'poon-router/util.js';
 
 const state = createBus();
 

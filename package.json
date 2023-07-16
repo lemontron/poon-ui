@@ -1,5 +1,5 @@
 {
-  "name": "@poon/ui",
+  "name": "poon-ui",
   "version": "1.0.0",
   "description": "The provocative UI framework that's so native it's indecent!",
   "type": "module",
@@ -29,10 +29,13 @@
     "@rollup/plugin-terser": "^0.4.3"
   },
   "workspaces": [
-    "../router"
+    "../poon-router"
   ],
   "bugs": {
     "url": "https://github.com/jamesloper/poon-ui/issues"
   },
-  "homepage": "https://github.com/jamesloper/poon-ui#readme"
+  "homepage": "https://poon.app",
+  "dependencies": {
+    "rollup-plugin-filesize": "^10.0.0"
+  }
 }
