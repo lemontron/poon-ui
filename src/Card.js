@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, forwardRef } from 'react';
+import React, { forwardRef, useEffect, useRef, useState } from 'react';
 import { navigation } from 'poon-router';
 import { useAnimatedValue } from './util/animated';
 import { usePanGestures } from './util/gestures';
@@ -25,6 +25,7 @@ export const Card = forwardRef(({
 	HeaderComponent,
 	className,
 }, el) => {
+	el = el || useRef();
 	const allowBack = useRef(history.length > 1).current;
 	const [dropping, setDropping] = useState(false);
 	const shadeEl = useRef();

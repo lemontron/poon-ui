@@ -23,7 +23,7 @@ export class AnimatedValue {
 		this.listeners.forEach(fn => fn(value));
 	};
 
-	spring = (finalValue, duration = 300) => new Promise(resolve => {
+	spring = (finalValue, duration = AnimatedValue.defaultAnimationDuration) => new Promise(resolve => {
 		if (finalValue === this.value) return; // cancel unnecessary animation
 
 		const t0 = this.id = performance.now(); // a unique id for this animation lifecycle
@@ -54,6 +54,8 @@ export class AnimatedValue {
 		this.checkpoint = this.value;
 	};
 }
+
+AnimatedValue.defaultAnimationDuration = 300;
 
 export const useAnimatedValue = (initialValue) => useMemo(() => {
 	return new AnimatedValue(initialValue);
