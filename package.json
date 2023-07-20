@@ -1,6 +1,6 @@
 {
   "name": "poon-ui",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "The provocative UI framework that's so native it's indecent!",
   "type": "module",
   "main": "dist/index.js",
