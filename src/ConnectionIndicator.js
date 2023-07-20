@@ -1,12 +1,12 @@
 import React from 'react';
-import { Spinner } from './Spinner';
+import { ActivityIndicator } from './ActivityIndicator.js';
 
 export const ConnectionIndicator = ({status}) => {
 	if (status === 'connected') return null;
 	return (
 		<div className="connection-indicator">
 			<div className="bubble">
-				<Spinner/>
+				<ActivityIndicator/>
 				{status}
 			</div>
 		</div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Icon } from './Icon';
-import { Spinner } from './Spinner';
+import { ProgressIndicator } from './ProgressIndicator.js';
 
 export const SearchInput = ({value, placeholder, onChange, loading}) => (
 	<div className="search">
@@ -19,6 +19,6 @@ export const SearchInput = ({value, placeholder, onChange, loading}) => (
 			onClick={() => onChange('')}
 			size={16}
 		/>
-		{loading ? <Spinner/> : null}
+		{loading ? <ProgressIndicator/> : null}
 	</div>
 );

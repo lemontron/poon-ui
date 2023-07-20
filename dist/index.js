@@ -1,5 +1,6 @@
 import React, {
 	Children,
+	createElement,
 	forwardRef,
 	Fragment,
 	memo,
@@ -12,37 +13,6 @@ import React, {
 import { createBus, randomId, useBus } from 'poon-router/util.js';
 import { navigation } from 'poon-router';
 
-const array = new Array(5);
-const ActivityIndicator = ({
-  size = 16,
-  color = '#fff'
-}) => {
-  const renderSegment = (a, i) => {
-    const style = {
-      'width': 1.7,
-      'borderRadius': 1,
-      'left': size / 2 - 1,
-      'height': size / 4,
-      'animationDelay': (-1.1 + .1 * i).toFixed(1) + 's',
-      'transform': `rotate(${30 * i}deg)`,
-      'backgroundColor': color,
-      'transformOrigin': `50% ${size / 2}px`
-    };
-    return /*#__PURE__*/React.createElement("div", {
-      key: i,
-      style: style
-    });
-  };
-  return /*#__PURE__*/React.createElement("div", {
-    className: "activity-indicator",
-    style: {
-      width: size,
-      height: size
-    },
-    children: array.map(renderSegment)
-  });
-};
-
 const c = (...rest) => rest.filter(Boolean).join(' ');
 const toPercent = val => `${val * 100}%`;
 
@@ -50,8 +20,10 @@ const Touchable = ({
   href,
   onClick,
   className,
+  active,
   target,
   children,
+  style,
   disableMenu
 }) => {
   const [touched, setTouched] = useState(false);
@@ -61,8 +33,9 @@ const Touchable = ({
     if (onClick) {
       if (!href) {
         e.preventDefault();
-        e.stopPropagation();
+        // e.stopPropagation();
       }
+
       onClick(e);
     }
   };
@@ -84,39 +57,16 @@ const Touchable = ({
     'onMouseUp': leave,
     'onMouseLeave': leave,
     'onClick': clickButton,
-    'className': c('touchable', className, touched && 'active', disableMenu && 'disable-menu'),
+    'className': c('touchable', className, touched && 'touched', disableMenu && 'disable-menu', active && 'active'),
     'target': target,
     'draggable': false,
     'onContextMenu': disableMenu ? e => {
       e.preventDefault();
       return false;
-    } : undefined
+    } : undefined,
+    'style': style
   }, children);
 };
-
-const iOS = /iPad|iPhone|iPod/.test(navigator.platform);
-const iconMap = {
-  'os:back': iOS ? 'arrow_back_ios' : 'arrow_back',
-  'os:share': iOS ? 'ios_share' : 'share',
-  'os:close': iOS ? 'keyboard_arrow_down' : 'close'
-};
-const Icon = ({
-  icon,
-  className,
-  color,
-  title,
-  size,
-  onClick
-}) => /*#__PURE__*/React.createElement("i", {
-  className: c('material-icons', className),
-  style: {
-    color,
-    fontSize: size
-  },
-  title: title,
-  onClick: onClick,
-  children: iconMap[icon] || icon
-});
 
 const FLICK_SPEED = .25; // pixels per ms
 const CUTOFF_INTERVAL = 50; // ms
@@ -130,6 +80,7 @@ const getVelocity = (lastV = 0, newV, elapsedTime) => {
   return lastV * w0 + newV * w1;
 };
 const useSize = el => {
+  // console.log('SIZE:', el);
   const [size, setSize] = useState({
     'width': el.current?.clientWidth,
     'height': el.current?.clientHeight
@@ -352,11 +303,38 @@ class AnimatedValue {
   saveCheckpoint = () => {
     this.checkpoint = this.value;
   };
+  stop = () => {
+    delete this.id;
+  };
 }
 AnimatedValue.defaultAnimationDuration = 300;
 const useAnimatedValue = initialValue => useMemo(() => {
   return new AnimatedValue(initialValue);
 }, []);
+
+const iOS = /iPad|iPhone|iPod/.test(navigator.platform);
+const iconMap = {
+  'os:back': iOS ? 'arrow_back_ios' : 'arrow_back',
+  'os:share': iOS ? 'ios_share' : 'share',
+  'os:close': iOS ? 'keyboard_arrow_down' : 'close'
+};
+const Icon = ({
+  icon,
+  className,
+  color,
+  title,
+  size,
+  onClick
+}) => /*#__PURE__*/React.createElement("i", {
+  className: c('material-icons', className),
+  style: {
+    color,
+    fontSize: size
+  },
+  title: title,
+  onClick: onClick,
+  children: iconMap[icon] || icon
+});
 
 const PullIndicator = /*#__PURE__*/forwardRef(({
   pull
@@ -380,12 +358,16 @@ const ScrollView = /*#__PURE__*/forwardRef(({
   const spinnerEl = useRef();
   const refs = useRef({}).current;
   const pull = useAnimatedValue(0);
+  const scrollY = useAnimatedValue(0);
+  const scrollX = useAnimatedValue(0);
   usePanGestures(el, {
     onDown: () => {
       refs.canScrollVertical = el.current.scrollHeight > el.current.clientHeight;
       refs.canScrollHorizontal = el.current.scrollWidth > el.current.clientWidth;
       refs.initScrollTop = el.current.scrollTop;
       refs.initScrollLeft = el.current.scrollLeft;
+      scrollY.stop();
+      scrollX.stop();
     },
     onCapture: e => {
       if (e.locked === 'v') {
@@ -396,13 +378,29 @@ const ScrollView = /*#__PURE__*/forwardRef(({
       }
       if (e.locked === 'h') {
         if (!refs.canScrollHorizontal) return false;
-        return refs.initScrollLeft > 0;
+        return true;
+        // return (refs.initScrollLeft > 0);
       }
     },
+
     onMove: e => {
-      if (onRefresh && refs.initScrollTop === 0) pull.setValue(Math.min(70, e.d.y));
+      if (e.locked === 'v') {
+        scrollY.setValue(refs.initScrollTop - e.d.y);
+      } else if (e.locked === 'h') {
+        scrollX.setValue(refs.initScrollLeft - e.d.x);
+      }
+      if (onRefresh && refs.initScrollTop === 0) {
+        // Reveal pull to refresh indicator
+        pull.setValue(Math.min(70, e.d.y));
+      }
     },
     onUp: e => {
+      if (e.locked === 'v') {
+        if (e.v.y) scrollY.spring(scrollY.value - e.v.y * 2000, 2000); // Coast scrolling
+      } else if (e.locked === 'h') {
+        if (e.v.x) scrollX.spring(scrollX.value - e.v.x * 2000, 2000); // Coast scrolling
+      }
+
       if (onRefresh && refs.initScrollTop === 0) {
         if (e.d.y > 70) {
           pull.spring(0).then(onRefresh);
@@ -412,6 +410,16 @@ const ScrollView = /*#__PURE__*/forwardRef(({
       }
     }
   });
+  useEffect(() => {
+    // Scrolling Y
+    return scrollY.on(val => {
+      el.current.scrollTop = val;
+    });
+  }, []);
+  useEffect(() => {
+    // Scrolling X
+    return scrollX.on(val => el.current.scrollLeft = val);
+  }, []);
   useEffect(() => {
     if (!onRefresh) return;
     return pull.on(val => {
@@ -437,35 +445,160 @@ const ScrollView = /*#__PURE__*/forwardRef(({
   }));
 });
 
-const BreadCrumbs = ({
-  path,
-  onClickPath
+const array = new Array(12).fill(0);
+const ActivityIndicator = ({
+  size = 16,
+  color = '#fff'
 }) => {
-  const slugs = path.split('/').filter(Boolean);
-  const renderSlug = (slug, i) => /*#__PURE__*/React.createElement(Fragment, {
-    key: slug + '_' + i
-  }, /*#__PURE__*/React.createElement(Touchable, {
-    onClick: () => onClickPath(),
-    children: slug
-  }), i < slugs.length - 1 ? /*#__PURE__*/React.createElement("span", null, " / ") : null);
-  if (slugs.length === 0) return null;
-  return /*#__PURE__*/React.createElement(ScrollView, {
-    horizontal: true,
-    className: "breadcrumbs"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    icon: "home",
-    onClick: () => onClickPath('/')
-  }), /*#__PURE__*/React.createElement("span", null, " / "), slugs.map(renderSlug));
+  const renderSegment = (x, i) => {
+    const style = {
+      'width': 1.7,
+      'borderRadius': 1,
+      'left': size / 2 - 1,
+      'height': size / 4,
+      'animationDelay': (-1.1 + .1 * i).toFixed(1) + 's',
+      'transform': `rotate(${30 * i}deg)`,
+      'backgroundColor': color,
+      'transformOrigin': `50% ${size / 2}px`
+    };
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: style
+    });
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "activity-indicator",
+    style: {
+      width: size,
+      height: size
+    },
+    children: array.map(renderSegment)
+  });
 };
 
-const CheckBox = ({
-  active,
-  undetermined
-}) => /*#__PURE__*/React.createElement("div", {
-  className: c('toggle-check', active && 'active', undetermined && 'undetermined')
-}, /*#__PURE__*/React.createElement(Icon, {
-  icon: undetermined ? 'horizontal_rule' : active ? 'check' : null
-}));
+const Button = ({
+  className,
+  title,
+  onClick,
+  onDown,
+  icon,
+  href,
+  tabIndex,
+  color,
+  textColor,
+  disabled,
+  download,
+  iconImageUrl,
+  loading,
+  submit,
+  fullWidth
+}) => {
+  const style = {
+    backgroundColor: color,
+    color: textColor
+  };
+  const cn = c('btn', className, disabled && 'disabled', fullWidth && 'full-width', color && `btn-${color}`);
+  const renderInner = () => {
+    if (loading) return /*#__PURE__*/React.createElement(ActivityIndicator, null);
+    return /*#__PURE__*/React.createElement(Fragment, null, iconImageUrl ? /*#__PURE__*/React.createElement("img", {
+      src: iconImageUrl,
+      alt: title
+    }) : null, icon ? /*#__PURE__*/React.createElement(Icon, {
+      icon: icon
+    }) : null, title ? /*#__PURE__*/React.createElement("span", null, title) : null);
+  };
+  return /*#__PURE__*/React.createElement(Touchable, {
+    type: submit ? 'submit' : 'button',
+    className: cn,
+    onClick: e => {
+      if (download) e.stopPropagation();
+      if (onClick) onClick(e);
+    },
+    href: href,
+    onTouchStart: onDown,
+    tabIndex: tabIndex,
+    style: style,
+    children: renderInner()
+  });
+};
+
+const alertsStore = createBus([]);
+const dismissAlert = (alert, val) => {
+  // Hide alert
+  alertsStore.update(alertsStore.state.map(a => {
+    if (a === alert) a.visible = false;
+    return a;
+  }));
+
+  // Remove alert when animation completes
+  setTimeout(() => {
+    alert.callback(val);
+    alertsStore.update(alertsStore.state.filter(a => a !== alert));
+  }, 300);
+};
+const SingleAlert = ({
+  alert,
+  isLast
+}) => {
+  const renderButton = (option, i) => {
+    const pressButton = () => {
+      if (option.onPress) option.onPress();
+      dismissAlert(alert, option._id || option.value);
+    };
+    return /*#__PURE__*/React.createElement(Touchable, {
+      key: i,
+      className: c('alert-button', option.destructive && 'destructive'),
+      onClick: pressButton,
+      children: option.name,
+      disableMenu: true
+    });
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: c('alert-container', isLast && alert.visible && alert.className)
+  }, /*#__PURE__*/React.createElement("div", {
+    className: c('alert', isLast && alert.visible && 'visible'),
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "alert-top"
+  }, alert.title ? /*#__PURE__*/React.createElement("div", {
+    className: "alert-title"
+  }, alert.title) : null, alert.message ? /*#__PURE__*/React.createElement("div", {
+    className: "alert-message"
+  }, alert.message) : null), alert.options ? /*#__PURE__*/React.createElement(ScrollView, {
+    className: c('alert-buttons', alert.options.length <= 2 && 'alert-buttons-horizontal'),
+    children: alert.options.map(renderButton)
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "alert-bottom"
+  }, /*#__PURE__*/React.createElement(Button, {
+    color: "white",
+    fullWidth: true,
+    title: "Close",
+    onClick: () => dismissAlert(alert)
+  }))));
+};
+const Alert = () => {
+  const alerts = useBus(alertsStore);
+  const last = alerts.filter(alert => alert.visible).pop();
+  if (alerts.length === 0) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: c('layer alert-backdrop', alerts.some(a => a.visible) && 'visible'),
+    onClick: () => dismissAlert(last),
+    children: alerts.map(alert => /*#__PURE__*/React.createElement(SingleAlert, {
+      key: alert.key,
+      alert: alert,
+      isLast: last === alert
+    }))
+  });
+};
+const showAlert = (alert, options) => new Promise(resolve => {
+  alertsStore.update([...alertsStore.state, {
+    'key': randomId(),
+    'callback': resolve,
+    'visible': true,
+    'options': options,
+    ...alert
+  }]);
+});
 
 const TouchableRow = ({
   title,
@@ -478,12 +611,15 @@ const TouchableRow = ({
   children,
   caret,
   disabled,
-  RightComponent
+  RightComponent,
+  className,
+  active
 }) => /*#__PURE__*/React.createElement(Touchable, {
-  className: c('touchable-row', disabled && 'disabled'),
+  className: c('touchable-highlight touchable-row', disabled && 'disabled', className),
   onClick: onClick,
   href: href,
-  target: target
+  target: target,
+  active: active
 }, /*#__PURE__*/React.createElement("div", {
   className: "touchable-row-left"
 }, typeof leftIcon === 'string' ? /*#__PURE__*/React.createElement("div", {
@@ -602,140 +738,6 @@ const showActionSheet = (title, options, callback) => bus.update({
   options,
   callback
 });
-
-const alertsStore = createBus([]);
-const dismissAlert = (alert, val) => {
-  // Hide alert
-  alertsStore.update(alertsStore.state.map(a => {
-    if (a === alert) a.visible = false;
-    return a;
-  }));
-
-  // Remove alert when animation completes
-  setTimeout(() => {
-    alert.callback(val);
-    alertsStore.update(alertsStore.state.filter(a => a !== alert));
-  }, 300);
-};
-const SingleAlert = ({
-  alert,
-  isLast
-}) => {
-  const renderButton = (option, i) => {
-    const pressButton = () => {
-      if (option.onPress) option.onPress();
-      dismissAlert(alert, option._id || option.value);
-    };
-    return /*#__PURE__*/React.createElement(Touchable, {
-      key: i,
-      className: c('alert-button', option.destructive && 'destructive'),
-      onClick: pressButton,
-      children: option.name,
-      disableMenu: true
-    });
-  };
-  return /*#__PURE__*/React.createElement("div", {
-    className: c('alert-container', isLast && alert.visible && alert.className)
-  }, /*#__PURE__*/React.createElement("div", {
-    className: c('alert', isLast && alert.visible && 'visible'),
-    onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "alert-top"
-  }, alert.title ? /*#__PURE__*/React.createElement("div", {
-    className: "alert-title"
-  }, alert.title) : null, alert.message ? /*#__PURE__*/React.createElement("div", {
-    className: "alert-message"
-  }, alert.message) : null), alert.options.length ? /*#__PURE__*/React.createElement(ScrollView, {
-    className: c('alert-buttons', alert.options.length <= 2 && 'alert-buttons-horizontal'),
-    children: alert.options.map(renderButton)
-  }) : null));
-};
-const Alert = () => {
-  const alerts = useBus(alertsStore);
-  const last = alerts.filter(alert => alert.visible).pop();
-  if (alerts.length === 0) return null;
-  return /*#__PURE__*/React.createElement("div", {
-    className: c('layer alert-backdrop', alerts.some(a => a.visible) && 'visible'),
-    onClick: () => dismissAlert(last),
-    children: alerts.map(alert => /*#__PURE__*/React.createElement(SingleAlert, {
-      key: alert.key,
-      alert: alert,
-      isLast: last === alert
-    }))
-  });
-};
-const showAlert = (alert, options = [{
-  name: 'Close'
-}]) => new Promise(resolve => {
-  alertsStore.update([...alertsStore.state, {
-    'key': randomId(),
-    'callback': resolve,
-    'visible': true,
-    'options': options,
-    ...alert
-  }]);
-});
-
-const Spinner = () => /*#__PURE__*/React.createElement("div", {
-  className: "spinner"
-});
-
-const Button = ({
-  className,
-  title,
-  onClick,
-  onDown,
-  icon,
-  href,
-  tabIndex,
-  color,
-  textColor,
-  disabled,
-  width,
-  download,
-  iconImageUrl,
-  loading,
-  submit,
-  pop
-}) => {
-  const classes = ['btn'];
-  if (className) classes.push(className);
-  if (disabled) classes.push('disabled');
-  const style = {
-    background: color,
-    width,
-    color: textColor
-  };
-  const renderInner = () => {
-    if (loading) return /*#__PURE__*/React.createElement(Spinner, null);
-    return /*#__PURE__*/React.createElement(Fragment, null, iconImageUrl ? /*#__PURE__*/React.createElement("img", {
-      src: iconImageUrl,
-      alt: title
-    }) : null, icon ? /*#__PURE__*/React.createElement(Icon, {
-      icon: icon
-    }) : null, title ? /*#__PURE__*/React.createElement("span", null, title) : null);
-  };
-  if (href) return /*#__PURE__*/React.createElement("a", {
-    onClick: e => {
-      if (download) e.stopPropagation();
-    },
-    href: href,
-    target: href && pop ? '_blank' : null,
-    className: classes.join(' '),
-    tabIndex: tabIndex,
-    style: style,
-    children: renderInner()
-  });
-  return /*#__PURE__*/React.createElement(Touchable, {
-    type: submit ? 'submit' : 'button',
-    className: classes.join(' '),
-    onClick: onClick,
-    onTouchStart: onDown,
-    tabIndex: tabIndex,
-    style: style,
-    children: renderInner()
-  });
-};
 
 const closeImage = {
   'card': 'os:back',
@@ -915,34 +917,6 @@ const Card = /*#__PURE__*/forwardRef(({
   }) : null));
 });
 
-const ConnectionIndicator = ({
-  status
-}) => {
-  if (status === 'connected') return null;
-  return /*#__PURE__*/React.createElement("div", {
-    className: "connection-indicator"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "bubble"
-  }, /*#__PURE__*/React.createElement(Spinner, null), status));
-};
-
-const CornerDialog = ({
-  title,
-  children,
-  isVisible,
-  onClose
-}) => {
-  if (!isVisible) return null;
-  return /*#__PURE__*/React.createElement("div", {
-    className: "corner-dialog"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "corner-dialog-title"
-  }, title, /*#__PURE__*/React.createElement(Icon, {
-    icon: "close",
-    onClick: onClose
-  })), children);
-};
-
 let origin = {};
 const Reveal = /*#__PURE__*/forwardRef(({
   children,
@@ -950,7 +924,8 @@ const Reveal = /*#__PURE__*/forwardRef(({
   headerRight,
   onClose,
   isVisible,
-  className
+  className,
+  screen // From poon-router
 }, ref) => {
   const el = useRef();
   const innerEl = useRef();
@@ -974,15 +949,15 @@ const Reveal = /*#__PURE__*/forwardRef(({
     }
   }, [isVisible]);
   useEffect(() => {
-    return pan.on(value => {
-      const inverse = 1 - value;
+    return pan.on(val => {
+      const inverse = 1 - val;
       const revealX = origin.x * inverse;
       const revealY = origin.y * inverse;
       if (el.current) {
-        el.current.style.opacity = value * 2;
+        // el.current.style.opacity = val;
         el.current.style.transform = `translate(${revealX}px, ${revealY}px)`;
-        el.current.style.width = toPercent(value);
-        el.current.style.height = toPercent(value);
+        el.current.style.width = toPercent(val);
+        el.current.style.height = toPercent(val);
       }
       if (innerEl.current) {
         innerEl.current.style.transform = `translate(${-1 * revealX}px, ${-1 * revealY}px)`;
@@ -990,12 +965,10 @@ const Reveal = /*#__PURE__*/forwardRef(({
     });
   }, [width, height]);
   return /*#__PURE__*/React.createElement("div", {
-    className: "layer"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: c('reveal', className),
+    className: "layer reveal",
     ref: el
   }, /*#__PURE__*/React.createElement("div", {
-    className: "reveal-content",
+    className: c('card reveal-content', className),
     ref: innerEl
   }, /*#__PURE__*/React.createElement(ScreenHeader, {
     title: title,
@@ -1005,12 +978,12 @@ const Reveal = /*#__PURE__*/forwardRef(({
   }), /*#__PURE__*/React.createElement("div", {
     className: "card-body",
     children: children
-  }))));
+  })));
 });
-const setRevealOrigin = (x, y) => {
-  origin.x = x;
-  origin.y = y;
-};
+const setRevealOrigin = (x, y) => Object.assign(origin, {
+  x,
+  y
+});
 
 const setOrigin = e => {
   const rect = e.currentTarget.getBoundingClientRect();
@@ -1031,6 +1004,32 @@ const DashboardIcon = ({
 })), /*#__PURE__*/React.createElement("div", {
   className: "springboard-icon-name"
 }, title));
+
+const CornerDialog = ({
+  title,
+  children,
+  isVisible,
+  onClose
+}) => {
+  if (!isVisible) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "corner-dialog"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "corner-dialog-title"
+  }, title, /*#__PURE__*/React.createElement(Icon, {
+    icon: "close",
+    onClick: onClose
+  })), children);
+};
+
+const CheckBox = ({
+  active,
+  undetermined
+}) => /*#__PURE__*/React.createElement("div", {
+  className: c('toggle-check', active && 'active', undetermined && 'undetermined')
+}, /*#__PURE__*/React.createElement(Icon, {
+  icon: undetermined ? 'horizontal_rule' : active ? 'check' : null
+}));
 
 const Dropdown = ({
   position,
@@ -1059,38 +1058,26 @@ const Dropdown = ({
   }, /*#__PURE__*/React.createElement("div", {
     children: button,
     className: "dropdown-button",
-    onClick: () => setVisible(true)
+    onClick: () => {
+      console.log('show');
+      setVisible(true);
+    }
   }), /*#__PURE__*/React.createElement("div", {
     className: c('dropdown-content', position || 'top-right', visible ? 'visible' : 'hidden'),
     children: content
   })));
 };
 
-const DropdownItem = ({
-  title,
-  icon,
-  onClick,
-  href,
-  disabled,
-  children,
-  active
-}) => /*#__PURE__*/React.createElement(TouchableRow, {
-  className: "dropdown-item",
-  onClick: onClick,
-  disabled: disabled,
-  active: active,
-  children: children,
-  href: href,
-  leftIcon: icon,
-  title: title
-});
-
-const Emoji = ({
-  emoji
-}) => /*#__PURE__*/React.createElement("span", {
-  className: "emoji",
-  children: emoji
-});
+const ConnectionIndicator = ({
+  status
+}) => {
+  if (status === 'connected') return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "connection-indicator"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bubble"
+  }, /*#__PURE__*/React.createElement(ActivityIndicator, null), status));
+};
 
 const Fab = ({
   icon,
@@ -1114,6 +1101,68 @@ const Fab = ({
 }), title && /*#__PURE__*/React.createElement("div", {
   className: "fab-title"
 }, title)));
+
+const BreadCrumbs = ({
+  path,
+  onClickPath
+}) => {
+  const slugs = path.split('/').filter(Boolean);
+  const renderSlug = (slug, i) => /*#__PURE__*/React.createElement(Fragment, {
+    key: slug + '_' + i
+  }, /*#__PURE__*/React.createElement(Touchable, {
+    onClick: () => onClickPath(),
+    children: slug
+  }), i < slugs.length - 1 ? /*#__PURE__*/React.createElement("span", null, " / ") : null);
+  if (slugs.length === 0) return null;
+  return /*#__PURE__*/React.createElement(ScrollView, {
+    horizontal: true,
+    className: "breadcrumbs"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    icon: "home",
+    onClick: () => onClickPath('/')
+  }), /*#__PURE__*/React.createElement("span", null, " / "), slugs.map(renderSlug));
+};
+
+const Emoji = ({
+  emoji
+}) => /*#__PURE__*/React.createElement("span", {
+  className: "emoji",
+  children: emoji
+});
+
+const modalState = createBus([]);
+const renderModal = modal => /*#__PURE__*/React.createElement("div", {
+  key: modal.id,
+  className: "layer",
+  children: modal.children
+});
+const Modal = () => useBus(modalState).map(renderModal);
+const showModal = children => modalState.update([...modalState.state, {
+  'id': Math.random(),
+  'children': children
+}]);
+const hideModal = () => {
+  modalState.update([]);
+};
+
+const DropdownItem = ({
+  title,
+  icon,
+  onClick,
+  href,
+  disabled,
+  children,
+  active
+}) => /*#__PURE__*/React.createElement(TouchableRow, {
+  className: "dropdown-item",
+  onClick: onClick,
+  disabled: disabled,
+  active: active,
+  children: children,
+  href: href,
+  leftIcon: icon,
+  title: title
+});
 
 const FullScreen = ({
   title,
@@ -1147,39 +1196,6 @@ const FullScreen = ({
   }, children), footer);
 };
 
-const HeaderButton = ({
-  icon,
-  title,
-  badge,
-  loading,
-  disabled,
-  onClick,
-  active,
-  href
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: c('header-button center', title === 'Cancel' && 'header-cancel'),
-  onClick: onClick,
-  loading: loading,
-  disabled: disabled,
-  active: active,
-  href: href
-}, icon ? /*#__PURE__*/React.createElement(Icon, {
-  icon: icon
-}) : null, title ? /*#__PURE__*/React.createElement("span", null, title) : null, badge ? /*#__PURE__*/React.createElement("span", {
-  className: "badge"
-}, badge) : null);
-
-const PercentBar = ({
-  percent
-}) => /*#__PURE__*/React.createElement("div", {
-  className: "percent-bar"
-}, /*#__PURE__*/React.createElement("div", {
-  className: "percent-bar-inner",
-  style: {
-    width: `${percent * 100}%`
-  }
-}));
-
 const List = ({
   title,
   items = [],
@@ -1189,14 +1205,15 @@ const List = ({
   className,
   ListEmptyComponent,
   HeaderComponent,
-  children
+  children,
+  showSeparators = true
 }) => {
   const renderList = () => {
     if (loading || !items) return null;
     if (ListEmptyComponent && items.length === 0) return ListEmptyComponent;
     return items.map((item, i) => /*#__PURE__*/React.createElement(Fragment, {
       key: keyExtractor(item)
-    }, renderItem(item, i), i < items.length - 1 && /*#__PURE__*/React.createElement("hr", null)));
+    }, renderItem(item, i), showSeparators && i < items.length - 1 && /*#__PURE__*/React.createElement("hr", null)));
   };
   const renderChild = (child, i) => /*#__PURE__*/React.createElement(Fragment, {
     key: i
@@ -1210,63 +1227,9 @@ const List = ({
   }, renderList(), Children.map(children, renderChild)) : ListEmptyComponent);
 };
 
-const modalState = createBus([]);
-const renderModal = modal => /*#__PURE__*/React.createElement("div", {
-  key: modal.id,
-  className: "absolute",
-  children: modal.children
+const ProgressIndicator = () => /*#__PURE__*/React.createElement("div", {
+  className: "progress-indicator"
 });
-const Modal = () => useBus(modalState).map(renderModal);
-const showModal = children => modalState.update([...modalState.state, {
-  'id': Math.random(),
-  'children': children
-}]);
-const hideModal = () => {
-  modalState.update([]);
-};
-
-const state = createBus();
-const Toast = () => {
-  const message = useBus(state);
-  useEffect(() => {
-    if (!message) return;
-    const timeout = setTimeout(() => state.update(null), 2000);
-    return () => clearTimeout(timeout);
-  }, [message]);
-  if (!message) return null;
-  return /*#__PURE__*/React.createElement("div", {
-    className: "toast-container"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "toast",
-    children: message
-  }));
-};
-const toast = state.update;
-
-const PoonOverlays = () => /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(Modal, null), /*#__PURE__*/React.createElement(ActionSheet, null), /*#__PURE__*/React.createElement(Alert, null), /*#__PURE__*/React.createElement(Toast, null));
-
-const PillButton = ({
-  title,
-  LeftComponent,
-  caret = true,
-  checked,
-  active,
-  href,
-  onPress
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: "pill",
-  onClick: onPress,
-  active: active,
-  interactive: true,
-  href: href
-}, LeftComponent, title ? /*#__PURE__*/React.createElement("div", {
-  className: "pill-title"
-}, title) : null, caret ? /*#__PURE__*/React.createElement(Icon, {
-  className: "pill-caret",
-  icon: "expand_more"
-}) : /*#__PURE__*/React.createElement(CheckBox, {
-  active: checked
-}));
 
 const ProgressRing = ({
   color = '#fff',
@@ -1275,7 +1238,7 @@ const ProgressRing = ({
   spinning,
   completedIcon = 'check'
 }) => {
-  if (spinning || !percent) return /*#__PURE__*/React.createElement(Spinner, null);
+  if (spinning || !percent) return /*#__PURE__*/React.createElement(ProgressIndicator, null);
   if (percent === 1) return /*#__PURE__*/React.createElement(Icon, {
     icon: completedIcon
   });
@@ -1309,6 +1272,50 @@ const ProgressRing = ({
     cy: r
   }));
 };
+
+const FilterButton = ({
+  title,
+  LeftComponent,
+  caret = true,
+  checked,
+  active,
+  href,
+  onPress
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: "filter-button",
+  onClick: onPress,
+  active: active,
+  interactive: true,
+  href: href
+}, LeftComponent, title ? /*#__PURE__*/React.createElement("div", {
+  className: "filter-button-title"
+}, title) : null, caret ? /*#__PURE__*/React.createElement(Icon, {
+  className: "filter-button-caret",
+  icon: "expand_more"
+}) : /*#__PURE__*/React.createElement(CheckBox, {
+  active: checked
+}));
+
+const CircleCheck = ({
+  active
+}) => {
+  return /*#__PURE__*/React.createElement("div", {
+    className: c('circle-check', active && 'active')
+  }, /*#__PURE__*/React.createElement(Icon, {
+    icon: "check"
+  }));
+};
+
+const PercentBar = ({
+  percent
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "percent-bar"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "percent-bar-inner",
+  style: {
+    width: `${percent * 100}%`
+  }
+}));
 
 const Image = ({
   ar,
@@ -1345,6 +1352,40 @@ const Image = ({
   }, children) : null);
 };
 
+const Pill = ({
+  title,
+  color,
+  onClick
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: "pill",
+  onClick: onClick,
+  style: {
+    backgroundColor: color
+  }
+}, title);
+
+const HeaderButton = ({
+  icon,
+  title,
+  badge,
+  loading,
+  disabled,
+  onClick,
+  active,
+  href
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: c('header-button center', title === 'Cancel' && 'header-cancel'),
+  onClick: onClick,
+  loading: loading,
+  disabled: disabled,
+  active: active,
+  href: href
+}, icon ? /*#__PURE__*/React.createElement(Icon, {
+  icon: icon
+}) : null, title ? /*#__PURE__*/React.createElement("span", null, title) : null, badge ? /*#__PURE__*/React.createElement("span", {
+  className: "badge"
+}, badge) : null);
+
 const SegmentedController = ({
   children
 }) => /*#__PURE__*/React.createElement("div", {
@@ -1352,41 +1393,53 @@ const SegmentedController = ({
   children: children
 });
 
-const SearchInput = ({
-  value,
-  placeholder,
-  onChange,
-  loading
-}) => /*#__PURE__*/React.createElement("div", {
-  className: "search"
-}, /*#__PURE__*/React.createElement(Icon, {
-  icon: "search"
-}), /*#__PURE__*/React.createElement("input", {
-  placeholder: placeholder,
-  type: "search",
-  value: value,
-  onChange: e => {
-    e.stopPropagation();
-    onChange(e.target.value);
-  }
-}), /*#__PURE__*/React.createElement(Icon, {
-  icon: "close",
-  onClick: () => onChange(''),
-  size: 16
-}), loading ? /*#__PURE__*/React.createElement(Spinner, null) : null);
+const state = createBus();
+const Toast = () => {
+  const message = useBus(state);
+  useEffect(() => {
+    if (!message) return;
+    const timeout = setTimeout(() => state.update(null), 2000);
+    return () => clearTimeout(timeout);
+  }, [message]);
+  if (!message) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "toast-container"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "toast",
+    children: message
+  }));
+};
+const toast = state.update;
+
+const PoonOverlays = () => /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(Modal, null), /*#__PURE__*/React.createElement(ActionSheet, null), /*#__PURE__*/React.createElement(Alert, null), /*#__PURE__*/React.createElement(Toast, null));
 
 const Select = ({
   options,
   value,
+  disabled,
+  autoComplete,
   onChangeValue
-}) => /*#__PURE__*/React.createElement("select", {
-  onChange: e => onChangeValue(e.target.value),
-  value: value
-}, Object.keys(options).map(key => /*#__PURE__*/React.createElement("option", {
-  key: key,
-  value: key,
-  children: options[key]
-})));
+}) => {
+  const renderOptions = () => {
+    if (options instanceof Array) return options.map(option => /*#__PURE__*/React.createElement("option", {
+      key: option.value,
+      value: option.value,
+      children: option.name
+    }));
+    Object.keys(options).map(key => /*#__PURE__*/React.createElement("option", {
+      key: key,
+      value: key,
+      children: options[key]
+    }));
+  };
+  return /*#__PURE__*/React.createElement("select", {
+    className: c('text select', disabled && 'disabled'),
+    onChange: e => onChangeValue(e.target.value),
+    value: value,
+    disabled: disabled,
+    autoComplete: autoComplete
+  }, renderOptions());
+};
 
 const TabularRow = ({
   leftText,
@@ -1398,22 +1451,6 @@ const TabularRow = ({
 }, leftText), /*#__PURE__*/React.createElement("div", {
   className: "tabular-row-right"
 }, rightText));
-
-const TextInput = ({
-  value,
-  type,
-  placeholder,
-  onChange
-}) => /*#__PURE__*/React.createElement("input", {
-  placeholder: placeholder,
-  className: "text",
-  type: type,
-  value: value,
-  onChange: e => {
-    e.stopPropagation();
-    onChange(e.target.value);
-  }
-});
 
 const cyrb53 = (str, seed = 0) => {
   let h1 = 0xdeadbeef ^ seed,
@@ -1447,6 +1484,298 @@ const Tag = /*#__PURE__*/memo(({
     },
     children: `${tag}  ${count || ''}`
   });
+});
+
+const SearchInput = ({
+  value,
+  placeholder,
+  onChange,
+  loading
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "search"
+}, /*#__PURE__*/React.createElement(Icon, {
+  icon: "search"
+}), /*#__PURE__*/React.createElement("input", {
+  placeholder: placeholder,
+  type: "search",
+  value: value,
+  onChange: e => {
+    e.stopPropagation();
+    onChange(e.target.value);
+  }
+}), /*#__PURE__*/React.createElement(Icon, {
+  icon: "close",
+  onClick: () => onChange(''),
+  size: 16
+}), loading ? /*#__PURE__*/React.createElement(ProgressIndicator, null) : null);
+
+const autoCompleteMap = {
+  'code': 'one-time-code'
+};
+const typeMap = {
+  'phone': 'tel',
+  'code': 'tel'
+};
+const TextInput = /*#__PURE__*/forwardRef(({
+  placeholder,
+  value = '',
+  icon,
+  type = 'text',
+  dnt,
+  disabled,
+  rows = 0,
+  className,
+  onFocus,
+  autoComplete,
+  onClick,
+  maxLength,
+  id,
+  onChangeText = () => null,
+  autoFocus,
+  loading,
+  RightComponent,
+  countryCode,
+  onChangePhone,
+  lowerCase,
+  min,
+  max,
+  onPressCountry,
+  countries
+}, ref) => {
+  const [_value, _setValue] = useState(value); // internal value
+
+  const renderInput = () => {
+    let tagName = type === 'textarea' || rows ? 'textarea' : 'input';
+    const changeText = e => {
+      let value = e.target.value;
+      _setValue(value);
+      if (type === 'phone') {
+        value = value.replace(/[^0-9]/g, '');
+      } else {
+        if (lowerCase) value = value.toLowerCase();
+        if (maxLength) value = value.slice(0, maxLength);
+        if (type === 'username') value = value.replace(/\s/g, '');
+      }
+      onChangeText(value);
+    };
+    const renderValue = value => {
+      if (type === 'phone' && countryCode) {
+        const country = countries.find(r => r.code === countryCode);
+        const chars = value.split('');
+        return country.example.split('').map(char => {
+          if (chars.length) return char === 'X' ? chars.shift() : char;
+        }).filter(Boolean).join('');
+      }
+      return value;
+    };
+    return /*#__PURE__*/createElement(tagName, {
+      'type': typeMap[type] || type,
+      'autoComplete': autoCompleteMap[type],
+      'maxLength': maxLength,
+      'className': c('text', disabled && 'disabled', dnt && 'fs-hide', className),
+      'readOnly': disabled,
+      'onChange': changeText,
+      'value': renderValue(value),
+      'autoCapitalize': lowerCase && 'none',
+      placeholder,
+      rows,
+      onFocus,
+      onClick,
+      id,
+      autoFocus,
+      ref,
+      min,
+      max
+    });
+  };
+  const renderIcon = () => {
+    if (icon) return /*#__PURE__*/React.createElement(Icon, {
+      className: "text-input-icon",
+      icon: icon
+    });
+    if (type === 'username') return /*#__PURE__*/React.createElement("span", {
+      className: "text-input-icon"
+    }, "@");
+    if (type === 'search') return /*#__PURE__*/React.createElement(Icon, {
+      className: "text-input-icon",
+      icon: "search"
+    });
+  };
+  const renderClearButton = () => {
+    if (type !== 'search') return null;
+    if (value) return /*#__PURE__*/React.createElement(Touchable, {
+      onClick: () => onChangeText('')
+    }, /*#__PURE__*/React.createElement(Icon, {
+      icon: "cancel",
+      className: "text-input-clear"
+    }));
+  };
+  const renderSpinner = () => {
+    if (!loading) return null;
+    return /*#__PURE__*/React.createElement("div", {
+      className: "text-input-spinner"
+    }, /*#__PURE__*/React.createElement(ActivityIndicator, {
+      size: 18
+    }));
+  };
+  const renderCountryButton = () => {
+    const country = countries ? countries.find(r => r.code === countryCode) : null;
+    if (!country) return null; // fix me??
+
+    return /*#__PURE__*/React.createElement(Touchable, {
+      className: "text-input-country",
+      onClick: onPressCountry
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "emoji"
+    }, country.flag), country.prefix);
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "text-input"
+  }, type === 'phone' && renderCountryButton(), renderIcon(), renderInput(), icon ? /*#__PURE__*/React.createElement("img", {
+    className: "text-input-icon",
+    src: icon
+  }) : null, RightComponent, renderSpinner(), renderClearButton());
+});
+
+const RadioButton = ({
+  active,
+  icon,
+  title,
+  elaboration,
+  subtitle,
+  value,
+  disabled,
+  onClick,
+  children
+}) => /*#__PURE__*/React.createElement(TouchableRow, {
+  onClick: () => {
+    onClick(value);
+  },
+  disabled: disabled,
+  className: "radio-btn",
+  active: active
+}, /*#__PURE__*/React.createElement("div", {
+  className: "radio-top"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "dot"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "dot-inside"
+})), icon && /*#__PURE__*/React.createElement(Icon, {
+  icon: icon
+}), /*#__PURE__*/React.createElement("div", {
+  className: "radio-title"
+}, title)), children && /*#__PURE__*/React.createElement("div", {
+  className: "radio-subtitle"
+}, children), subtitle && /*#__PURE__*/React.createElement("div", {
+  className: "radio-subtitle"
+}, subtitle), active && elaboration && /*#__PURE__*/React.createElement("div", {
+  className: "radio-subtitle",
+  children: elaboration
+}));
+
+const Window = /*#__PURE__*/forwardRef(({
+  children,
+  title,
+  search,
+  onChangeSearch,
+  searchLoading,
+  hasScrollView = true,
+  headerRight,
+  onClose,
+  isVisible
+}, ref) => {
+  const shadeEl = useRef();
+  const el = useRef();
+  const pan = useAnimatedValue(0);
+  const close = () => {
+    console.log('close window');
+    if (onClose) {
+      pan.spring(0).then(onClose);
+    } else {
+      navigation.goBack(1);
+    }
+  };
+  useImperativeHandle(ref, () => ({
+    close
+  }));
+  const {
+    height
+  } = usePanGestures(el, {
+    onMove: e => {
+      pan.setValue(height - Math.max(0, e.d.y));
+    },
+    onUp: e => {
+      if (e.flick.y === 1 || e.d.y > e.height / 2) {
+        close();
+      } else {
+        pan.spring(e.height);
+      }
+    }
+  });
+  useEffect(() => {
+    if (!height) return;
+    if (isVisible || onClose) {
+      // onClose is here because the window is in a modal if there is an onClose
+      pan.spring(height);
+    } else {
+      pan.spring(0);
+    }
+  }, [isVisible, height]);
+  useEffect(() => {
+    const cards = document.querySelectorAll('.card');
+    return pan.on(value => {
+      const percent = value / height;
+      if (el.current) el.current.style.transform = `translateY(-${value}px)`;
+      if (shadeEl.current) {
+        shadeEl.current.style.display = value ? 'block' : 'none';
+        shadeEl.current.style.opacity = value / height * .8;
+      }
+      [...cards].forEach(el => {
+        el.style.transform = `scale(${1 - .04 * percent})`;
+      });
+    });
+  }, [height]);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "layer"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "window",
+    ref: el
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "window-content"
+  }, /*#__PURE__*/React.createElement(ScreenHeader, {
+    title: title,
+    presentation: "modal",
+    onClose: close,
+    SearchComponent: onChangeSearch ? /*#__PURE__*/React.createElement("div", {
+      className: "header-search"
+    }, /*#__PURE__*/React.createElement(TextInput, {
+      placeholder: "Search",
+      type: "search",
+      value: search,
+      onChangeText: onChangeSearch,
+      loading: searchLoading
+    })) : null,
+    headerRight: headerRight
+  }), hasScrollView ? /*#__PURE__*/React.createElement(ScrollView, {
+    className: "card-body",
+    children: children
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "card-body",
+    children: children
+  }))));
+});
+
+const TouchableHighlight = ({
+  href,
+  onClick,
+  children,
+  disabled,
+  className
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: c('touchable-highlight', disabled && 'disabled', className),
+  onClick: onClick,
+  href: href,
+  children: children
 });
 
 const PagerDot = ({
@@ -1500,7 +1829,8 @@ const ViewPager = /*#__PURE__*/forwardRef(({
   titles,
   children,
   vertical,
-  dots
+  dots,
+  className
 }, ref) => {
   const pan = useAnimatedValue(0);
   const indicatorEl = useRef();
@@ -1587,7 +1917,7 @@ const ViewPager = /*#__PURE__*/forwardRef(({
     pan.spring(i * width);
   };
   return /*#__PURE__*/React.createElement("div", {
-    className: c('pager', vertical ? 'vertical' : 'horizontal')
+    className: c('pager', vertical ? 'vertical' : 'horizontal', className)
   }, titles ? /*#__PURE__*/React.createElement("div", {
     className: "pager-tabs"
   }, titles.map((title, i) => /*#__PURE__*/React.createElement(PagerTabTitle, {
@@ -1625,90 +1955,12 @@ const ViewPager = /*#__PURE__*/forwardRef(({
   }))) : null);
 });
 
-const Window = /*#__PURE__*/forwardRef(({
-  children,
-  title,
-  search,
-  onChangeSearch,
-  searchLoading,
-  hasScrollView = true,
-  headerRight,
-  onClose,
-  isVisible
-}, ref) => {
-  const shadeEl = useRef();
-  const el = useRef();
-  const pan = useAnimatedValue(0);
-  const close = () => navigation.goBack(1);
-  useImperativeHandle(ref, () => ({
-    close
-  }));
-  const {
-    height
-  } = usePanGestures(el, {
-    onMove: e => {
-      pan.setValue(height - Math.max(0, e.d.y));
-    },
-    onUp: e => {
-      if (e.flick.y === 1 || e.d.y > e.height / 2) {
-        close();
-      } else {
-        pan.spring(e.height);
-      }
-    }
-  });
-  useEffect(() => {
-    if (!height) return;
-    if (isVisible) {
-      pan.spring(height);
-    } else {
-      pan.spring(0);
-    }
-    // return () => pan.setValue(0);
-  }, [isVisible, height]);
-  useEffect(() => {
-    const cards = document.querySelectorAll('.card');
-    return pan.on(value => {
-      const percent = value / height;
-      if (el.current) el.current.style.transform = `translateY(-${value}px)`;
-      if (shadeEl.current) {
-        shadeEl.current.style.display = value ? 'block' : 'none';
-        shadeEl.current.style.opacity = value / height * .8;
-      }
-      [...cards].forEach(el => {
-        el.style.transform = `scale(${1 - .04 * percent})`;
-      });
-    });
-  }, [height]);
-  return /*#__PURE__*/React.createElement("div", {
-    className: "layer"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "window",
-    ref: el
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "window-content"
-  }, /*#__PURE__*/React.createElement(ScreenHeader, {
-    title: title,
-    presentation: "modal",
-    onClose: close,
-    SearchComponent: onChangeSearch ? /*#__PURE__*/React.createElement("div", {
-      className: "header-search"
-    }, /*#__PURE__*/React.createElement(TextInput, {
-      placeholder: "Search",
-      type: "search",
-      value: search,
-      onChange: onChangeSearch,
-      loading: searchLoading
-    })) : null,
-    headerRight: headerRight
-  }), hasScrollView ? /*#__PURE__*/React.createElement(ScrollView, {
-    className: "card-body",
-    children: children
-  }) : /*#__PURE__*/React.createElement("div", {
-    className: "card-body",
-    children: children
-  }))));
-});
+const vk = navigator.virtualKeyboard;
+const useVirtualKeyboard = () => useEffect(() => {
+  if (!vk) return;
+  vk.overlaysContent = true;
+  return () => vk.overlaysContent = false;
+}, []);
 
 const cache = new Map();
 const memoize = func => function (...args) {
@@ -1720,10 +1972,7 @@ const loadCss = memoize(url => new Promise(resolve => {
   const el = document.createElement('link');
   el.setAttribute('rel', 'stylesheet');
   el.setAttribute('href', url);
-  el.onload = () => {
-    console.log('loaded css');
-    resolve();
-  };
+  el.onload = () => resolve();
   document.head.appendChild(el);
 }));
 const loadScript = memoize((url, windowKey) => new Promise(resolve => {
@@ -1731,18 +1980,8 @@ const loadScript = memoize((url, windowKey) => new Promise(resolve => {
   script.type = 'text/javascript';
   script.async = true;
   script.src = url;
-  script.onload = () => {
-    console.log('loaded script');
-    resolve(window[windowKey]);
-  };
+  script.onload = () => resolve(window[windowKey]);
   document.head.appendChild(script);
 }));
 
-const vk = navigator.virtualKeyboard;
-const useVirtualKeyboard = () => useEffect(() => {
-  if (!vk) return;
-  vk.overlaysContent = true;
-  return () => vk.overlaysContent = false;
-}, []);
-
-export { ActionSheet, ActivityIndicator, Alert, AnimatedValue, BottomSheet, BreadCrumbs, Button, Card, CheckBox, ConnectionIndicator, CornerDialog, DashboardIcon, Dropdown, DropdownItem, Emoji, FLICK_SPEED, Fab, FullScreen, HeaderButton, Icon, Image, List, Modal, PercentBar, PillButton, Placeholder, PoonOverlays, ProgressRing, PullIndicator, Reveal, ScreenHeader, ScrollView, SearchInput, SegmentedController, Select, Shade, Spinner, TabularRow, Tag, TextInput, Toast, Touchable, TouchableRow, ViewPager, Window, bounce, c, clamp, cyrb53, easeOutCubic, hideModal, loadCss, loadScript, memoize, modalState, setRevealOrigin, showActionSheet, showAlert, showModal, toPercent, toast, useAnimatedValue, usePanGestures, useSize, useVirtualKeyboard };
+export { ActionSheet, ActivityIndicator, Alert, AnimatedValue, BottomSheet, BreadCrumbs, Button, Card, CheckBox, CircleCheck, ConnectionIndicator, CornerDialog, DashboardIcon, Dropdown, DropdownItem, Emoji, FLICK_SPEED, Fab, FilterButton, FullScreen, HeaderButton, Icon, Image, List, Modal, PercentBar, Pill, Placeholder, PoonOverlays, ProgressIndicator, ProgressRing, PullIndicator, RadioButton, Reveal, ScreenHeader, ScrollView, SearchInput, SegmentedController, Select, Shade, TabularRow, Tag, TextInput, Toast, Touchable, TouchableHighlight, TouchableRow, ViewPager, Window, bounce, c, clamp, cyrb53, easeOutCubic, hideModal, loadCss, loadScript, memoize, modalState, setRevealOrigin, showActionSheet, showAlert, showModal, toPercent, toast, useAnimatedValue, usePanGestures, useSize, useVirtualKeyboard };

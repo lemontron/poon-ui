@@ -1,8 +1,9 @@
 import React from 'react';
-import { createBus, useBus, randomId } from 'poon-router/util.js';
+import { createBus, randomId, useBus } from 'poon-router/util.js';
 import { c } from './util';
 import { Touchable } from './Touchable';
 import { ScrollView } from './ScrollView';
+import { Button } from './Button.js';
 
 const alertsStore = createBus([]);
 
@@ -47,12 +48,16 @@ const SingleAlert = ({alert, isLast}) => {
 					{alert.title ? <div className="alert-title">{alert.title}</div> : null}
 					{alert.message ? <div className="alert-message">{alert.message}</div> : null}
 				</div>
-				{alert.options.length ? (
+				{alert.options ? (
 					<ScrollView
 						className={c('alert-buttons', alert.options.length <= 2 && 'alert-buttons-horizontal')}
 						children={alert.options.map(renderButton)}
 					/>
-				) : null}
+				) : (
+					<div className="alert-bottom">
+						<Button color="white" fullWidth title="Close" onClick={() => dismissAlert(alert)}/>
+					</div>
+				)}
 			</div>
 		</div>
 	);
@@ -74,7 +79,7 @@ export const Alert = () => {
 	);
 };
 
-export const showAlert = (alert, options = [{name: 'Close'}]) => new Promise(resolve => {
+export const showAlert = (alert, options) => new Promise(resolve => {
 	alertsStore.update([...alertsStore.state, {
 		'key': randomId(),
 		'callback': resolve,

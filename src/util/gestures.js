@@ -12,12 +12,14 @@ const getVelocity = (lastV = 0, newV, elapsedTime) => {
 };
 
 export const useSize = (el) => {
+	// console.log('SIZE:', el);
 	const [size, setSize] = useState({
 		'width': el.current?.clientWidth,
 		'height': el.current?.clientHeight,
 	});
 	useEffect(() => { // observe size of element
 		if (!el.current) return;
+
 		const ro = new ResizeObserver(entries => {
 			const e = entries[0].borderBoxSize[0];
 			setSize({'height': e.blockSize, 'width': e.inlineSize});

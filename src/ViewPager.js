@@ -1,4 +1,4 @@
-import React, { useImperativeHandle, forwardRef, useEffect, useRef } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { usePanGestures } from './util/gestures';
 import { clamp, useAnimatedValue } from './util/animated';
 import { c } from './util';
@@ -42,7 +42,7 @@ const PagerTabTitle = ({title, i, pan, width, onPress}) => {
 	);
 };
 
-export const ViewPager = forwardRef(({titles, children, vertical, dots}, ref) => {
+export const ViewPager = forwardRef(({titles, children, vertical, dots, className}, ref) => {
 	const pan = useAnimatedValue(0);
 	const indicatorEl = useRef();
 	const scrollerEl = useRef();
@@ -125,7 +125,7 @@ export const ViewPager = forwardRef(({titles, children, vertical, dots}, ref) =>
 	};
 
 	return (
-		<div className={c('pager', vertical ? 'vertical' : 'horizontal')}>
+		<div className={c('pager', vertical ? 'vertical' : 'horizontal', className)}>
 			{titles ? (
 				<div className="pager-tabs">
 					{titles.map((title, i) => (

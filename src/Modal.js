@@ -3,7 +3,7 @@ import { createBus, useBus } from 'poon-router/util.js';
 
 export const modalState = createBus([]);
 
-const renderModal = (modal) => <div key={modal.id} className="absolute" children={modal.children}/>;
+const renderModal = (modal) => <div key={modal.id} className="layer" children={modal.children}/>;
 
 export const Modal = () => useBus(modalState).map(renderModal);
 

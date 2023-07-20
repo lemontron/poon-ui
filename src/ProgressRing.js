@@ -1,9 +1,9 @@
 import React from 'react';
 import { Icon } from './Icon';
-import { Spinner } from './Spinner';
+import { ProgressIndicator } from './ProgressIndicator.js';
 
 export const ProgressRing = ({color = '#fff', size = 20, percent, spinning, completedIcon = 'check'}) => {
-	if (spinning || !percent) return <Spinner/>;
+	if (spinning || !percent) return <ProgressIndicator/>;
 	if (percent === 1) return <Icon icon={completedIcon}/>;
 
 	const r = size / 2;

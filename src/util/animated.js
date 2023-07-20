@@ -53,6 +53,10 @@ export class AnimatedValue {
 	saveCheckpoint = () => {
 		this.checkpoint = this.value;
 	};
+
+	stop = () => {
+		delete this.id;
+	};
 }
 
 AnimatedValue.defaultAnimationDuration = 300;

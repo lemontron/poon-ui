@@ -21,7 +21,14 @@ export const Window = forwardRef(({
 	const el = useRef();
 	const pan = useAnimatedValue(0);
 
-	const close = () => navigation.goBack(1);
+	const close = () => {
+		console.log('close window');
+		if (onClose) {
+			pan.spring(0).then(onClose);
+		} else {
+			navigation.goBack(1);
+		}
+	};
 
 	useImperativeHandle(ref, () => ({
 		close,
@@ -43,12 +50,11 @@ export const Window = forwardRef(({
 	useEffect(() => {
 		if (!height) return;
 
-		if (isVisible) {
+		if (isVisible || onClose) { // onClose is here because the window is in a modal if there is an onClose
 			pan.spring(height);
 		} else {
 			pan.spring(0);
 		}
-		// return () => pan.setValue(0);
 	}, [isVisible, height]);
 
 	useEffect(() => {
@@ -81,7 +87,7 @@ export const Window = forwardRef(({
 									placeholder="Search"
 									type="search"
 									value={search}
-									onChange={onChangeSearch}
+									onChangeText={onChangeSearch}
 									loading={searchLoading}
 								/>
 							</div>

@@ -9,6 +9,8 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 	const spinnerEl = useRef();
 	const refs = useRef({}).current;
 	const pull = useAnimatedValue(0);
+	const scrollY = useAnimatedValue(0);
+	const scrollX = useAnimatedValue(0);
 
 	usePanGestures(el, {
 		onDown: () => {
@@ -16,6 +18,8 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 			refs.canScrollHorizontal = (el.current.scrollWidth > el.current.clientWidth);
 			refs.initScrollTop = el.current.scrollTop;
 			refs.initScrollLeft = el.current.scrollLeft;
+			scrollY.stop();
+			scrollX.stop();
 		},
 		onCapture: (e) => {
 			if (e.locked === 'v') {
@@ -26,13 +30,26 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 			}
 			if (e.locked === 'h') {
 				if (!refs.canScrollHorizontal) return false;
-				return (refs.initScrollLeft > 0);
+				return true;
+				// return (refs.initScrollLeft > 0);
 			}
 		},
 		onMove: (e) => {
-			if (onRefresh && refs.initScrollTop === 0) pull.setValue(Math.min(70, e.d.y));
+			if (e.locked === 'v') {
+				scrollY.setValue(refs.initScrollTop - e.d.y);
+			} else if (e.locked === 'h') {
+				scrollX.setValue(refs.initScrollLeft - e.d.x);
+			}
+			if (onRefresh && refs.initScrollTop === 0) { // Reveal pull to refresh indicator
+				pull.setValue(Math.min(70, e.d.y));
+			}
 		},
 		onUp: (e) => {
+			if (e.locked === 'v') {
+				if (e.v.y) scrollY.spring(scrollY.value - (e.v.y * 2000), 2000); // Coast scrolling
+			} else if (e.locked === 'h') {
+				if (e.v.x) scrollX.spring(scrollX.value - (e.v.x * 2000), 2000); // Coast scrolling
+			}
 			if (onRefresh && refs.initScrollTop === 0) {
 				if (e.d.y > 70) {
 					pull.spring(0).then(onRefresh);
@@ -42,6 +59,16 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 			}
 		},
 	});
+
+	useEffect(() => { // Scrolling Y
+		return scrollY.on(val => {
+			el.current.scrollTop = val;
+		});
+	}, []);
+
+	useEffect(() => { // Scrolling X
+		return scrollX.on(val => el.current.scrollLeft = val);
+	}, []);
 
 	useEffect(() => {
 		if (!onRefresh) return;

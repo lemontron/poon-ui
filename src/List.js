@@ -1,4 +1,4 @@
-import React, { Fragment, Children } from 'react';
+import React, { Children, Fragment } from 'react';
 import { c } from './util';
 
 export const List = ({
@@ -11,6 +11,7 @@ export const List = ({
 	ListEmptyComponent,
 	HeaderComponent,
 	children,
+	showSeparators = true,
 }) => {
 	const renderList = () => {
 		if (loading || !items) return null;
@@ -18,7 +19,7 @@ export const List = ({
 		return items.map((item, i) => (
 			<Fragment key={keyExtractor(item)}>
 				{renderItem(item, i)}
-				{i < items.length - 1 && <hr/>}
+				{(showSeparators && i < items.length - 1) && <hr/>}
 			</Fragment>
 		));
 	};

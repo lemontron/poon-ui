@@ -1,7 +1,8 @@
 import React, { Fragment } from 'react';
+import { c } from './util/index.js';
 import { Icon } from './Icon';
-import { Spinner } from './Spinner';
 import { Touchable } from './Touchable';
+import { ActivityIndicator } from './ActivityIndicator.js';
 
 export const Button = ({
 	className,
@@ -14,21 +15,17 @@ export const Button = ({
 	color,
 	textColor,
 	disabled,
-	width,
 	download,
 	iconImageUrl,
 	loading,
 	submit,
-	pop,
+	fullWidth,
 }) => {
-	const classes = ['btn'];
-	if (className) classes.push(className);
-	if (disabled) classes.push('disabled');
-
-	const style = {background: color, width, color: textColor};
+	const style = {backgroundColor: color, color: textColor};
+	const cn = c('btn', className, disabled && 'disabled', fullWidth && 'full-width', color && `btn-${color}`);
 
 	const renderInner = () => {
-		if (loading) return <Spinner/>;
+		if (loading) return <ActivityIndicator/>;
 		return (
 			<Fragment>
 				{iconImageUrl ? <img src={iconImageUrl} alt={title}/> : null}
@@ -38,24 +35,15 @@ export const Button = ({
 		);
 	};
 
-	if (href) return (
-		<a
-			onClick={e => {
-				if (download) e.stopPropagation();
-			}}
-			href={href}
-			target={(href && pop) ? '_blank' : null}
-			className={classes.join(' ')}
-			tabIndex={tabIndex} style={style}
-			children={renderInner()}
-		/>
-	);
-
 	return (
 		<Touchable
 			type={submit ? 'submit' : 'button'}
-			className={classes.join(' ')}
-			onClick={onClick}
+			className={cn}
+			onClick={e => {
+				if (download) e.stopPropagation();
+				if (onClick) onClick(e);
+			}}
+			href={href}
 			onTouchStart={onDown}
 			tabIndex={tabIndex}
 			style={style}

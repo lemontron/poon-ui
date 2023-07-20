@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { c } from './util';
 
-export const Touchable = ({href, onClick, className, target, children, disableMenu}) => {
+export const Touchable = ({href, onClick, className, active, target, children, style, disableMenu}) => {
 	const [touched, setTouched] = useState(false);
 	const moved = useRef(false);
 
@@ -10,7 +10,7 @@ export const Touchable = ({href, onClick, className, target, children, disableMe
 		if (onClick) {
 			if (!href) {
 				e.preventDefault();
-				e.stopPropagation();
+				// e.stopPropagation();
 			}
 			onClick(e);
 		}
@@ -36,12 +36,13 @@ export const Touchable = ({href, onClick, className, target, children, disableMe
 		'onMouseUp': leave,
 		'onMouseLeave': leave,
 		'onClick': clickButton,
-		'className': c('touchable', className, touched && 'active', disableMenu && 'disable-menu'),
+		'className': c('touchable', className, touched && 'touched', disableMenu && 'disable-menu', active && 'active'),
 		'target': target,
 		'draggable': false,
 		'onContextMenu': disableMenu ? e => {
 			e.preventDefault();
 			return false;
 		} : undefined,
+		'style': style,
 	}, children);
 };

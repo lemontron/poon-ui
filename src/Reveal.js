@@ -14,6 +14,7 @@ export const Reveal = forwardRef(({
 	onClose,
 	isVisible,
 	className,
+	screen, // From poon-router
 }, ref) => {
 	const el = useRef();
 	const innerEl = useRef();
@@ -41,16 +42,16 @@ export const Reveal = forwardRef(({
 	}, [isVisible]);
 
 	useEffect(() => {
-		return pan.on(value => {
-			const inverse = (1 - value);
+		return pan.on(val => {
+			const inverse = (1 - val);
 			const revealX = (origin.x * inverse);
 			const revealY = (origin.y * inverse);
 
 			if (el.current) {
-				el.current.style.opacity = value * 2;
+				// el.current.style.opacity = val;
 				el.current.style.transform = `translate(${revealX}px, ${revealY}px)`;
-				el.current.style.width = toPercent(value);
-				el.current.style.height = toPercent(value);
+				el.current.style.width = toPercent(val);
+				el.current.style.height = toPercent(val);
 			}
 			if (innerEl.current) {
 				innerEl.current.style.transform = `translate(${-1 * revealX}px, ${-1 * revealY}px)`;
@@ -59,23 +60,18 @@ export const Reveal = forwardRef(({
 	}, [width, height]);
 
 	return (
-		<div className="layer">
-			<div className={c('reveal', className)} ref={el}>
-				<div className="reveal-content" ref={innerEl}>
-					<ScreenHeader
-						title={title}
-						onClose={close}
-						headerRight={headerRight}
-						presentation="card"
-					/>
-					<div className="card-body" children={children}/>
-				</div>
+		<div className="layer reveal" ref={el}>
+			<div className={c('card reveal-content', className)} ref={innerEl}>
+				<ScreenHeader
+					title={title}
+					onClose={close}
+					headerRight={headerRight}
+					presentation="card"
+				/>
+				<div className="card-body" children={children}/>
 			</div>
 		</div>
 	);
 });
 
-export const setRevealOrigin = (x, y) => {
-	origin.x = x;
-	origin.y = y;
-};
+export const setRevealOrigin = (x, y) => Object.assign(origin, {x, y});

@@ -1,9 +1,9 @@
 import React from 'react';
 
-const array = new Array(5);
+const array = new Array(12).fill(0);
 
 export const ActivityIndicator = ({size = 16, color = '#fff'}) => {
-	const renderSegment = (a, i) => {
+	const renderSegment = (x, i) => {
 		const style = {
 			'width': 1.7,
 			'borderRadius': 1,

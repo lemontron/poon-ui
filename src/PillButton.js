@@ -3,12 +3,12 @@ import { Touchable } from './Touchable.js';
 import { Icon } from './Icon.js';
 import { CheckBox } from './CheckBox.js';
 
-export const PillButton = ({title, LeftComponent, caret = true, checked, active, href, onPress}) => (
-	<Touchable className="pill" onClick={onPress} active={active} interactive href={href}>
+export const FilterButton = ({title, LeftComponent, caret = true, checked, active, href, onPress}) => (
+	<Touchable className="filter-button" onClick={onPress} active={active} interactive href={href}>
 		{LeftComponent}
-		{title ? <div className="pill-title">{title}</div> : null}
+		{title ? <div className="filter-button-title">{title}</div> : null}
 		{caret ? (
-			<Icon className="pill-caret" icon="expand_more"/>
+			<Icon className="filter-button-caret" icon="expand_more"/>
 		) : (
 			<CheckBox active={checked}/>
 		)}

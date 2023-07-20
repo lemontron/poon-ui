@@ -2,7 +2,6 @@ import React from 'react';
 import { Touchable } from './Touchable';
 import { Icon } from './Icon';
 import { c } from './util';
-import { CheckBox } from './CheckBox.js';
 
 export const TouchableRow = ({
 	title,
@@ -16,8 +15,16 @@ export const TouchableRow = ({
 	caret,
 	disabled,
 	RightComponent,
+	className,
+	active,
 }) => (
-	<Touchable className={c('touchable-row', disabled && 'disabled')} onClick={onClick} href={href} target={target}>
+	<Touchable
+		className={c('touchable-highlight touchable-row', disabled && 'disabled', className)}
+		onClick={onClick}
+		href={href}
+		target={target}
+		active={active}
+	>
 		<div className="touchable-row-left">
 			{typeof leftIcon === 'string' ? (
 				<div className="touchable-row-icon"><Icon icon={leftIcon}/></div>
