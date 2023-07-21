@@ -74,7 +74,7 @@ export const Window = forwardRef(({
 
 	return (
 		<div className="layer">
-			{/*<div className="shade shade-window" ref={shadeEl}/>*/}
+			<div className="shade" ref={shadeEl}/>
 			<div className="window" ref={el}>
 				<div className="window-content">
 					<ScreenHeader

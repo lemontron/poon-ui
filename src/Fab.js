@@ -13,7 +13,7 @@ export const Fab = ({icon, title, loading, disabled, active = true, href, onPres
 		onClick={onPress}
 		href={href}
 	>
-		{loading ? <ActivityIndicator size={24}/> : (
+		{loading ? <ActivityIndicator color="#000"/> : (
 			<Fragment>
 				<Icon icon={icon}/>
 				{title && <div className="fab-title">{title}</div>}

@@ -1,17 +1,60 @@
-import React, {
-	Children,
-	createElement,
-	forwardRef,
-	Fragment,
-	memo,
-	useEffect,
-	useImperativeHandle,
-	useMemo,
-	useRef,
-	useState,
-} from 'react';
-import { createBus, randomId, useBus } from 'poon-router/util.js';
+import React, { useMemo, useState, useRef, useEffect, forwardRef, Fragment, useImperativeHandle, Children, memo, createElement } from 'react';
+import { randomId, createBus, useBus } from 'poon-router/util.js';
 import { navigation } from 'poon-router';
+
+const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
+const bounce = (num, min, max) => {
+  if (num > max) return max + (max + num) / 50;
+  if (num < min) return min - (min - num) / 50;
+  return num;
+};
+const easeOutCubic = t => --t * t * t + 1;
+class AnimatedValue {
+  constructor(initialValue) {
+    this.listeners = [];
+    this.value = initialValue;
+    this.checkpoint = initialValue;
+  }
+  setValue = (value, stopAnimations = true) => {
+    if (stopAnimations) delete this.id;
+    this.value = value;
+    this.listeners.forEach(fn => fn(value));
+  };
+  spring = (finalValue, duration = AnimatedValue.defaultAnimationDuration) => new Promise(resolve => {
+    if (finalValue === this.value) return; // cancel unnecessary animation
+
+    const t0 = this.id = performance.now(); // a unique id for this animation lifecycle
+    const oldValue = this.value;
+    const animate = t => {
+      if (t0 !== this.id) return;
+      const elapsed = Math.max(0, t - t0); // time hack
+      if (elapsed >= duration) {
+        this.setValue(finalValue);
+        resolve();
+      } else {
+        const d = (finalValue - oldValue) * easeOutCubic(elapsed / duration);
+        // if (this.name === 'sidebar') console.log('delta:', d, 'elapsed:', elapsed, 'duration:', duration, 'ease:', ease);
+        this.setValue(oldValue + d, false);
+        requestAnimationFrame(animate);
+      }
+    };
+    animate(t0);
+  });
+  on = fn => {
+    this.listeners.push(fn);
+    return () => this.listeners = this.listeners.filter(i => i !== fn);
+  };
+  saveCheckpoint = () => {
+    this.checkpoint = this.value;
+  };
+  stop = () => {
+    delete this.id;
+  };
+}
+AnimatedValue.defaultAnimationDuration = 300;
+const useAnimatedValue = initialValue => useMemo(() => {
+  return new AnimatedValue(initialValue);
+}, []);
 
 const c = (...rest) => rest.filter(Boolean).join(' ');
 const toPercent = val => `${val * 100}%`;
@@ -67,6 +110,74 @@ const Touchable = ({
     'style': style
   }, children);
 };
+
+const iOS = /iPad|iPhone|iPod/.test(navigator.platform);
+const iconMap = {
+  'os:back': iOS ? 'arrow_back_ios' : 'arrow_back',
+  'os:share': iOS ? 'ios_share' : 'share',
+  'os:close': iOS ? 'keyboard_arrow_down' : 'close'
+};
+const Icon = ({
+  icon,
+  className,
+  color,
+  title,
+  size,
+  onClick
+}) => /*#__PURE__*/React.createElement("i", {
+  className: c('material-icons', className),
+  style: {
+    color,
+    fontSize: size
+  },
+  title: title,
+  onClick: onClick,
+  children: iconMap[icon] || icon
+});
+
+const TouchableRow = ({
+  title,
+  meta,
+  leftIcon,
+  href,
+  onClick,
+  onPressMore,
+  target,
+  children,
+  caret,
+  disabled,
+  RightComponent,
+  className,
+  active
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: c('touchable-highlight touchable-row', disabled && 'disabled', className),
+  onClick: onClick,
+  href: href,
+  target: target,
+  active: active
+}, /*#__PURE__*/React.createElement("div", {
+  className: "touchable-row-left"
+}, typeof leftIcon === 'string' ? /*#__PURE__*/React.createElement("div", {
+  className: "touchable-row-icon"
+}, /*#__PURE__*/React.createElement(Icon, {
+  icon: leftIcon
+})) : null, typeof leftIcon === 'object' ? /*#__PURE__*/React.createElement("div", {
+  className: "touchable-row-icon"
+}, leftIcon) : null, /*#__PURE__*/React.createElement("div", {
+  className: "touchable-row-content"
+}, title ? /*#__PURE__*/React.createElement("div", {
+  className: "touchable-row-title",
+  children: title
+}) : null, meta ? /*#__PURE__*/React.createElement("div", {
+  className: "meta",
+  children: meta
+}) : null, children)), RightComponent, onPressMore ? /*#__PURE__*/React.createElement(Touchable, {
+  onClick: onPressMore
+}, /*#__PURE__*/React.createElement(Icon, {
+  icon: "more_vert"
+})) : null, caret ? /*#__PURE__*/React.createElement(Icon, {
+  icon: "chevron_right"
+}) : null);
 
 const FLICK_SPEED = .25; // pixels per ms
 const CUTOFF_INTERVAL = 50; // ms
@@ -258,83 +369,152 @@ const usePanGestures = (el, opts = {}, deps) => {
   };
 };
 
-const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
-const bounce = (num, min, max) => {
-  if (num > max) return max + (max + num) / 50;
-  if (num < min) return min - (min - num) / 50;
-  return num;
-};
-const easeOutCubic = t => --t * t * t + 1;
-class AnimatedValue {
-  constructor(initialValue) {
-    this.listeners = [];
-    this.value = initialValue;
-    this.checkpoint = initialValue;
-  }
-  setValue = (value, stopAnimations = true) => {
-    if (stopAnimations) delete this.id;
-    this.value = value;
-    this.listeners.forEach(fn => fn(value));
-  };
-  spring = (finalValue, duration = AnimatedValue.defaultAnimationDuration) => new Promise(resolve => {
-    if (finalValue === this.value) return; // cancel unnecessary animation
-
-    const t0 = this.id = performance.now(); // a unique id for this animation lifecycle
-    const oldValue = this.value;
-    const animate = t => {
-      if (t0 !== this.id) return;
-      const elapsed = Math.max(0, t - t0); // time hack
-      if (elapsed >= duration) {
-        this.setValue(finalValue);
-        resolve();
-      } else {
-        const d = (finalValue - oldValue) * easeOutCubic(elapsed / duration);
-        // if (this.name === 'sidebar') console.log('delta:', d, 'elapsed:', elapsed, 'duration:', duration, 'ease:', ease);
-        this.setValue(oldValue + d, false);
-        requestAnimationFrame(animate);
-      }
-    };
-    animate(t0);
-  });
-  on = fn => {
-    this.listeners.push(fn);
-    return () => this.listeners = this.listeners.filter(i => i !== fn);
-  };
-  saveCheckpoint = () => {
-    this.checkpoint = this.value;
-  };
-  stop = () => {
-    delete this.id;
-  };
-}
-AnimatedValue.defaultAnimationDuration = 300;
-const useAnimatedValue = initialValue => useMemo(() => {
-  return new AnimatedValue(initialValue);
-}, []);
-
-const iOS = /iPad|iPhone|iPod/.test(navigator.platform);
-const iconMap = {
-  'os:back': iOS ? 'arrow_back_ios' : 'arrow_back',
-  'os:share': iOS ? 'ios_share' : 'share',
-  'os:close': iOS ? 'keyboard_arrow_down' : 'close'
-};
-const Icon = ({
-  icon,
+const BottomSheet = /*#__PURE__*/forwardRef(({
   className,
-  color,
-  title,
-  size,
-  onClick
-}) => /*#__PURE__*/React.createElement("i", {
-  className: c('material-icons', className),
-  style: {
-    color,
-    fontSize: size
-  },
-  title: title,
-  onClick: onClick,
-  children: iconMap[icon] || icon
+  visible,
+  pan,
+  children,
+  onClose,
+  onPress,
+  showShade,
+  handle
+}, ref) => {
+  const shadeEl = useRef();
+  const sheetEl = useRef();
+  const {
+    height
+  } = usePanGestures(sheetEl, {
+    onMove: e => {
+      pan.setValue(e.height - Math.max(e.d.y / 100, e.d.y));
+    },
+    onUp: e => {
+      if (e.flick.y === 1 || e.d.y > e.height / 2) {
+        close();
+      } else {
+        pan.spring(e.height);
+      }
+    }
+  });
+  const close = () => pan.spring(0).then(onClose);
+  useEffect(() => {
+    if (!height) return;
+    return pan.on(value => {
+      sheetEl.current.style.transform = `translateY(-${value}px)`;
+      if (shadeEl.current) shadeEl.current.style.opacity = value / height;
+    });
+  }, [height]);
+  useEffect(() => {
+    if (!height) return;
+    if (visible) {
+      // show
+      pan.spring(height);
+    } else {
+      // hide
+      pan.spring(0).then(onClose);
+    }
+  }, [visible, height, onClose]);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "layer"
+  }, visible && showShade ? /*#__PURE__*/React.createElement("div", {
+    className: "shade shade-bottom-sheet",
+    ref: shadeEl,
+    onClick: close
+  }) : null, /*#__PURE__*/React.createElement("div", {
+    ref: sheetEl,
+    className: c('sheet', className),
+    onClick: onPress
+  }, handle ? /*#__PURE__*/React.createElement("div", {
+    className: "handle"
+  }) : null, children));
 });
+
+const bus = createBus(null);
+const pan = new AnimatedValue(0);
+const ActionSheet = () => {
+  const sheet = useBus(bus);
+  const renderOption = (option, i) => {
+    const clickOption = e => {
+      if (option.onClick) option.onClick();
+      if (sheet.callback) sheet.callback(option.value);
+      pan.spring(0).then(() => bus.update(0));
+    };
+    return /*#__PURE__*/React.createElement(TouchableRow, {
+      key: i,
+      title: option.name,
+      leftIcon: option.icon,
+      onClick: clickOption,
+      disabled: option.disabled,
+      target: option.target,
+      href: option.href
+    });
+  };
+  if (!sheet) return null;
+  return /*#__PURE__*/React.createElement(BottomSheet, {
+    pan: pan,
+    visible: !!sheet,
+    onClose: () => bus.update(null),
+    showShade: true
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "action-sheet-title"
+  }, sheet && sheet.title), /*#__PURE__*/React.createElement("hr", null), sheet.options.map(renderOption));
+};
+const showActionSheet = (title, options, callback) => bus.update({
+  title,
+  options,
+  callback
+});
+
+const array = new Array(12).fill(0);
+const ActivityIndicator = ({
+  size = 16,
+  color = '#fff'
+}) => {
+  const renderSegment = (x, i) => {
+    const style = {
+      'width': 1.7,
+      'borderRadius': 1,
+      'left': size / 2 - 1,
+      'height': size / 4,
+      'animationDelay': (-1.1 + .1 * i).toFixed(1) + 's',
+      'transform': `rotate(${30 * i}deg)`,
+      'backgroundColor': color,
+      'transformOrigin': `50% ${size / 2}px`
+    };
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: style
+    });
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "activity-indicator",
+    style: {
+      width: size,
+      height: size
+    },
+    children: array.map(renderSegment)
+  });
+};
+
+const Avatar = ({
+  imageId,
+  className,
+  variant,
+  getUrl
+}) => {
+  if (!imageId) return /*#__PURE__*/React.createElement("div", {
+    draggable: false,
+    className: c('avatar', className)
+  });
+  return /*#__PURE__*/React.createElement("img", {
+    draggable: false,
+    className: c('avatar', className),
+    src: getUrl(imageId, variant)
+  });
+};
+Avatar.defaultProps = {
+  variant: 'normal',
+  getUrl: () => null
+};
 
 const PullIndicator = /*#__PURE__*/forwardRef(({
   pull
@@ -444,37 +624,6 @@ const ScrollView = /*#__PURE__*/forwardRef(({
     children: children
   }));
 });
-
-const array = new Array(12).fill(0);
-const ActivityIndicator = ({
-  size = 16,
-  color = '#fff'
-}) => {
-  const renderSegment = (x, i) => {
-    const style = {
-      'width': 1.7,
-      'borderRadius': 1,
-      'left': size / 2 - 1,
-      'height': size / 4,
-      'animationDelay': (-1.1 + .1 * i).toFixed(1) + 's',
-      'transform': `rotate(${30 * i}deg)`,
-      'backgroundColor': color,
-      'transformOrigin': `50% ${size / 2}px`
-    };
-    return /*#__PURE__*/React.createElement("div", {
-      key: i,
-      style: style
-    });
-  };
-  return /*#__PURE__*/React.createElement("div", {
-    className: "activity-indicator",
-    style: {
-      width: size,
-      height: size
-    },
-    children: array.map(renderSegment)
-  });
-};
 
 const Button = ({
   className,
@@ -600,144 +749,26 @@ const showAlert = (alert, options) => new Promise(resolve => {
   }]);
 });
 
-const TouchableRow = ({
-  title,
-  meta,
-  leftIcon,
-  href,
-  onClick,
-  onPressMore,
-  target,
-  children,
-  caret,
-  disabled,
-  RightComponent,
-  className,
-  active
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: c('touchable-highlight touchable-row', disabled && 'disabled', className),
-  onClick: onClick,
-  href: href,
-  target: target,
-  active: active
-}, /*#__PURE__*/React.createElement("div", {
-  className: "touchable-row-left"
-}, typeof leftIcon === 'string' ? /*#__PURE__*/React.createElement("div", {
-  className: "touchable-row-icon"
-}, /*#__PURE__*/React.createElement(Icon, {
-  icon: leftIcon
-})) : null, typeof leftIcon === 'object' ? /*#__PURE__*/React.createElement("div", {
-  className: "touchable-row-icon"
-}, leftIcon) : null, /*#__PURE__*/React.createElement("div", {
-  className: "touchable-row-content"
-}, title ? /*#__PURE__*/React.createElement("div", {
-  className: "touchable-row-title",
-  children: title
-}) : null, meta ? /*#__PURE__*/React.createElement("div", {
-  className: "meta",
-  children: meta
-}) : null, children)), RightComponent, onPressMore ? /*#__PURE__*/React.createElement(Touchable, {
-  onClick: onPressMore
-}, /*#__PURE__*/React.createElement(Icon, {
-  icon: "more_vert"
-})) : null, caret ? /*#__PURE__*/React.createElement(Icon, {
-  icon: "chevron_right"
-}) : null);
-
-const BottomSheet = /*#__PURE__*/forwardRef(({
-  className,
-  visible,
-  pan,
-  children,
-  onClose,
-  onPress,
-  showShade,
-  handle
-}, ref) => {
-  const shadeEl = useRef();
-  const sheetEl = useRef();
-  const {
-    height
-  } = usePanGestures(sheetEl, {
-    onMove: e => {
-      pan.setValue(e.height - Math.max(e.d.y / 100, e.d.y));
-    },
-    onUp: e => {
-      if (e.flick.y === 1 || e.d.y > e.height / 2) {
-        close();
-      } else {
-        pan.spring(e.height);
-      }
-    }
-  });
-  const close = () => pan.spring(0).then(onClose);
-  useEffect(() => {
-    if (!height) return;
-    return pan.on(value => {
-      sheetEl.current.style.transform = `translateY(-${value}px)`;
-      if (shadeEl.current) shadeEl.current.style.opacity = value / height;
-    });
-  }, [height]);
-  useEffect(() => {
-    if (!height) return;
-    if (visible) {
-      // show
-      pan.spring(height);
-    } else {
-      // hide
-      pan.spring(0).then(onClose);
-    }
-  }, [visible, height, onClose]);
-  return /*#__PURE__*/React.createElement("div", {
-    className: "layer"
-  }, visible && showShade ? /*#__PURE__*/React.createElement("div", {
-    className: "shade shade-bottom-sheet",
-    ref: shadeEl,
-    onClick: close
-  }) : null, /*#__PURE__*/React.createElement("div", {
-    ref: sheetEl,
-    className: c('sheet', className),
-    onClick: onPress
-  }, handle ? /*#__PURE__*/React.createElement("div", {
-    className: "handle"
-  }) : null, children));
-});
-
-const bus = createBus(null);
-const pan = new AnimatedValue(0);
-const ActionSheet = () => {
-  const sheet = useBus(bus);
-  const renderOption = (option, i) => {
-    const clickOption = e => {
-      if (option.onClick) option.onClick();
-      if (sheet.callback) sheet.callback(option.value);
-      pan.spring(0).then(() => bus.update(0));
-    };
-    return /*#__PURE__*/React.createElement(TouchableRow, {
-      key: i,
-      title: option.name,
-      leftIcon: option.icon,
-      onClick: clickOption,
-      disabled: option.disabled,
-      target: option.target,
-      href: option.href
-    });
-  };
-  if (!sheet) return null;
-  return /*#__PURE__*/React.createElement(BottomSheet, {
-    pan: pan,
-    visible: !!sheet,
-    onClose: () => bus.update(null),
-    showShade: true
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "action-sheet-title"
-  }, sheet && sheet.title), /*#__PURE__*/React.createElement("hr", null), sheet.options.map(renderOption));
+const BreadCrumbs = ({
+  path,
+  onClickPath
+}) => {
+  const slugs = path.split('/').filter(Boolean);
+  const renderSlug = (slug, i) => /*#__PURE__*/React.createElement(Fragment, {
+    key: slug + '_' + i
+  }, /*#__PURE__*/React.createElement(Touchable, {
+    onClick: () => onClickPath(),
+    children: slug
+  }), i < slugs.length - 1 ? /*#__PURE__*/React.createElement("span", null, " / ") : null);
+  if (slugs.length === 0) return null;
+  return /*#__PURE__*/React.createElement(ScrollView, {
+    horizontal: true,
+    className: "breadcrumbs"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    icon: "home",
+    onClick: () => onClickPath('/')
+  }), /*#__PURE__*/React.createElement("span", null, " / "), slugs.map(renderSlug));
 };
-const showActionSheet = (title, options, callback) => bus.update({
-  title,
-  options,
-  callback
-});
 
 const closeImage = {
   'card': 'os:back',
@@ -917,6 +948,43 @@ const Card = /*#__PURE__*/forwardRef(({
   }) : null));
 });
 
+const CheckBox = ({
+  active,
+  undetermined
+}) => /*#__PURE__*/React.createElement("div", {
+  className: c('toggle-check', active && 'active', undetermined && 'undetermined')
+}, /*#__PURE__*/React.createElement(Icon, {
+  icon: undetermined ? 'horizontal_rule' : active ? 'check' : null
+}));
+
+const CornerDialog = ({
+  title,
+  children,
+  isVisible,
+  onClose
+}) => {
+  if (!isVisible) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "corner-dialog"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "corner-dialog-title"
+  }, title, /*#__PURE__*/React.createElement(Icon, {
+    icon: "close",
+    onClick: onClose
+  })), children);
+};
+
+const ConnectionIndicator = ({
+  status
+}) => {
+  if (status === 'connected') return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "connection-indicator"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bubble"
+  }, /*#__PURE__*/React.createElement(ActivityIndicator, null), status));
+};
+
 let origin = {};
 const Reveal = /*#__PURE__*/forwardRef(({
   children,
@@ -1005,32 +1073,6 @@ const DashboardIcon = ({
   className: "springboard-icon-name"
 }, title));
 
-const CornerDialog = ({
-  title,
-  children,
-  isVisible,
-  onClose
-}) => {
-  if (!isVisible) return null;
-  return /*#__PURE__*/React.createElement("div", {
-    className: "corner-dialog"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "corner-dialog-title"
-  }, title, /*#__PURE__*/React.createElement(Icon, {
-    icon: "close",
-    onClick: onClose
-  })), children);
-};
-
-const CheckBox = ({
-  active,
-  undetermined
-}) => /*#__PURE__*/React.createElement("div", {
-  className: c('toggle-check', active && 'active', undetermined && 'undetermined')
-}, /*#__PURE__*/React.createElement(Icon, {
-  icon: undetermined ? 'horizontal_rule' : active ? 'check' : null
-}));
-
 const Dropdown = ({
   position,
   button,
@@ -1068,83 +1110,6 @@ const Dropdown = ({
   })));
 };
 
-const ConnectionIndicator = ({
-  status
-}) => {
-  if (status === 'connected') return null;
-  return /*#__PURE__*/React.createElement("div", {
-    className: "connection-indicator"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "bubble"
-  }, /*#__PURE__*/React.createElement(ActivityIndicator, null), status));
-};
-
-const Fab = ({
-  icon,
-  title,
-  loading,
-  disabled,
-  active = true,
-  href,
-  onPress
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: c('fab', !title && 'round'),
-  loading: loading,
-  disabled: disabled,
-  active: active,
-  onClick: onPress,
-  href: href
-}, loading ? /*#__PURE__*/React.createElement(ActivityIndicator, {
-  size: 24
-}) : /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(Icon, {
-  icon: icon
-}), title && /*#__PURE__*/React.createElement("div", {
-  className: "fab-title"
-}, title)));
-
-const BreadCrumbs = ({
-  path,
-  onClickPath
-}) => {
-  const slugs = path.split('/').filter(Boolean);
-  const renderSlug = (slug, i) => /*#__PURE__*/React.createElement(Fragment, {
-    key: slug + '_' + i
-  }, /*#__PURE__*/React.createElement(Touchable, {
-    onClick: () => onClickPath(),
-    children: slug
-  }), i < slugs.length - 1 ? /*#__PURE__*/React.createElement("span", null, " / ") : null);
-  if (slugs.length === 0) return null;
-  return /*#__PURE__*/React.createElement(ScrollView, {
-    horizontal: true,
-    className: "breadcrumbs"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    icon: "home",
-    onClick: () => onClickPath('/')
-  }), /*#__PURE__*/React.createElement("span", null, " / "), slugs.map(renderSlug));
-};
-
-const Emoji = ({
-  emoji
-}) => /*#__PURE__*/React.createElement("span", {
-  className: "emoji",
-  children: emoji
-});
-
-const modalState = createBus([]);
-const renderModal = modal => /*#__PURE__*/React.createElement("div", {
-  key: modal.id,
-  className: "layer",
-  children: modal.children
-});
-const Modal = () => useBus(modalState).map(renderModal);
-const showModal = children => modalState.update([...modalState.state, {
-  'id': Math.random(),
-  'children': children
-}]);
-const hideModal = () => {
-  modalState.update([]);
-};
-
 const DropdownItem = ({
   title,
   icon,
@@ -1163,6 +1128,46 @@ const DropdownItem = ({
   leftIcon: icon,
   title: title
 });
+
+const Emoji = ({
+  emoji
+}) => /*#__PURE__*/React.createElement("span", {
+  className: "emoji",
+  children: emoji
+});
+
+const Fab = ({
+  icon,
+  title,
+  loading,
+  disabled,
+  active = true,
+  href,
+  onPress
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: c('fab', !title && 'round'),
+  loading: loading,
+  disabled: disabled,
+  active: active,
+  onClick: onPress,
+  href: href
+}, loading ? /*#__PURE__*/React.createElement(ActivityIndicator, {
+  color: "#000"
+}) : /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(Icon, {
+  icon: icon
+}), title && /*#__PURE__*/React.createElement("div", {
+  className: "fab-title"
+}, title)));
+
+const CircleCheck = ({
+  active
+}) => {
+  return /*#__PURE__*/React.createElement("div", {
+    className: c('circle-check', active && 'active')
+  }, /*#__PURE__*/React.createElement(Icon, {
+    icon: "check"
+  }));
+};
 
 const FullScreen = ({
   title,
@@ -1196,6 +1201,28 @@ const FullScreen = ({
   }, children), footer);
 };
 
+const HeaderButton = ({
+  icon,
+  title,
+  badge,
+  loading,
+  disabled,
+  onClick,
+  active,
+  href
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: c('header-button center', title === 'Cancel' && 'header-cancel'),
+  onClick: onClick,
+  loading: loading,
+  disabled: disabled,
+  active: active,
+  href: href
+}, icon ? /*#__PURE__*/React.createElement(Icon, {
+  icon: icon
+}) : null, title ? /*#__PURE__*/React.createElement("span", null, title) : null, badge ? /*#__PURE__*/React.createElement("span", {
+  className: "badge"
+}, badge) : null);
+
 const List = ({
   title,
   items = [],
@@ -1227,83 +1254,19 @@ const List = ({
   }, renderList(), Children.map(children, renderChild)) : ListEmptyComponent);
 };
 
-const ProgressIndicator = () => /*#__PURE__*/React.createElement("div", {
-  className: "progress-indicator"
+const modalState = createBus([]);
+const renderModal = modal => /*#__PURE__*/React.createElement("div", {
+  key: modal.id,
+  className: "layer",
+  children: modal.children
 });
-
-const ProgressRing = ({
-  color = '#fff',
-  size = 20,
-  percent,
-  spinning,
-  completedIcon = 'check'
-}) => {
-  if (spinning || !percent) return /*#__PURE__*/React.createElement(ProgressIndicator, null);
-  if (percent === 1) return /*#__PURE__*/React.createElement(Icon, {
-    icon: completedIcon
-  });
-  const r = size / 2;
-  const ri = r - 1; // inner radius
-  const c = ri * 2 * Math.PI; // circumference
-  const strokeDashoffset = c - percent * c;
-  return /*#__PURE__*/React.createElement("svg", {
-    height: size,
-    width: size
-  }, /*#__PURE__*/React.createElement("circle", {
-    stroke: color,
-    opacity: .3,
-    fill: "transparent",
-    strokeWidth: 2,
-    r: ri,
-    cx: r,
-    cy: r
-  }), /*#__PURE__*/React.createElement("circle", {
-    strokeDasharray: c + ' ' + c,
-    style: {
-      strokeDashoffset,
-      transform: 'rotate(-90deg)',
-      transformOrigin: '50% 50%'
-    },
-    stroke: color,
-    fill: "transparent",
-    strokeWidth: 2,
-    r: ri,
-    cx: r,
-    cy: r
-  }));
-};
-
-const FilterButton = ({
-  title,
-  LeftComponent,
-  caret = true,
-  checked,
-  active,
-  href,
-  onPress
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: "filter-button",
-  onClick: onPress,
-  active: active,
-  interactive: true,
-  href: href
-}, LeftComponent, title ? /*#__PURE__*/React.createElement("div", {
-  className: "filter-button-title"
-}, title) : null, caret ? /*#__PURE__*/React.createElement(Icon, {
-  className: "filter-button-caret",
-  icon: "expand_more"
-}) : /*#__PURE__*/React.createElement(CheckBox, {
-  active: checked
-}));
-
-const CircleCheck = ({
-  active
-}) => {
-  return /*#__PURE__*/React.createElement("div", {
-    className: c('circle-check', active && 'active')
-  }, /*#__PURE__*/React.createElement(Icon, {
-    icon: "check"
-  }));
+const Modal = () => useBus(modalState).map(renderModal);
+const showModal = children => modalState.update([...modalState.state, {
+  'id': Math.random(),
+  'children': children
+}]);
+const hideModal = () => {
+  modalState.update([]);
 };
 
 const PercentBar = ({
@@ -1352,47 +1315,6 @@ const Image = ({
   }, children) : null);
 };
 
-const Pill = ({
-  title,
-  color,
-  onClick
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: "pill",
-  onClick: onClick,
-  style: {
-    backgroundColor: color
-  }
-}, title);
-
-const HeaderButton = ({
-  icon,
-  title,
-  badge,
-  loading,
-  disabled,
-  onClick,
-  active,
-  href
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: c('header-button center', title === 'Cancel' && 'header-cancel'),
-  onClick: onClick,
-  loading: loading,
-  disabled: disabled,
-  active: active,
-  href: href
-}, icon ? /*#__PURE__*/React.createElement(Icon, {
-  icon: icon
-}) : null, title ? /*#__PURE__*/React.createElement("span", null, title) : null, badge ? /*#__PURE__*/React.createElement("span", {
-  className: "badge"
-}, badge) : null);
-
-const SegmentedController = ({
-  children
-}) => /*#__PURE__*/React.createElement("div", {
-  className: "segmented",
-  children: children
-});
-
 const state = createBus();
 const Toast = () => {
   const message = useBus(state);
@@ -1412,6 +1334,130 @@ const Toast = () => {
 const toast = state.update;
 
 const PoonOverlays = () => /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(Modal, null), /*#__PURE__*/React.createElement(ActionSheet, null), /*#__PURE__*/React.createElement(Alert, null), /*#__PURE__*/React.createElement(Toast, null));
+
+const FilterButton = ({
+  title,
+  LeftComponent,
+  caret = true,
+  checked,
+  active,
+  href,
+  onPress
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: "filter-button",
+  onClick: onPress,
+  active: active,
+  interactive: true,
+  href: href
+}, LeftComponent, title ? /*#__PURE__*/React.createElement("div", {
+  className: "filter-button-title"
+}, title) : null, caret ? /*#__PURE__*/React.createElement(Icon, {
+  className: "filter-button-caret",
+  icon: "expand_more"
+}) : /*#__PURE__*/React.createElement(CheckBox, {
+  active: checked
+}));
+
+const Pill = ({
+  title,
+  color,
+  onClick
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: "pill",
+  onClick: onClick,
+  style: {
+    backgroundColor: color
+  }
+}, title);
+
+const ProgressIndicator = () => /*#__PURE__*/React.createElement("div", {
+  className: "progress-indicator"
+});
+
+const ProgressRing = ({
+  color = '#fff',
+  size = 20,
+  percent,
+  spinning,
+  completedIcon = 'check'
+}) => {
+  if (spinning || !percent) return /*#__PURE__*/React.createElement(ProgressIndicator, null);
+  if (percent === 1) return /*#__PURE__*/React.createElement(Icon, {
+    icon: completedIcon
+  });
+  const r = size / 2;
+  const ri = r - 1; // inner radius
+  const c = ri * 2 * Math.PI; // circumference
+  const strokeDashoffset = c - percent * c;
+  return /*#__PURE__*/React.createElement("svg", {
+    height: size,
+    width: size
+  }, /*#__PURE__*/React.createElement("circle", {
+    stroke: color,
+    opacity: .3,
+    fill: "transparent",
+    strokeWidth: 2,
+    r: ri,
+    cx: r,
+    cy: r
+  }), /*#__PURE__*/React.createElement("circle", {
+    strokeDasharray: c + ' ' + c,
+    style: {
+      strokeDashoffset,
+      transform: 'rotate(-90deg)',
+      transformOrigin: '50% 50%'
+    },
+    stroke: color,
+    fill: "transparent",
+    strokeWidth: 2,
+    r: ri,
+    cx: r,
+    cy: r
+  }));
+};
+
+const RadioButton = ({
+  active,
+  icon,
+  title,
+  elaboration,
+  subtitle,
+  value,
+  disabled,
+  onClick,
+  children
+}) => /*#__PURE__*/React.createElement(TouchableRow, {
+  onClick: () => {
+    onClick(value);
+  },
+  disabled: disabled,
+  className: "radio-btn",
+  active: active
+}, /*#__PURE__*/React.createElement("div", {
+  className: "radio-top"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "dot"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "dot-inside"
+})), icon && /*#__PURE__*/React.createElement(Icon, {
+  icon: icon
+}), /*#__PURE__*/React.createElement("div", {
+  className: "radio-title"
+}, title)), children && /*#__PURE__*/React.createElement("div", {
+  className: "radio-subtitle"
+}, children), subtitle && /*#__PURE__*/React.createElement("div", {
+  className: "radio-subtitle"
+}, subtitle), active && elaboration && /*#__PURE__*/React.createElement("div", {
+  className: "radio-subtitle",
+  children: elaboration
+}));
+
+const SegmentedController = ({
+  children
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "segmented",
+  children: children
+});
 
 const Select = ({
   options,
@@ -1485,29 +1531,6 @@ const Tag = /*#__PURE__*/memo(({
     children: `${tag}  ${count || ''}`
   });
 });
-
-const SearchInput = ({
-  value,
-  placeholder,
-  onChange,
-  loading
-}) => /*#__PURE__*/React.createElement("div", {
-  className: "search"
-}, /*#__PURE__*/React.createElement(Icon, {
-  icon: "search"
-}), /*#__PURE__*/React.createElement("input", {
-  placeholder: placeholder,
-  type: "search",
-  value: value,
-  onChange: e => {
-    e.stopPropagation();
-    onChange(e.target.value);
-  }
-}), /*#__PURE__*/React.createElement(Icon, {
-  icon: "close",
-  onClick: () => onChange(''),
-  size: 16
-}), loading ? /*#__PURE__*/React.createElement(ProgressIndicator, null) : null);
 
 const autoCompleteMap = {
   'code': 'one-time-code'
@@ -1635,134 +1658,6 @@ const TextInput = /*#__PURE__*/forwardRef(({
     className: "text-input-icon",
     src: icon
   }) : null, RightComponent, renderSpinner(), renderClearButton());
-});
-
-const RadioButton = ({
-  active,
-  icon,
-  title,
-  elaboration,
-  subtitle,
-  value,
-  disabled,
-  onClick,
-  children
-}) => /*#__PURE__*/React.createElement(TouchableRow, {
-  onClick: () => {
-    onClick(value);
-  },
-  disabled: disabled,
-  className: "radio-btn",
-  active: active
-}, /*#__PURE__*/React.createElement("div", {
-  className: "radio-top"
-}, /*#__PURE__*/React.createElement("div", {
-  className: "dot"
-}, /*#__PURE__*/React.createElement("div", {
-  className: "dot-inside"
-})), icon && /*#__PURE__*/React.createElement(Icon, {
-  icon: icon
-}), /*#__PURE__*/React.createElement("div", {
-  className: "radio-title"
-}, title)), children && /*#__PURE__*/React.createElement("div", {
-  className: "radio-subtitle"
-}, children), subtitle && /*#__PURE__*/React.createElement("div", {
-  className: "radio-subtitle"
-}, subtitle), active && elaboration && /*#__PURE__*/React.createElement("div", {
-  className: "radio-subtitle",
-  children: elaboration
-}));
-
-const Window = /*#__PURE__*/forwardRef(({
-  children,
-  title,
-  search,
-  onChangeSearch,
-  searchLoading,
-  hasScrollView = true,
-  headerRight,
-  onClose,
-  isVisible
-}, ref) => {
-  const shadeEl = useRef();
-  const el = useRef();
-  const pan = useAnimatedValue(0);
-  const close = () => {
-    console.log('close window');
-    if (onClose) {
-      pan.spring(0).then(onClose);
-    } else {
-      navigation.goBack(1);
-    }
-  };
-  useImperativeHandle(ref, () => ({
-    close
-  }));
-  const {
-    height
-  } = usePanGestures(el, {
-    onMove: e => {
-      pan.setValue(height - Math.max(0, e.d.y));
-    },
-    onUp: e => {
-      if (e.flick.y === 1 || e.d.y > e.height / 2) {
-        close();
-      } else {
-        pan.spring(e.height);
-      }
-    }
-  });
-  useEffect(() => {
-    if (!height) return;
-    if (isVisible || onClose) {
-      // onClose is here because the window is in a modal if there is an onClose
-      pan.spring(height);
-    } else {
-      pan.spring(0);
-    }
-  }, [isVisible, height]);
-  useEffect(() => {
-    const cards = document.querySelectorAll('.card');
-    return pan.on(value => {
-      const percent = value / height;
-      if (el.current) el.current.style.transform = `translateY(-${value}px)`;
-      if (shadeEl.current) {
-        shadeEl.current.style.display = value ? 'block' : 'none';
-        shadeEl.current.style.opacity = value / height * .8;
-      }
-      [...cards].forEach(el => {
-        el.style.transform = `scale(${1 - .04 * percent})`;
-      });
-    });
-  }, [height]);
-  return /*#__PURE__*/React.createElement("div", {
-    className: "layer"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "window",
-    ref: el
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "window-content"
-  }, /*#__PURE__*/React.createElement(ScreenHeader, {
-    title: title,
-    presentation: "modal",
-    onClose: close,
-    SearchComponent: onChangeSearch ? /*#__PURE__*/React.createElement("div", {
-      className: "header-search"
-    }, /*#__PURE__*/React.createElement(TextInput, {
-      placeholder: "Search",
-      type: "search",
-      value: search,
-      onChangeText: onChangeSearch,
-      loading: searchLoading
-    })) : null,
-    headerRight: headerRight
-  }), hasScrollView ? /*#__PURE__*/React.createElement(ScrollView, {
-    className: "card-body",
-    children: children
-  }) : /*#__PURE__*/React.createElement("div", {
-    className: "card-body",
-    children: children
-  }))));
 });
 
 const TouchableHighlight = ({
@@ -1955,12 +1850,100 @@ const ViewPager = /*#__PURE__*/forwardRef(({
   }))) : null);
 });
 
-const vk = navigator.virtualKeyboard;
-const useVirtualKeyboard = () => useEffect(() => {
-  if (!vk) return;
-  vk.overlaysContent = true;
-  return () => vk.overlaysContent = false;
-}, []);
+const Window = /*#__PURE__*/forwardRef(({
+  children,
+  title,
+  search,
+  onChangeSearch,
+  searchLoading,
+  hasScrollView = true,
+  headerRight,
+  onClose,
+  isVisible
+}, ref) => {
+  const shadeEl = useRef();
+  const el = useRef();
+  const pan = useAnimatedValue(0);
+  const close = () => {
+    console.log('close window');
+    if (onClose) {
+      pan.spring(0).then(onClose);
+    } else {
+      navigation.goBack(1);
+    }
+  };
+  useImperativeHandle(ref, () => ({
+    close
+  }));
+  const {
+    height
+  } = usePanGestures(el, {
+    onMove: e => {
+      pan.setValue(height - Math.max(0, e.d.y));
+    },
+    onUp: e => {
+      if (e.flick.y === 1 || e.d.y > e.height / 2) {
+        close();
+      } else {
+        pan.spring(e.height);
+      }
+    }
+  });
+  useEffect(() => {
+    if (!height) return;
+    if (isVisible || onClose) {
+      // onClose is here because the window is in a modal if there is an onClose
+      pan.spring(height);
+    } else {
+      pan.spring(0);
+    }
+  }, [isVisible, height]);
+  useEffect(() => {
+    const cards = document.querySelectorAll('.card');
+    return pan.on(value => {
+      const percent = value / height;
+      if (el.current) el.current.style.transform = `translateY(-${value}px)`;
+      if (shadeEl.current) {
+        shadeEl.current.style.display = value ? 'block' : 'none';
+        shadeEl.current.style.opacity = value / height * .8;
+      }
+      [...cards].forEach(el => {
+        el.style.transform = `scale(${1 - .04 * percent})`;
+      });
+    });
+  }, [height]);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "layer"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "shade",
+    ref: shadeEl
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "window",
+    ref: el
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "window-content"
+  }, /*#__PURE__*/React.createElement(ScreenHeader, {
+    title: title,
+    presentation: "modal",
+    onClose: close,
+    SearchComponent: onChangeSearch ? /*#__PURE__*/React.createElement("div", {
+      className: "header-search"
+    }, /*#__PURE__*/React.createElement(TextInput, {
+      placeholder: "Search",
+      type: "search",
+      value: search,
+      onChangeText: onChangeSearch,
+      loading: searchLoading
+    })) : null,
+    headerRight: headerRight
+  }), hasScrollView ? /*#__PURE__*/React.createElement(ScrollView, {
+    className: "card-body",
+    children: children
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "card-body",
+    children: children
+  }))));
+});
 
 const cache = new Map();
 const memoize = func => function (...args) {
@@ -1984,4 +1967,28 @@ const loadScript = memoize((url, windowKey) => new Promise(resolve => {
   document.head.appendChild(script);
 }));
 
-export { ActionSheet, ActivityIndicator, Alert, AnimatedValue, BottomSheet, BreadCrumbs, Button, Card, CheckBox, CircleCheck, ConnectionIndicator, CornerDialog, DashboardIcon, Dropdown, DropdownItem, Emoji, FLICK_SPEED, Fab, FilterButton, FullScreen, HeaderButton, Icon, Image, List, Modal, PercentBar, Pill, Placeholder, PoonOverlays, ProgressIndicator, ProgressRing, PullIndicator, RadioButton, Reveal, ScreenHeader, ScrollView, SearchInput, SegmentedController, Select, Shade, TabularRow, Tag, TextInput, Toast, Touchable, TouchableHighlight, TouchableRow, ViewPager, Window, bounce, c, clamp, cyrb53, easeOutCubic, hideModal, loadCss, loadScript, memoize, modalState, setRevealOrigin, showActionSheet, showAlert, showModal, toPercent, toast, useAnimatedValue, usePanGestures, useSize, useVirtualKeyboard };
+// Sync Viewport Size
+const syncSize = ({
+  width,
+  height
+}) => {
+  document.documentElement.style.setProperty('--viewport-width', `${width}px`);
+  document.documentElement.style.setProperty('--viewport-height', `${height}px`);
+};
+syncSize({
+  width: document.documentElement.clientWidth,
+  height: document.documentElement.clientHeight
+});
+new ResizeObserver(entries => {
+  syncSize(entries[0].contentRect);
+}).observe(document.documentElement);
+
+// Virtual Keyboard API
+const vk = navigator.virtualKeyboard;
+const useVirtualKeyboard = () => useEffect(() => {
+  if (!vk) return;
+  vk.overlaysContent = true;
+  return () => vk.overlaysContent = false;
+}, []);
+
+export { ActionSheet, ActivityIndicator, Alert, AnimatedValue, Avatar, BottomSheet, BreadCrumbs, Button, Card, CheckBox, CircleCheck, ConnectionIndicator, CornerDialog, DashboardIcon, Dropdown, DropdownItem, Emoji, FLICK_SPEED, Fab, FilterButton, FullScreen, HeaderButton, Icon, Image, List, Modal, PercentBar, Pill, Placeholder, PoonOverlays, ProgressIndicator, ProgressRing, PullIndicator, RadioButton, Reveal, ScreenHeader, ScrollView, SegmentedController, Select, Shade, TabularRow, Tag, TextInput, Toast, Touchable, TouchableHighlight, TouchableRow, ViewPager, Window, bounce, c, clamp, cyrb53, easeOutCubic, hideModal, loadCss, loadScript, memoize, modalState, setRevealOrigin, showActionSheet, showAlert, showModal, toPercent, toast, useAnimatedValue, usePanGestures, useSize, useVirtualKeyboard };
