@@ -2,6 +2,37 @@ import React, { useMemo, useState, useRef, useEffect, forwardRef, Fragment, useI
 import { randomId, createBus, useBus } from 'poon-router/util.js';
 import { navigation } from 'poon-router';
 
+const array = new Array(12).fill(0);
+const ActivityIndicator = ({
+  size = 16,
+  color = '#fff'
+}) => {
+  const renderSegment = (x, i) => {
+    const style = {
+      'width': 1.7,
+      'borderRadius': 1,
+      'left': size / 2 - 1,
+      'height': size / 4,
+      'animationDelay': (-1.1 + .1 * i).toFixed(1) + 's',
+      'transform': `rotate(${30 * i}deg)`,
+      'backgroundColor': color,
+      'transformOrigin': `50% ${size / 2}px`
+    };
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: style
+    });
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "activity-indicator",
+    style: {
+      width: size,
+      height: size
+    },
+    children: array.map(renderSegment)
+  });
+};
+
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
 const bounce = (num, min, max) => {
   if (num > max) return max + (max + num) / 50;
@@ -321,15 +352,12 @@ const usePanGestures = (el, opts = {}, deps) => {
         // lock scroll direction
         refs.locked = refs.abs.y > refs.abs.x ? 'v' : 'h';
       }
-      if (!refs.locked) return e.preventDefault(); // do nothing until locked
-
-      refs.touch = shouldCapture(e);
-      if (!refs.touch) return; // Let browser handle touch
-      // if (!responderEl) console.log('Capture:', el.current);
-
-      responderEl = el.current; // capture event
-
-      if (refs.locked && opts.onMove) opts.onMove(refs, e);
+      if (refs.locked) {
+        refs.touch = shouldCapture(e);
+        if (!refs.touch) return; // Let browser handle touch
+        responderEl = el.current; // capture event
+        if (opts.onMove) opts.onMove(refs, e);
+      }
     };
     const up = () => {
       if (responderEl && responderEl !== el.current) return;
@@ -345,10 +373,14 @@ const usePanGestures = (el, opts = {}, deps) => {
       };
       if (opts.onUp) opts.onUp(refs);
     };
+    const wheel = e => {
+      el.current.scrollTop += e.deltaY;
+    };
     return {
       onTouchStart: down,
       onTouchMove: move,
-      onTouchEnd: up
+      onTouchEnd: up,
+      onWheel: wheel
     };
   }, [el, height, width, deps]);
   useEffect(() => {
@@ -356,11 +388,13 @@ const usePanGestures = (el, opts = {}, deps) => {
     el.current.addEventListener('touchstart', handlers.onTouchStart, listenerOptions);
     el.current.addEventListener('touchmove', handlers.onTouchMove, listenerOptions);
     el.current.addEventListener('touchend', handlers.onTouchEnd, listenerOptions);
+    el.current.addEventListener('wheel', handlers.onWheel, listenerOptions);
     return () => {
       if (!el.current) return;
       el.current.removeEventListener('touchstart', handlers.onTouchStart);
       el.current.removeEventListener('touchmove', handlers.onTouchMove);
       el.current.removeEventListener('touchend', handlers.onTouchEnd);
+      el.current.removeEventListener('wheel', handlers.onWheel);
     };
   }, [handlers, deps]);
   return {
@@ -463,58 +497,6 @@ const showActionSheet = (title, options, callback) => bus.update({
   options,
   callback
 });
-
-const array = new Array(12).fill(0);
-const ActivityIndicator = ({
-  size = 16,
-  color = '#fff'
-}) => {
-  const renderSegment = (x, i) => {
-    const style = {
-      'width': 1.7,
-      'borderRadius': 1,
-      'left': size / 2 - 1,
-      'height': size / 4,
-      'animationDelay': (-1.1 + .1 * i).toFixed(1) + 's',
-      'transform': `rotate(${30 * i}deg)`,
-      'backgroundColor': color,
-      'transformOrigin': `50% ${size / 2}px`
-    };
-    return /*#__PURE__*/React.createElement("div", {
-      key: i,
-      style: style
-    });
-  };
-  return /*#__PURE__*/React.createElement("div", {
-    className: "activity-indicator",
-    style: {
-      width: size,
-      height: size
-    },
-    children: array.map(renderSegment)
-  });
-};
-
-const Avatar = ({
-  imageId,
-  className,
-  variant,
-  getUrl
-}) => {
-  if (!imageId) return /*#__PURE__*/React.createElement("div", {
-    draggable: false,
-    className: c('avatar', className)
-  });
-  return /*#__PURE__*/React.createElement("img", {
-    draggable: false,
-    className: c('avatar', className),
-    src: getUrl(imageId, variant)
-  });
-};
-Avatar.defaultProps = {
-  variant: 'normal',
-  getUrl: () => null
-};
 
 const PullIndicator = /*#__PURE__*/forwardRef(({
   pull
@@ -749,6 +731,27 @@ const showAlert = (alert, options) => new Promise(resolve => {
   }]);
 });
 
+const Avatar = ({
+  imageId,
+  className,
+  variant,
+  getUrl
+}) => {
+  if (!imageId) return /*#__PURE__*/React.createElement("div", {
+    draggable: false,
+    className: c('avatar', className)
+  });
+  return /*#__PURE__*/React.createElement("img", {
+    draggable: false,
+    className: c('avatar', className),
+    src: getUrl(imageId, variant)
+  });
+};
+Avatar.defaultProps = {
+  variant: 'normal',
+  getUrl: () => null
+};
+
 const BreadCrumbs = ({
   path,
   onClickPath
@@ -768,6 +771,36 @@ const BreadCrumbs = ({
     icon: "home",
     onClick: () => onClickPath('/')
   }), /*#__PURE__*/React.createElement("span", null, " / "), slugs.map(renderSlug));
+};
+
+const CircleCheck = ({
+  active
+}) => {
+  return /*#__PURE__*/React.createElement("div", {
+    className: c('circle-check', active && 'active')
+  }, /*#__PURE__*/React.createElement(Icon, {
+    icon: "check"
+  }));
+};
+
+const CheckBox = ({
+  active,
+  undetermined
+}) => /*#__PURE__*/React.createElement("div", {
+  className: c('toggle-check', active && 'active', undetermined && 'undetermined')
+}, /*#__PURE__*/React.createElement(Icon, {
+  icon: undetermined ? 'horizontal_rule' : active ? 'check' : null
+}));
+
+const ConnectionIndicator = ({
+  status
+}) => {
+  if (status === 'connected') return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "connection-indicator"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bubble"
+  }, /*#__PURE__*/React.createElement(ActivityIndicator, null), status));
 };
 
 const closeImage = {
@@ -807,182 +840,6 @@ const ScreenHeader = ({
   }, subtitle) : null), /*#__PURE__*/React.createElement("div", {
     className: "header-spacer"
   }, headerRight)), SearchComponent);
-};
-
-const Placeholder = ({
-  className,
-  icon,
-  title,
-  message,
-  children
-}) => /*#__PURE__*/React.createElement("div", {
-  className: c('placeholder', className)
-}, icon ? /*#__PURE__*/React.createElement(Icon, {
-  icon: icon
-}) : null, title ? /*#__PURE__*/React.createElement("div", {
-  className: "title"
-}, title) : null, message ? /*#__PURE__*/React.createElement("div", {
-  className: "placeholder-message"
-}, message) : null, children);
-
-const Shade = /*#__PURE__*/forwardRef(({}, ref) => {
-  const el = useRef();
-  useImperativeHandle(ref, () => ({
-    progress: (value, width) => {
-      if (el.current) el.current.style.opacity = 1 - value / width;
-    }
-  }));
-  return /*#__PURE__*/React.createElement("div", {
-    className: "shade shade-card",
-    ref: el
-  });
-});
-
-const Card = /*#__PURE__*/forwardRef(({
-  title,
-  subtitle,
-  children,
-  footer,
-  headerRight,
-  hasScrollView = true,
-  SearchComponent,
-  scrollerRef,
-  disableGestures,
-  onDrop,
-  isVisible = true,
-  animateIn = true,
-  ShadeComponent = Shade,
-  HeaderComponent,
-  className
-}, el) => {
-  el = el || useRef();
-  const allowBack = useRef(history.length > 1).current;
-  const [dropping, setDropping] = useState(false);
-  const shadeEl = useRef();
-  const pan = useAnimatedValue(animateIn ? document.body.clientWidth : 0);
-  const close = () => pan.spring(width).then(() => {
-    if (allowBack) navigation.goBack();
-  });
-  const {
-    width
-  } = usePanGestures(el, {
-    onCapture: e => {
-      if (!allowBack) return;
-      if (disableGestures) return;
-      return e.locked === 'h' && e.d.x > 0;
-    },
-    onMove: e => {
-      pan.setValue(Math.max(0, e.d.x));
-    },
-    onUp: e => {
-      if (e.flick.x === 1 || e.d.x > e.width / 2) {
-        close();
-      } else {
-        pan.spring(0);
-      }
-    }
-  });
-
-  // Trigger animation on visibility change
-  useEffect(() => {
-    if (!width || !animateIn) return;
-    if (isVisible) {
-      pan.spring(0);
-    } else {
-      pan.spring(width);
-    }
-  }, [animateIn, isVisible, width]);
-  useEffect(() => {
-    return pan.on(value => {
-      if (el.current) el.current.style.transform = `translateX(${value}px)`;
-      if (shadeEl.current) shadeEl.current.progress(value, width);
-    });
-  }, [width]);
-  const dragOver = e => {
-    e.preventDefault();
-  };
-  const startDrag = e => {
-    setDropping(true);
-  };
-  const cancelDrag = e => {
-    setDropping(false);
-  };
-  const drop = e => {
-    setDropping(false);
-    onDrop(e);
-  };
-  const renderHeader = () => {
-    if (HeaderComponent === null) return null;
-    if (HeaderComponent) return HeaderComponent;
-    return /*#__PURE__*/React.createElement(ScreenHeader, {
-      title: title,
-      subtitle: subtitle,
-      presentation: "card",
-      SearchComponent: SearchComponent,
-      onClose: close,
-      headerRight: headerRight
-    });
-  };
-  return /*#__PURE__*/React.createElement("div", {
-    className: "layer"
-  }, ShadeComponent ? /*#__PURE__*/React.createElement(ShadeComponent, {
-    ref: shadeEl
-  }) : null, /*#__PURE__*/React.createElement("div", {
-    className: c('card', animateIn && 'animate', className),
-    ref: el,
-    onDragOver: onDrop && dragOver,
-    onDragEnter: onDrop && startDrag,
-    onDragLeave: onDrop && cancelDrag,
-    onDrop: onDrop && drop
-  }, renderHeader(), hasScrollView ? /*#__PURE__*/React.createElement(ScrollView, {
-    className: "card-body",
-    ref: scrollerRef,
-    children: children
-  }) : /*#__PURE__*/React.createElement("div", {
-    className: "card-body",
-    children: children
-  }), footer, dropping ? /*#__PURE__*/React.createElement(Placeholder, {
-    className: "drop-zone",
-    icon: "upload",
-    title: "Upload"
-  }) : null));
-});
-
-const CheckBox = ({
-  active,
-  undetermined
-}) => /*#__PURE__*/React.createElement("div", {
-  className: c('toggle-check', active && 'active', undetermined && 'undetermined')
-}, /*#__PURE__*/React.createElement(Icon, {
-  icon: undetermined ? 'horizontal_rule' : active ? 'check' : null
-}));
-
-const CornerDialog = ({
-  title,
-  children,
-  isVisible,
-  onClose
-}) => {
-  if (!isVisible) return null;
-  return /*#__PURE__*/React.createElement("div", {
-    className: "corner-dialog"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "corner-dialog-title"
-  }, title, /*#__PURE__*/React.createElement(Icon, {
-    icon: "close",
-    onClick: onClose
-  })), children);
-};
-
-const ConnectionIndicator = ({
-  status
-}) => {
-  if (status === 'connected') return null;
-  return /*#__PURE__*/React.createElement("div", {
-    className: "connection-indicator"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "bubble"
-  }, /*#__PURE__*/React.createElement(ActivityIndicator, null), status));
 };
 
 let origin = {};
@@ -1110,6 +967,30 @@ const Dropdown = ({
   })));
 };
 
+const CornerDialog = ({
+  title,
+  children,
+  isVisible,
+  onClose
+}) => {
+  if (!isVisible) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "corner-dialog"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "corner-dialog-title"
+  }, title, /*#__PURE__*/React.createElement(Icon, {
+    icon: "close",
+    onClick: onClose
+  })), children);
+};
+
+const Emoji = ({
+  emoji
+}) => /*#__PURE__*/React.createElement("span", {
+  className: "emoji",
+  children: emoji
+});
+
 const DropdownItem = ({
   title,
   icon,
@@ -1127,13 +1008,6 @@ const DropdownItem = ({
   href: href,
   leftIcon: icon,
   title: title
-});
-
-const Emoji = ({
-  emoji
-}) => /*#__PURE__*/React.createElement("span", {
-  className: "emoji",
-  children: emoji
 });
 
 const Fab = ({
@@ -1158,127 +1032,6 @@ const Fab = ({
 }), title && /*#__PURE__*/React.createElement("div", {
   className: "fab-title"
 }, title)));
-
-const CircleCheck = ({
-  active
-}) => {
-  return /*#__PURE__*/React.createElement("div", {
-    className: c('circle-check', active && 'active')
-  }, /*#__PURE__*/React.createElement(Icon, {
-    icon: "check"
-  }));
-};
-
-const FullScreen = ({
-  title,
-  children,
-  footer,
-  headerRight,
-  SearchComponent
-}) => {
-  const el = useRef();
-  const pan = useAnimatedValue(0);
-  const close = () => {
-    pan.spring(0).then(() => navigation.goBack());
-  };
-  useEffect(() => {
-    pan.spring(1);
-    return pan.on(value => {
-      el.current.style.opacity = value;
-    });
-  }, []);
-  return /*#__PURE__*/React.createElement("div", {
-    className: "fullscreen",
-    ref: el
-  }, /*#__PURE__*/React.createElement(ScreenHeader, {
-    title: title,
-    presentation: "full",
-    onClose: close,
-    headerRight: headerRight,
-    SearchComponent: SearchComponent
-  }), /*#__PURE__*/React.createElement(ScrollView, {
-    className: "card-body"
-  }, children), footer);
-};
-
-const HeaderButton = ({
-  icon,
-  title,
-  badge,
-  loading,
-  disabled,
-  onClick,
-  active,
-  href
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: c('header-button center', title === 'Cancel' && 'header-cancel'),
-  onClick: onClick,
-  loading: loading,
-  disabled: disabled,
-  active: active,
-  href: href
-}, icon ? /*#__PURE__*/React.createElement(Icon, {
-  icon: icon
-}) : null, title ? /*#__PURE__*/React.createElement("span", null, title) : null, badge ? /*#__PURE__*/React.createElement("span", {
-  className: "badge"
-}, badge) : null);
-
-const List = ({
-  title,
-  items = [],
-  keyExtractor = r => r._id,
-  renderItem,
-  loading,
-  className,
-  ListEmptyComponent,
-  HeaderComponent,
-  children,
-  showSeparators = true
-}) => {
-  const renderList = () => {
-    if (loading || !items) return null;
-    if (ListEmptyComponent && items.length === 0) return ListEmptyComponent;
-    return items.map((item, i) => /*#__PURE__*/React.createElement(Fragment, {
-      key: keyExtractor(item)
-    }, renderItem(item, i), showSeparators && i < items.length - 1 && /*#__PURE__*/React.createElement("hr", null)));
-  };
-  const renderChild = (child, i) => /*#__PURE__*/React.createElement(Fragment, {
-    key: i
-  }, child, i < children.length - 1 && /*#__PURE__*/React.createElement("hr", null));
-  return /*#__PURE__*/React.createElement("div", {
-    className: c('list', className)
-  }, title ? /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement("div", {
-    className: "list-title"
-  }, title), /*#__PURE__*/React.createElement("hr", null)) : null, HeaderComponent, items.length || children ? /*#__PURE__*/React.createElement("div", {
-    className: "list-body"
-  }, renderList(), Children.map(children, renderChild)) : ListEmptyComponent);
-};
-
-const modalState = createBus([]);
-const renderModal = modal => /*#__PURE__*/React.createElement("div", {
-  key: modal.id,
-  className: "layer",
-  children: modal.children
-});
-const Modal = () => useBus(modalState).map(renderModal);
-const showModal = children => modalState.update([...modalState.state, {
-  'id': Math.random(),
-  'children': children
-}]);
-const hideModal = () => {
-  modalState.update([]);
-};
-
-const PercentBar = ({
-  percent
-}) => /*#__PURE__*/React.createElement("div", {
-  className: "percent-bar"
-}, /*#__PURE__*/React.createElement("div", {
-  className: "percent-bar-inner",
-  style: {
-    width: `${percent * 100}%`
-  }
-}));
 
 const Image = ({
   ar,
@@ -1315,6 +1068,123 @@ const Image = ({
   }, children) : null);
 };
 
+const FullScreen = ({
+  title,
+  children,
+  footer,
+  headerRight,
+  SearchComponent
+}) => {
+  const el = useRef();
+  const pan = useAnimatedValue(0);
+  const close = () => {
+    pan.spring(0).then(() => navigation.goBack());
+  };
+  useEffect(() => {
+    pan.spring(1);
+    return pan.on(value => {
+      el.current.style.opacity = value;
+    });
+  }, []);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "fullscreen",
+    ref: el
+  }, /*#__PURE__*/React.createElement(ScreenHeader, {
+    title: title,
+    presentation: "full",
+    onClose: close,
+    headerRight: headerRight,
+    SearchComponent: SearchComponent
+  }), /*#__PURE__*/React.createElement(ScrollView, {
+    className: "card-body"
+  }, children), footer);
+};
+
+const List = ({
+  title,
+  items = [],
+  keyExtractor = r => r._id,
+  renderItem,
+  loading,
+  className,
+  ListEmptyComponent,
+  HeaderComponent,
+  children,
+  showSeparators = true
+}) => {
+  const renderList = () => {
+    if (loading || !items) return null;
+    if (ListEmptyComponent && items.length === 0) return ListEmptyComponent;
+    return items.map((item, i) => /*#__PURE__*/React.createElement(Fragment, {
+      key: keyExtractor(item)
+    }, renderItem(item, i), showSeparators && i < items.length - 1 && /*#__PURE__*/React.createElement("hr", null)));
+  };
+  const renderChild = (child, i) => /*#__PURE__*/React.createElement(Fragment, {
+    key: i
+  }, child, i < children.length - 1 && /*#__PURE__*/React.createElement("hr", null));
+  return /*#__PURE__*/React.createElement("div", {
+    className: c('list', className)
+  }, title ? /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "list-title"
+  }, title), /*#__PURE__*/React.createElement("hr", null)) : null, HeaderComponent, items.length || children ? /*#__PURE__*/React.createElement("div", {
+    className: "list-body"
+  }, renderList(), Children.map(children, renderChild)) : ListEmptyComponent);
+};
+
+const PercentBar = ({
+  percent
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "percent-bar"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "percent-bar-inner",
+  style: {
+    width: `${percent * 100}%`
+  }
+}));
+
+const Pill = ({
+  title,
+  color,
+  onClick
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: "pill",
+  onClick: onClick,
+  style: {
+    backgroundColor: color
+  }
+}, title);
+
+const Placeholder = ({
+  className,
+  icon,
+  title,
+  message,
+  children
+}) => /*#__PURE__*/React.createElement("div", {
+  className: c('placeholder', className)
+}, icon ? /*#__PURE__*/React.createElement(Icon, {
+  icon: icon
+}) : null, title ? /*#__PURE__*/React.createElement("div", {
+  className: "title"
+}, title) : null, message ? /*#__PURE__*/React.createElement("div", {
+  className: "placeholder-message"
+}, message) : null, children);
+
+const modalState = createBus([]);
+const renderModal = modal => /*#__PURE__*/React.createElement("div", {
+  key: modal.id,
+  className: "layer",
+  children: modal.children
+});
+const Modal = () => useBus(modalState).map(renderModal);
+const showModal = children => modalState.update([...modalState.state, {
+  'id': Math.random(),
+  'children': children
+}]);
+const hideModal = () => {
+  modalState.update([]);
+};
+
 const state = createBus();
 const Toast = () => {
   const message = useBus(state);
@@ -1334,41 +1204,6 @@ const Toast = () => {
 const toast = state.update;
 
 const PoonOverlays = () => /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(Modal, null), /*#__PURE__*/React.createElement(ActionSheet, null), /*#__PURE__*/React.createElement(Alert, null), /*#__PURE__*/React.createElement(Toast, null));
-
-const FilterButton = ({
-  title,
-  LeftComponent,
-  caret = true,
-  checked,
-  active,
-  href,
-  onPress
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: "filter-button",
-  onClick: onPress,
-  active: active,
-  interactive: true,
-  href: href
-}, LeftComponent, title ? /*#__PURE__*/React.createElement("div", {
-  className: "filter-button-title"
-}, title) : null, caret ? /*#__PURE__*/React.createElement(Icon, {
-  className: "filter-button-caret",
-  icon: "expand_more"
-}) : /*#__PURE__*/React.createElement(CheckBox, {
-  active: checked
-}));
-
-const Pill = ({
-  title,
-  color,
-  onClick
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: "pill",
-  onClick: onClick,
-  style: {
-    backgroundColor: color
-  }
-}, title);
 
 const ProgressIndicator = () => /*#__PURE__*/React.createElement("div", {
   className: "progress-indicator"
@@ -1459,44 +1294,41 @@ const SegmentedController = ({
   children: children
 });
 
-const Select = ({
-  options,
-  value,
-  disabled,
-  autoComplete,
-  onChangeValue
-}) => {
-  const renderOptions = () => {
-    if (options instanceof Array) return options.map(option => /*#__PURE__*/React.createElement("option", {
-      key: option.value,
-      value: option.value,
-      children: option.name
-    }));
-    Object.keys(options).map(key => /*#__PURE__*/React.createElement("option", {
-      key: key,
-      value: key,
-      children: options[key]
-    }));
-  };
-  return /*#__PURE__*/React.createElement("select", {
-    className: c('text select', disabled && 'disabled'),
-    onChange: e => onChangeValue(e.target.value),
-    value: value,
-    disabled: disabled,
-    autoComplete: autoComplete
-  }, renderOptions());
-};
+const FilterButton = ({
+  title,
+  LeftComponent,
+  caret = true,
+  checked,
+  active,
+  href,
+  onPress
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: "filter-button",
+  onClick: onPress,
+  active: active,
+  interactive: true,
+  href: href
+}, LeftComponent, title ? /*#__PURE__*/React.createElement("div", {
+  className: "filter-button-title"
+}, title) : null, caret ? /*#__PURE__*/React.createElement(Icon, {
+  className: "filter-button-caret",
+  icon: "expand_more"
+}) : /*#__PURE__*/React.createElement(CheckBox, {
+  active: checked
+}));
 
-const TabularRow = ({
-  leftText,
-  rightText
-}) => /*#__PURE__*/React.createElement("div", {
-  className: "tabular-row"
-}, /*#__PURE__*/React.createElement("div", {
-  className: "tabular-row-left"
-}, leftText), /*#__PURE__*/React.createElement("div", {
-  className: "tabular-row-right"
-}, rightText));
+const Shade = /*#__PURE__*/forwardRef(({}, ref) => {
+  const el = useRef();
+  useImperativeHandle(ref, () => ({
+    progress: (value, width) => {
+      if (el.current) el.current.style.opacity = 1 - value / width;
+    }
+  }));
+  return /*#__PURE__*/React.createElement("div", {
+    className: "shade shade-card",
+    ref: el
+  });
+});
 
 const cyrb53 = (str, seed = 0) => {
   let h1 = 0xdeadbeef ^ seed,
@@ -1530,6 +1362,190 @@ const Tag = /*#__PURE__*/memo(({
     },
     children: `${tag}  ${count || ''}`
   });
+});
+
+const Card = /*#__PURE__*/forwardRef(({
+  title,
+  subtitle,
+  children,
+  footer,
+  headerRight,
+  hasScrollView = true,
+  SearchComponent,
+  scrollerRef,
+  disableGestures,
+  onDrop,
+  isVisible = true,
+  animateIn = true,
+  ShadeComponent = Shade,
+  HeaderComponent,
+  className
+}, el) => {
+  el = el || useRef();
+  const allowBack = useRef(history.length > 1).current;
+  const [dropping, setDropping] = useState(false);
+  const shadeEl = useRef();
+  const pan = useAnimatedValue(animateIn ? document.body.clientWidth : 0);
+  const close = () => pan.spring(width).then(() => {
+    if (allowBack) navigation.goBack();
+  });
+  const {
+    width
+  } = usePanGestures(el, {
+    onCapture: e => {
+      if (!allowBack) return;
+      if (disableGestures) return;
+      return e.locked === 'h' && e.d.x > 0;
+    },
+    onMove: e => {
+      pan.setValue(Math.max(0, e.d.x));
+    },
+    onUp: e => {
+      if (e.flick.x === 1 || e.d.x > e.width / 2) {
+        close();
+      } else {
+        pan.spring(0);
+      }
+    }
+  });
+
+  // Trigger animation on visibility change
+  useEffect(() => {
+    if (!width || !animateIn) return;
+    if (isVisible) {
+      pan.spring(0);
+    } else {
+      pan.spring(width);
+    }
+  }, [animateIn, isVisible, width]);
+  useEffect(() => {
+    return pan.on(value => {
+      if (el.current) el.current.style.transform = `translateX(${value}px)`;
+      if (shadeEl.current) shadeEl.current.progress(value, width);
+    });
+  }, [width]);
+  const dragOver = e => {
+    e.preventDefault();
+  };
+  const startDrag = e => {
+    setDropping(true);
+  };
+  const cancelDrag = e => {
+    setDropping(false);
+  };
+  const drop = e => {
+    setDropping(false);
+    onDrop(e);
+  };
+  const renderHeader = () => {
+    if (HeaderComponent === null) return null;
+    if (HeaderComponent) return HeaderComponent;
+    return /*#__PURE__*/React.createElement(ScreenHeader, {
+      title: title,
+      subtitle: subtitle,
+      presentation: "card",
+      SearchComponent: SearchComponent,
+      onClose: close,
+      headerRight: headerRight
+    });
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "layer"
+  }, ShadeComponent ? /*#__PURE__*/React.createElement(ShadeComponent, {
+    ref: shadeEl
+  }) : null, /*#__PURE__*/React.createElement("div", {
+    className: c('card', animateIn && 'animate', className),
+    ref: el,
+    onDragOver: onDrop && dragOver,
+    onDragEnter: onDrop && startDrag,
+    onDragLeave: onDrop && cancelDrag,
+    onDrop: onDrop && drop
+  }, renderHeader(), hasScrollView ? /*#__PURE__*/React.createElement(ScrollView, {
+    className: "card-body",
+    ref: scrollerRef,
+    children: children
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "card-body",
+    children: children
+  }), footer, dropping ? /*#__PURE__*/React.createElement(Placeholder, {
+    className: "drop-zone",
+    icon: "upload",
+    title: "Upload"
+  }) : null));
+});
+
+const TabularRow = ({
+  leftText,
+  rightText
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "tabular-row"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "tabular-row-left"
+}, leftText), /*#__PURE__*/React.createElement("div", {
+  className: "tabular-row-right"
+}, rightText));
+
+const Select = ({
+  options,
+  value,
+  disabled,
+  autoComplete,
+  onChangeValue
+}) => {
+  const renderOptions = () => {
+    if (options instanceof Array) return options.map(option => /*#__PURE__*/React.createElement("option", {
+      key: option.value,
+      value: option.value,
+      children: option.name
+    }));
+    Object.keys(options).map(key => /*#__PURE__*/React.createElement("option", {
+      key: key,
+      value: key,
+      children: options[key]
+    }));
+  };
+  return /*#__PURE__*/React.createElement("select", {
+    className: c('text select', disabled && 'disabled'),
+    onChange: e => onChangeValue(e.target.value),
+    value: value,
+    disabled: disabled,
+    autoComplete: autoComplete
+  }, renderOptions());
+};
+
+const HeaderButton = ({
+  icon,
+  title,
+  badge,
+  loading,
+  disabled,
+  onClick,
+  active,
+  href
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: c('header-button center', title === 'Cancel' && 'header-cancel'),
+  onClick: onClick,
+  loading: loading,
+  disabled: disabled,
+  active: active,
+  href: href
+}, icon ? /*#__PURE__*/React.createElement(Icon, {
+  icon: icon
+}) : null, title ? /*#__PURE__*/React.createElement("span", null, title) : null, badge ? /*#__PURE__*/React.createElement("span", {
+  className: "badge"
+}, badge) : null);
+
+const TouchableHighlight = ({
+  href,
+  onClick,
+  children,
+  disabled,
+  className
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: c('touchable-highlight', disabled && 'disabled', className),
+  onClick: onClick,
+  href: href,
+  children: children
 });
 
 const autoCompleteMap = {
@@ -1660,17 +1676,99 @@ const TextInput = /*#__PURE__*/forwardRef(({
   }) : null, RightComponent, renderSpinner(), renderClearButton());
 });
 
-const TouchableHighlight = ({
-  href,
-  onClick,
+const Window = /*#__PURE__*/forwardRef(({
   children,
-  disabled,
-  className
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: c('touchable-highlight', disabled && 'disabled', className),
-  onClick: onClick,
-  href: href,
-  children: children
+  title,
+  search,
+  onChangeSearch,
+  searchLoading,
+  hasScrollView = true,
+  headerRight,
+  onClose,
+  isVisible
+}, ref) => {
+  const shadeEl = useRef();
+  const el = useRef();
+  const pan = useAnimatedValue(0);
+  const close = () => {
+    console.log('close window');
+    if (onClose) {
+      pan.spring(0).then(onClose);
+    } else {
+      navigation.goBack(1);
+    }
+  };
+  useImperativeHandle(ref, () => ({
+    close
+  }));
+  const {
+    height
+  } = usePanGestures(el, {
+    onMove: e => {
+      pan.setValue(height - Math.max(0, e.d.y));
+    },
+    onUp: e => {
+      if (e.flick.y === 1 || e.d.y > e.height / 2) {
+        close();
+      } else {
+        pan.spring(e.height);
+      }
+    }
+  });
+  useEffect(() => {
+    if (!height) return;
+    if (isVisible || onClose) {
+      // onClose is here because the window is in a modal if there is an onClose
+      pan.spring(height);
+    } else {
+      pan.spring(0);
+    }
+  }, [isVisible, height]);
+  useEffect(() => {
+    const cards = document.querySelectorAll('.card');
+    return pan.on(value => {
+      const percent = value / height;
+      if (el.current) el.current.style.transform = `translateY(-${value}px)`;
+      if (shadeEl.current) {
+        shadeEl.current.style.display = value ? 'block' : 'none';
+        shadeEl.current.style.opacity = value / height * .8;
+      }
+      [...cards].forEach(el => {
+        el.style.transform = `scale(${1 - .04 * percent})`;
+      });
+    });
+  }, [height]);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "layer"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "shade",
+    ref: shadeEl
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "window",
+    ref: el
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "window-content"
+  }, /*#__PURE__*/React.createElement(ScreenHeader, {
+    title: title,
+    presentation: "modal",
+    onClose: close,
+    SearchComponent: onChangeSearch ? /*#__PURE__*/React.createElement("div", {
+      className: "header-search"
+    }, /*#__PURE__*/React.createElement(TextInput, {
+      placeholder: "Search",
+      type: "search",
+      value: search,
+      onChangeText: onChangeSearch,
+      loading: searchLoading
+    })) : null,
+    headerRight: headerRight
+  }), hasScrollView ? /*#__PURE__*/React.createElement(ScrollView, {
+    className: "card-body",
+    children: children
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "card-body",
+    children: children
+  }))));
 });
 
 const PagerDot = ({
@@ -1850,123 +1948,6 @@ const ViewPager = /*#__PURE__*/forwardRef(({
   }))) : null);
 });
 
-const Window = /*#__PURE__*/forwardRef(({
-  children,
-  title,
-  search,
-  onChangeSearch,
-  searchLoading,
-  hasScrollView = true,
-  headerRight,
-  onClose,
-  isVisible
-}, ref) => {
-  const shadeEl = useRef();
-  const el = useRef();
-  const pan = useAnimatedValue(0);
-  const close = () => {
-    console.log('close window');
-    if (onClose) {
-      pan.spring(0).then(onClose);
-    } else {
-      navigation.goBack(1);
-    }
-  };
-  useImperativeHandle(ref, () => ({
-    close
-  }));
-  const {
-    height
-  } = usePanGestures(el, {
-    onMove: e => {
-      pan.setValue(height - Math.max(0, e.d.y));
-    },
-    onUp: e => {
-      if (e.flick.y === 1 || e.d.y > e.height / 2) {
-        close();
-      } else {
-        pan.spring(e.height);
-      }
-    }
-  });
-  useEffect(() => {
-    if (!height) return;
-    if (isVisible || onClose) {
-      // onClose is here because the window is in a modal if there is an onClose
-      pan.spring(height);
-    } else {
-      pan.spring(0);
-    }
-  }, [isVisible, height]);
-  useEffect(() => {
-    const cards = document.querySelectorAll('.card');
-    return pan.on(value => {
-      const percent = value / height;
-      if (el.current) el.current.style.transform = `translateY(-${value}px)`;
-      if (shadeEl.current) {
-        shadeEl.current.style.display = value ? 'block' : 'none';
-        shadeEl.current.style.opacity = value / height * .8;
-      }
-      [...cards].forEach(el => {
-        el.style.transform = `scale(${1 - .04 * percent})`;
-      });
-    });
-  }, [height]);
-  return /*#__PURE__*/React.createElement("div", {
-    className: "layer"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "shade",
-    ref: shadeEl
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "window",
-    ref: el
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "window-content"
-  }, /*#__PURE__*/React.createElement(ScreenHeader, {
-    title: title,
-    presentation: "modal",
-    onClose: close,
-    SearchComponent: onChangeSearch ? /*#__PURE__*/React.createElement("div", {
-      className: "header-search"
-    }, /*#__PURE__*/React.createElement(TextInput, {
-      placeholder: "Search",
-      type: "search",
-      value: search,
-      onChangeText: onChangeSearch,
-      loading: searchLoading
-    })) : null,
-    headerRight: headerRight
-  }), hasScrollView ? /*#__PURE__*/React.createElement(ScrollView, {
-    className: "card-body",
-    children: children
-  }) : /*#__PURE__*/React.createElement("div", {
-    className: "card-body",
-    children: children
-  }))));
-});
-
-const cache = new Map();
-const memoize = func => function (...args) {
-  const key = args[0];
-  if (!cache.has(key)) cache.set(key, func.apply(this, args));
-  return cache.get(key);
-};
-const loadCss = memoize(url => new Promise(resolve => {
-  const el = document.createElement('link');
-  el.setAttribute('rel', 'stylesheet');
-  el.setAttribute('href', url);
-  el.onload = () => resolve();
-  document.head.appendChild(el);
-}));
-const loadScript = memoize((url, windowKey) => new Promise(resolve => {
-  const script = document.createElement('script');
-  script.type = 'text/javascript';
-  script.async = true;
-  script.src = url;
-  script.onload = () => resolve(window[windowKey]);
-  document.head.appendChild(script);
-}));
-
 // Sync Viewport Size
 const syncSize = ({
   width,
@@ -1990,5 +1971,27 @@ const useVirtualKeyboard = () => useEffect(() => {
   vk.overlaysContent = true;
   return () => vk.overlaysContent = false;
 }, []);
+
+const cache = new Map();
+const memoize = func => function (...args) {
+  const key = args[0];
+  if (!cache.has(key)) cache.set(key, func.apply(this, args));
+  return cache.get(key);
+};
+const loadCss = memoize(url => new Promise(resolve => {
+  const el = document.createElement('link');
+  el.setAttribute('rel', 'stylesheet');
+  el.setAttribute('href', url);
+  el.onload = () => resolve();
+  document.head.appendChild(el);
+}));
+const loadScript = memoize((url, windowKey) => new Promise(resolve => {
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.async = true;
+  script.src = url;
+  script.onload = () => resolve(window[windowKey]);
+  document.head.appendChild(script);
+}));
 
 export { ActionSheet, ActivityIndicator, Alert, AnimatedValue, Avatar, BottomSheet, BreadCrumbs, Button, Card, CheckBox, CircleCheck, ConnectionIndicator, CornerDialog, DashboardIcon, Dropdown, DropdownItem, Emoji, FLICK_SPEED, Fab, FilterButton, FullScreen, HeaderButton, Icon, Image, List, Modal, PercentBar, Pill, Placeholder, PoonOverlays, ProgressIndicator, ProgressRing, PullIndicator, RadioButton, Reveal, ScreenHeader, ScrollView, SegmentedController, Select, Shade, TabularRow, Tag, TextInput, Toast, Touchable, TouchableHighlight, TouchableRow, ViewPager, Window, bounce, c, clamp, cyrb53, easeOutCubic, hideModal, loadCss, loadScript, memoize, modalState, setRevealOrigin, showActionSheet, showAlert, showModal, toPercent, toast, useAnimatedValue, usePanGestures, useSize, useVirtualKeyboard };

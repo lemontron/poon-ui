@@ -111,15 +111,12 @@ export const usePanGestures = (el, opts = {}, deps) => {
 				refs.locked = (refs.abs.y > refs.abs.x) ? 'v' : 'h';
 			}
 
-			if (!refs.locked) return e.preventDefault(); // do nothing until locked
-
-			refs.touch = shouldCapture(e);
-			if (!refs.touch) return; // Let browser handle touch
-			// if (!responderEl) console.log('Capture:', el.current);
-
-			responderEl = el.current; // capture event
-
-			if (refs.locked && opts.onMove) opts.onMove(refs, e);
+			if (refs.locked) {
+				refs.touch = shouldCapture(e);
+				if (!refs.touch) return; // Let browser handle touch
+				responderEl = el.current; // capture event
+				if (opts.onMove) opts.onMove(refs, e);
+			}
 		};
 
 		const up = () => {
@@ -134,10 +131,15 @@ export const usePanGestures = (el, opts = {}, deps) => {
 			if (opts.onUp) opts.onUp(refs);
 		};
 
+		const wheel = (e) => {
+			el.current.scrollTop += e.deltaY;
+		};
+
 		return {
 			onTouchStart: down,
 			onTouchMove: move,
 			onTouchEnd: up,
+			onWheel: wheel,
 		};
 	}, [el, height, width, deps]);
 
@@ -146,12 +148,14 @@ export const usePanGestures = (el, opts = {}, deps) => {
 		el.current.addEventListener('touchstart', handlers.onTouchStart, listenerOptions);
 		el.current.addEventListener('touchmove', handlers.onTouchMove, listenerOptions);
 		el.current.addEventListener('touchend', handlers.onTouchEnd, listenerOptions);
+		el.current.addEventListener('wheel', handlers.onWheel, listenerOptions);
 
 		return () => {
 			if (!el.current) return;
 			el.current.removeEventListener('touchstart', handlers.onTouchStart);
 			el.current.removeEventListener('touchmove', handlers.onTouchMove);
 			el.current.removeEventListener('touchend', handlers.onTouchEnd);
+			el.current.removeEventListener('wheel', handlers.onWheel);
 		};
 	}, [handlers, deps]);
 
