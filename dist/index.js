@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef, useEffect, forwardRef, Fragment, useImperativeHandle, Children, createElement, memo } from 'react';
+import React, { useMemo, useState, useRef, useEffect, forwardRef, Fragment, useImperativeHandle, Children, memo, createElement } from 'react';
 import { randomId, createBus, useBus } from 'poon-router/util.js';
 import { navigation } from 'poon-router';
 
@@ -981,23 +981,6 @@ const ConnectionIndicator = ({
   }, /*#__PURE__*/React.createElement(ActivityIndicator, null), status));
 };
 
-const CornerDialog = ({
-  title,
-  children,
-  isVisible,
-  onClose
-}) => {
-  if (!isVisible) return null;
-  return /*#__PURE__*/React.createElement("div", {
-    className: "corner-dialog"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "corner-dialog-title"
-  }, title, /*#__PURE__*/React.createElement(Icon, {
-    icon: "close",
-    onClick: onClose
-  })), children);
-};
-
 let origin = {};
 const Reveal = /*#__PURE__*/forwardRef(({
   children,
@@ -1086,25 +1069,6 @@ const DashboardIcon = ({
   className: "springboard-icon-name"
 }, title));
 
-const DropdownItem = ({
-  title,
-  icon,
-  onClick,
-  href,
-  disabled,
-  children,
-  active
-}) => /*#__PURE__*/React.createElement(TouchableRow, {
-  className: "dropdown-item",
-  onClick: onClick,
-  disabled: disabled,
-  active: active,
-  children: children,
-  href: href,
-  leftIcon: icon,
-  title: title
-});
-
 const Dropdown = ({
   position,
   button,
@@ -1140,6 +1104,42 @@ const Dropdown = ({
     className: c('dropdown-content', position || 'top-right', visible ? 'visible' : 'hidden'),
     children: content
   })));
+};
+
+const DropdownItem = ({
+  title,
+  icon,
+  onClick,
+  href,
+  disabled,
+  children,
+  active
+}) => /*#__PURE__*/React.createElement(TouchableRow, {
+  className: "dropdown-item",
+  onClick: onClick,
+  disabled: disabled,
+  active: active,
+  children: children,
+  href: href,
+  leftIcon: icon,
+  title: title
+});
+
+const CornerDialog = ({
+  title,
+  children,
+  isVisible,
+  onClose
+}) => {
+  if (!isVisible) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "corner-dialog"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "corner-dialog-title"
+  }, title, /*#__PURE__*/React.createElement(Icon, {
+    icon: "close",
+    onClick: onClose
+  })), children);
 };
 
 const Emoji = ({
@@ -1292,6 +1292,17 @@ const List = ({
   }, renderList(), Children.map(children, renderChild)) : ListEmptyComponent);
 };
 
+const PercentBar = ({
+  percent
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "percent-bar"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "percent-bar-inner",
+  style: {
+    width: `${percent * 100}%`
+  }
+}));
+
 const modalState = createBus([]);
 const renderModal = modal => /*#__PURE__*/React.createElement("div", {
   key: modal.id,
@@ -1306,17 +1317,6 @@ const showModal = children => modalState.update([...modalState.state, {
 const hideModal = () => {
   modalState.update([]);
 };
-
-const PercentBar = ({
-  percent
-}) => /*#__PURE__*/React.createElement("div", {
-  className: "percent-bar"
-}, /*#__PURE__*/React.createElement("div", {
-  className: "percent-bar-inner",
-  style: {
-    width: `${percent * 100}%`
-  }
-}));
 
 const Pill = ({
   title,
@@ -1455,6 +1455,13 @@ const RadioButton = ({
   children: elaboration
 }));
 
+const SegmentedController = ({
+  children
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "segmented",
+  children: children
+});
+
 const Select = ({
   options,
   value,
@@ -1483,13 +1490,6 @@ const Select = ({
   }, renderOptions());
 };
 
-const SegmentedController = ({
-  children
-}) => /*#__PURE__*/React.createElement("div", {
-  className: "segmented",
-  children: children
-});
-
 const TabularRow = ({
   leftText,
   rightText
@@ -1500,6 +1500,40 @@ const TabularRow = ({
 }, leftText), /*#__PURE__*/React.createElement("div", {
   className: "tabular-row-right"
 }, rightText));
+
+const cyrb53 = (str, seed = 0) => {
+  let h1 = 0xdeadbeef ^ seed,
+    h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0, ch; i < str.length; i++) {
+    ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ h1 >>> 16, 2246822507);
+  h1 ^= Math.imul(h2 ^ h2 >>> 13, 3266489909);
+  h2 = Math.imul(h2 ^ h2 >>> 16, 2246822507);
+  h2 ^= Math.imul(h1 ^ h1 >>> 13, 3266489909);
+  return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+};
+
+const f = 360 / Math.pow(2, 53);
+const hashColor = tag => {
+  return `hsl(${180 - f * cyrb53(tag)}, 100%, 50%)`;
+};
+const Tag = /*#__PURE__*/memo(({
+  tag,
+  count
+}) => {
+  const fg = hashColor(tag);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "tag",
+    style: {
+      borderColor: fg,
+      color: fg
+    },
+    children: `${tag}  ${count || ''}`
+  });
+});
 
 const autoCompleteMap = {
   'code': 'one-time-code'
@@ -1629,40 +1663,6 @@ const TextInput = /*#__PURE__*/forwardRef(({
   }) : null, RightComponent, renderSpinner(), renderClearButton());
 });
 
-const cyrb53 = (str, seed = 0) => {
-  let h1 = 0xdeadbeef ^ seed,
-    h2 = 0x41c6ce57 ^ seed;
-  for (let i = 0, ch; i < str.length; i++) {
-    ch = str.charCodeAt(i);
-    h1 = Math.imul(h1 ^ ch, 2654435761);
-    h2 = Math.imul(h2 ^ ch, 1597334677);
-  }
-  h1 = Math.imul(h1 ^ h1 >>> 16, 2246822507);
-  h1 ^= Math.imul(h2 ^ h2 >>> 13, 3266489909);
-  h2 = Math.imul(h2 ^ h2 >>> 16, 2246822507);
-  h2 ^= Math.imul(h1 ^ h1 >>> 13, 3266489909);
-  return 4294967296 * (2097151 & h2) + (h1 >>> 0);
-};
-
-const f = 360 / Math.pow(2, 53);
-const hashColor = tag => {
-  return `hsl(${180 - f * cyrb53(tag)}, 100%, 50%)`;
-};
-const Tag = /*#__PURE__*/memo(({
-  tag,
-  count
-}) => {
-  const fg = hashColor(tag);
-  return /*#__PURE__*/React.createElement("div", {
-    className: "tag",
-    style: {
-      borderColor: fg,
-      color: fg
-    },
-    children: `${tag}  ${count || ''}`
-  });
-});
-
 const TouchableHighlight = ({
   href,
   onClick,
@@ -1720,7 +1720,10 @@ const PagerTabTitle = ({
     children: title,
     className: "pager-tabs-title",
     onClick: () => onPress(i),
-    ref: el
+    ref: el,
+    style: {
+      opacity: pan.value === i ? 1 : .5
+    }
   });
 };
 const ViewPager = /*#__PURE__*/forwardRef(({

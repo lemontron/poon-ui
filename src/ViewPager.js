@@ -38,6 +38,7 @@ const PagerTabTitle = ({title, i, pan, width, onPress}) => {
 			className="pager-tabs-title"
 			onClick={() => onPress(i)}
 			ref={el}
+			style={{opacity: (pan.value === i) ? 1 : .5}}
 		/>
 	);
 };
