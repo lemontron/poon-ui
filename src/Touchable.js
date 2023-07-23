@@ -44,5 +44,6 @@ export const Touchable = ({href, onClick, className, active, target, children, s
 			return false;
 		} : undefined,
 		'style': style,
+		'type': 'button',
 	}, children);
 };

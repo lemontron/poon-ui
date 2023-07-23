@@ -37,7 +37,6 @@ export class AnimatedValue {
 				resolve();
 			} else {
 				const d = (finalValue - oldValue) * easeOutCubic(elapsed / duration);
-				// if (this.name === 'sidebar') console.log('delta:', d, 'elapsed:', elapsed, 'duration:', duration, 'ease:', ease);
 				this.setValue(oldValue + d, false);
 				requestAnimationFrame(animate);
 			}

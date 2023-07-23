@@ -2,7 +2,16 @@ import React, { forwardRef, useEffect, useRef } from 'react';
 import { usePanGestures } from './util/gestures';
 import { c } from './util';
 
-export const BottomSheet = forwardRef(({className, visible, pan, children, onClose, onPress, showShade, handle}, ref) => {
+export const BottomSheet = forwardRef(({
+	className,
+	visible,
+	pan,
+	children,
+	onClose,
+	onPress,
+	showShade,
+	showHandle,
+}, ref) => {
 	const shadeEl = useRef();
 	const sheetEl = useRef();
 	const {height} = usePanGestures(sheetEl, {
@@ -41,7 +50,7 @@ export const BottomSheet = forwardRef(({className, visible, pan, children, onClo
 		<div className="layer">
 			{visible && showShade ? <div className="shade shade-bottom-sheet" ref={shadeEl} onClick={close}/> : null}
 			<div ref={sheetEl} className={c('sheet', className)} onClick={onPress}>
-				{handle ? <div className="handle"/> : null}
+				{showHandle ? <div className="handle"/> : null}
 				{children}
 			</div>
 		</div>
