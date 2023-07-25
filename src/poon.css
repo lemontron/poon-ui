@@ -91,7 +91,7 @@ i.text-input-clear {font-size:18px;}
 .tabular-row-right {text-align:right;}
 
 /* BUTTONS */
-.btn {display:flex; position:relative; height:var(--input-height); align-items:center; justify-content:center; padding:0 10px; color:#fff; border:1px solid #fff; transition:opacity .15s; border-radius:var(--input-border-radius); white-space:nowrap; gap:10px; font-size:var(--input-font-size)}
+.btn {display:flex; position:relative; height:var(--input-height); align-items:center; justify-content:center; padding:0 15px; color:#fff; border:1px solid #fff; transition:opacity .15s; border-radius:var(--input-border-radius); white-space:nowrap; gap:10px; font-size:var(--input-font-size)}
 .full-width {width:100%;}
 .btn.disabled {opacity:.5; pointer-events:none;}
 .btn i {color:inherit;}
@@ -103,6 +103,7 @@ i.text-input-clear {font-size:18px;}
 .btn-black {background:#000; color:#fff; border-color:#000;}
 .btn-clear {border:none;}
 .btn-red {border-color:#f00; color:#f00;}
+.btn-frosted {backdrop-filter:blur(2px); background:rgba(255,255,255,.1); border:none;}
 
 .btn-row {margin-bottom:10px; width:100%; display:flex; color:#999; grid-gap:10px;}
 .window .btn {background:#000;}
@@ -140,7 +141,7 @@ i.text-input-clear {font-size:18px;}
 .layer {position:absolute; top:0; left:0; right:0; bottom:0; pointer-events:none; overflow:hidden;}
 .card {position:absolute; top:0; left:0; bottom:0; right:0; height:var(--viewport-height); width:var(--viewport-width); background:var(--bg); display:flex; flex-direction:column; pointer-events:auto;}
 .card.animate {transform:translateX(100%);}
-.card-body {flex:1; padding-bottom:env(keyboard-inset-height); display:flex; flex-direction:column; min-height:0; position:relative;}
+.card-body {flex:1; padding-bottom:env(keyboard-inset-height); display:flex; flex-direction:column; min-height:0; position:relative; overflow:hidden;}
 .fullscreen {position:absolute; top:0; left:0; right:0; background:#000; height:var(--viewport-height); display:flex; flex-direction:column;}
 .window {position:absolute; top:100%; left:0; right:0; height:calc(var(--viewport-height) - 10px); pointer-events:auto;}
 .window-content {width:var(--window-width); max-width:100%; background:#111; display:flex; flex-direction:column; height:100%; margin:0 auto; border-top-left-radius:var(--window-radius); border-top-right-radius:var(--window-radius); overflow:hidden;}
@@ -215,9 +216,11 @@ i.text-input-clear {font-size:18px;}
 .sheet .touchable-row .material-icons {font-size:16px;}
 
 /* SEGMENTED CONTROLLER */
-.segmented {padding:2px; background:#1c1c1f; display:flex; border-radius:8px; white-space:nowrap;}
-.segmented .touchable {flex:1; color:#fff; padding:2px 15px; border-radius:6px;}
-.segmented .active {background:#fff; color:#000; opacity:1;}
+.segmented {padding:2px; background:#1c1c1f; display:inline-flex; align-items:center; border-radius:8px; white-space:nowrap; position:relative;}
+.segmented .touchable {flex:1; color:#fff; padding:2px 15px; position:relative;}
+.segmented .active {color:#000; opacity:1;}
+.segmented .separator {width:1px; height:10px; background:#444;}
+.segmented-indicator {height:20px; width:50px; border-radius:6px; background:#fff; position:absolute; left:0; top:2px;}
 
 /* BREADCRUMBS */
 .breadcrumbs {padding:0 10px; display:flex; gap:5px; align-items:center; white-space:nowrap; overflow:auto; background:#323; height:36px;}
@@ -233,7 +236,7 @@ i.text-input-clear {font-size:18px;}
 .alert-backdrop {pointer-events:all; background:rgba(0, 0, 0, 0); transition:background 300ms; animation:alertBackDrop 300ms;}
 .alert-backdrop.visible {background:rgba(0, 0, 0, .8);}
 .alert-container {display:flex; align-items:center; justify-content:center; position:absolute; top:0; left:0; bottom:0; right:0;}
-.alert {width:var(--alert-width); background:#111; transition:all .2s; opacity:0; transform:scale(.9); pointer-events:none; border-radius:var(--window-radius); border:2px solid #333;}
+.alert {width:var(--alert-width); background:#111; transition:all .2s; opacity:0; transform:scale(.9); pointer-events:none; border-radius:var(--window-radius); overflow:hidden;}
 .alert.visible {opacity:1; transform:scale(1); animation:alert .2s; pointer-events:all;}
 
 .alert-top {padding:20px; text-align:center; gap:20px; display:flex; flex-direction:column;}

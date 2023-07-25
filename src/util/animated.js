@@ -14,11 +14,14 @@ export class AnimatedValue {
 	constructor(initialValue) {
 		this.listeners = [];
 		this.value = initialValue;
-		this.checkpoint = initialValue;
+		this.oldValue = initialValue;
 	}
 
-	setValue = (value, stopAnimations = true) => {
-		if (stopAnimations) delete this.id;
+	setValue = (value, force = true) => {
+		if (force) { // Stop animations and set the checkpoint
+			delete this.id;
+			this.oldValue = value;
+		}
 		this.value = value;
 		this.listeners.forEach(fn => fn(value));
 	};
@@ -33,7 +36,7 @@ export class AnimatedValue {
 
 			const elapsed = Math.max(0, t - t0); // time hack
 			if (elapsed >= duration) {
-				this.setValue(finalValue);
+				this.setValue(finalValue, true);
 				resolve();
 			} else {
 				const d = (finalValue - oldValue) * easeOutCubic(elapsed / duration);
@@ -47,10 +50,6 @@ export class AnimatedValue {
 	on = (fn) => {
 		this.listeners.push(fn);
 		return () => this.listeners = this.listeners.filter(i => i !== fn);
-	};
-
-	saveCheckpoint = () => {
-		this.checkpoint = this.value;
 	};
 
 	stop = () => {

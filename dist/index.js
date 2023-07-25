@@ -616,7 +616,6 @@ const Button = ({
   href,
   tabIndex,
   color,
-  textColor,
   disabled,
   download,
   iconImageUrl,
@@ -624,10 +623,6 @@ const Button = ({
   submit,
   fullWidth
 }) => {
-  const style = {
-    backgroundColor: color,
-    color: textColor
-  };
   const cn = c('btn', className, disabled && 'disabled', fullWidth && 'full-width', color && `btn-${color}`);
   const renderInner = () => {
     if (loading) return /*#__PURE__*/React.createElement(ActivityIndicator, null);
@@ -648,7 +643,6 @@ const Button = ({
     href: href,
     onTouchStart: onDown,
     tabIndex: tabIndex,
-    style: style,
     children: renderInner()
   });
 };
@@ -970,17 +964,6 @@ const CircleCheck = ({
   }));
 };
 
-const ConnectionIndicator = ({
-  status
-}) => {
-  if (status === 'connected') return null;
-  return /*#__PURE__*/React.createElement("div", {
-    className: "connection-indicator"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "bubble"
-  }, /*#__PURE__*/React.createElement(ActivityIndicator, null), status));
-};
-
 let origin = {};
 const Reveal = /*#__PURE__*/forwardRef(({
   children,
@@ -1069,6 +1052,17 @@ const DashboardIcon = ({
   className: "springboard-icon-name"
 }, title));
 
+const ConnectionIndicator = ({
+  status
+}) => {
+  if (status === 'connected') return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "connection-indicator"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bubble"
+  }, /*#__PURE__*/React.createElement(ActivityIndicator, null), status));
+};
+
 const Dropdown = ({
   position,
   button,
@@ -1125,6 +1119,13 @@ const DropdownItem = ({
   title: title
 });
 
+const Emoji = ({
+  emoji
+}) => /*#__PURE__*/React.createElement("span", {
+  className: "emoji",
+  children: emoji
+});
+
 const CornerDialog = ({
   title,
   children,
@@ -1141,13 +1142,6 @@ const CornerDialog = ({
     onClick: onClose
   })), children);
 };
-
-const Emoji = ({
-  emoji
-}) => /*#__PURE__*/React.createElement("span", {
-  className: "emoji",
-  children: emoji
-});
 
 const Fab = ({
   icon,
@@ -1292,17 +1286,6 @@ const List = ({
   }, renderList(), Children.map(children, renderChild)) : ListEmptyComponent);
 };
 
-const PercentBar = ({
-  percent
-}) => /*#__PURE__*/React.createElement("div", {
-  className: "percent-bar"
-}, /*#__PURE__*/React.createElement("div", {
-  className: "percent-bar-inner",
-  style: {
-    width: `${percent * 100}%`
-  }
-}));
-
 const modalState = createBus([]);
 const renderModal = modal => /*#__PURE__*/React.createElement("div", {
   key: modal.id,
@@ -1318,6 +1301,17 @@ const hideModal = () => {
   modalState.update([]);
 };
 
+const PercentBar = ({
+  percent
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "percent-bar"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "percent-bar-inner",
+  style: {
+    width: `${percent * 100}%`
+  }
+}));
+
 const Pill = ({
   title,
   color,
@@ -1329,6 +1323,26 @@ const Pill = ({
     backgroundColor: color
   }
 }, title);
+
+const state = createBus();
+const Toast = () => {
+  const message = useBus(state);
+  useEffect(() => {
+    if (!message) return;
+    const timeout = setTimeout(() => state.update(null), 2000);
+    return () => clearTimeout(timeout);
+  }, [message]);
+  if (!message) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "toast-container"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "toast",
+    children: message
+  }));
+};
+const toast = state.update;
+
+const PoonOverlays = () => /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(Modal, null), /*#__PURE__*/React.createElement(ActionSheet, null), /*#__PURE__*/React.createElement(Alert, null), /*#__PURE__*/React.createElement(Toast, null));
 
 const FilterButton = ({
   title,
@@ -1352,26 +1366,6 @@ const FilterButton = ({
 }) : /*#__PURE__*/React.createElement(CheckBox, {
   active: checked
 }));
-
-const state = createBus();
-const Toast = () => {
-  const message = useBus(state);
-  useEffect(() => {
-    if (!message) return;
-    const timeout = setTimeout(() => state.update(null), 2000);
-    return () => clearTimeout(timeout);
-  }, [message]);
-  if (!message) return null;
-  return /*#__PURE__*/React.createElement("div", {
-    className: "toast-container"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "toast",
-    children: message
-  }));
-};
-const toast = state.update;
-
-const PoonOverlays = () => /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(Modal, null), /*#__PURE__*/React.createElement(ActionSheet, null), /*#__PURE__*/React.createElement(Alert, null), /*#__PURE__*/React.createElement(Toast, null));
 
 const ProgressIndicator = () => /*#__PURE__*/React.createElement("div", {
   className: "progress-indicator"
@@ -1455,12 +1449,70 @@ const RadioButton = ({
   children: elaboration
 }));
 
+const SegmentedItem = ({
+  item,
+  isLast,
+  active,
+  onChange,
+  index,
+  pan
+}) => {
+  return /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(Touchable, {
+    children: item,
+    onClick: () => onChange(item),
+    active: active,
+    id: `item-${index}`
+  }), isLast ? null : /*#__PURE__*/React.createElement("div", {
+    className: "separator"
+  }));
+};
 const SegmentedController = ({
-  children
-}) => /*#__PURE__*/React.createElement("div", {
-  className: "segmented",
-  children: children
-});
+  children,
+  items,
+  value,
+  onChange
+}) => {
+  const el = useRef();
+  const indicatorEl = useRef();
+  const pan = useAnimatedValue(items.indexOf(value));
+  useEffect(() => {
+    const i = items.indexOf(value);
+    pan.spring(i);
+  }, [value]);
+  useEffect(() => {
+    pan.on(val => {
+      const i = Math.floor(val);
+
+      // const fraction = (val - i);
+      //
+      // console.log(i, fraction);
+
+      const button = el.current.querySelectorAll('.touchable')[i];
+      const last = el.current.querySelectorAll('.touchable')[items.length - 1];
+      indicatorEl.current.style.width = `${button.offsetWidth}px`;
+      indicatorEl.current.style.transform = `translateX(${val / items.length * (el.current.offsetWidth - last.offsetWidth)}px)`;
+    });
+  }, []);
+  if (children) return /*#__PURE__*/React.createElement("div", {
+    className: "segmented",
+    children: children
+  });
+  return /*#__PURE__*/React.createElement("div", {
+    className: "segmented",
+    ref: el
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "segmented-indicator",
+    ref: indicatorEl
+  }), items.map((item, i) => /*#__PURE__*/React.createElement(SegmentedItem, {
+    key: item,
+    item: item,
+    index: i,
+    isLast: i === items.length - 1,
+    active: value === item,
+    pan: pan,
+    onChange: onChange
+  })));
+};
 
 const Select = ({
   options,

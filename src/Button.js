@@ -13,7 +13,6 @@ export const Button = ({
 	href,
 	tabIndex,
 	color,
-	textColor,
 	disabled,
 	download,
 	iconImageUrl,
@@ -21,7 +20,6 @@ export const Button = ({
 	submit,
 	fullWidth,
 }) => {
-	const style = {backgroundColor: color, color: textColor};
 	const cn = c('btn', className, disabled && 'disabled', fullWidth && 'full-width', color && `btn-${color}`);
 
 	const renderInner = () => {
@@ -46,7 +44,6 @@ export const Button = ({
 			href={href}
 			onTouchStart={onDown}
 			tabIndex={tabIndex}
-			style={style}
 			children={renderInner()}
 		/>
 	);
