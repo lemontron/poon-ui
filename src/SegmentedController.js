@@ -1,51 +1,54 @@
-import React, { Fragment, useEffect, useRef } from 'react';
+import React, { forwardRef, Fragment, useEffect, useRef } from 'react';
 import { Touchable } from './Touchable.js';
 import { useAnimatedValue } from './util/animated.js';
 
-const SegmentedItem = ({item, isLast, active, onChange, index, pan}) => {
-	return (
-		<Fragment>
-			<Touchable children={item} onClick={() => onChange(item)} active={active} id={`item-${index}`}/>
-			{isLast ? null : <div className="separator"/>}
-		</Fragment>
-	);
-};
+const SegmentedItem = forwardRef(({item, isLast, active, onChange, index}, ref) => (
+	<Fragment>
+		<Touchable
+			children={item.name}
+			onClick={() => onChange(item.value)}
+			active={active}
+			ref={ref}
+		/>
+		{isLast ? null : <div className="separator"/>}
+	</Fragment>
+));
 
-export const SegmentedController = ({children, items, value, onChange}) => {
-	if (children) return <div className="segmented" children={children}/>;
-
-	const el = useRef();
-	const indicatorEl = useRef();
-	const pan = useAnimatedValue(items.indexOf(value));
-
-	useEffect(() => {
-		const i = items.indexOf(value);
-		pan.spring(i);
-	}, [value]);
+export const SegmentedController = ({options, value, onChange}) => {
+	const refs = useRef([]);
+	const indicator = useRef();
+	const index = options.findIndex(item => item.value === value);
+	const left = useAnimatedValue(0);
+	const width = useAnimatedValue(0);
 
 	useEffect(() => {
-		pan.on(val => {
-			const i = Math.floor(val);
-
-			const button = el.current.querySelectorAll('.touchable')[i];
-			const last = el.current.querySelectorAll('.touchable')[items.length - 1];
-			indicatorEl.current.style.width = `${button.offsetWidth}px`;
-			indicatorEl.current.style.transform = `translateX(${(val / items.length) * (el.current.offsetWidth - last.offsetWidth)}px)`;
-		});
+		left.on(val => indicator.current.style.transform = `translateX(${val}px)`);
+		width.on(val => indicator.current.style.width = `${val}px`);
 	}, []);
 
+	useEffect(() => {
+		const el = refs.current[index]; // element to copy attributes from
+		if (width.value === 0) {
+			left.setValue(el.offsetLeft);
+			width.setValue(el.offsetWidth);
+		} else {
+			left.spring(el.offsetLeft);
+			width.spring(el.offsetWidth);
+		}
+	}, [index]);
+
 	return (
-		<div className="segmented" ref={el}>
-			<div className="segmented-indicator" ref={indicatorEl}/>
-			{items.map((item, i) => (
+		<div className="segmented">
+			<div className="segmented-indicator" ref={indicator}/>
+			{options.map((item, i) => (
 				<SegmentedItem
-					key={item}
+					key={item.value}
 					item={item}
 					index={i}
-					isLast={i === items.length - 1}
-					active={value === item}
-					pan={pan}
+					isLast={i === options.length - 1}
+					active={index === i}
 					onChange={onChange}
+					ref={el => refs.current[i] = el}
 				/>
 			))}
 		</div>

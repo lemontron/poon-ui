@@ -1,7 +1,7 @@
-import React, { useRef, useState } from 'react';
+import React, { forwardRef, useRef, useState } from 'react';
 import { c } from './util';
 
-export const Touchable = ({href, onClick, className, active, target, children, style, disableMenu}) => {
+export const Touchable = forwardRef(({href, onClick, className, active, target, children, style, disableMenu}, ref) => {
 	const [touched, setTouched] = useState(false);
 	const moved = useRef(false);
 
@@ -45,5 +45,6 @@ export const Touchable = ({href, onClick, className, active, target, children, s
 		} : undefined,
 		'style': style,
 		'type': 'button',
+		'ref': ref,
 	}, children);
-};
+});

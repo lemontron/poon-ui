@@ -216,11 +216,11 @@ i.text-input-clear {font-size:18px;}
 .sheet .touchable-row .material-icons {font-size:16px;}
 
 /* SEGMENTED CONTROLLER */
-.segmented {padding:2px; background:#1c1c1f; display:inline-flex; align-items:center; border-radius:8px; white-space:nowrap; position:relative;}
+.segmented {padding:2px; background:#222; display:inline-flex; align-items:center; border-radius:8px; white-space:nowrap; position:relative;}
 .segmented .touchable {flex:1; color:#fff; padding:2px 15px; position:relative;}
 .segmented .active {color:#000; opacity:1;}
 .segmented .separator {width:1px; height:10px; background:#444;}
-.segmented-indicator {height:20px; width:50px; border-radius:6px; background:#fff; position:absolute; left:0; top:2px;}
+.segmented-indicator {height:calc(100% - 4px); border-radius:6px; background:#fff; position:absolute; left:0; top:2px; outline:2px solid #222;}
 
 /* BREADCRUMBS */
 .breadcrumbs {padding:0 10px; display:flex; gap:5px; align-items:center; white-space:nowrap; overflow:auto; background:#323; height:36px;}
