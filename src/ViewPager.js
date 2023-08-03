@@ -60,6 +60,7 @@ export const ViewPager = forwardRef(({titles, children, vertical, dots, classNam
 	}));
 
 	const {width, height} = usePanGestures(scrollerEl, {
+		enablePointerControls: true,
 		onCapture: e => { // release control when scrolled to left edge
 			if (vertical) {
 				if (e.locked === 'v') {
@@ -111,6 +112,10 @@ export const ViewPager = forwardRef(({titles, children, vertical, dots, classNam
 					pan.spring(landingPage * width);
 				}
 			}
+		},
+		onPan: e => {
+			console.log('Pan:', e.d.x, e.d.y);
+			pan.setValue(clamp(pan.value + e.d.x, 0, width * (children.length - 1)));
 		},
 	}, [children]);
 
