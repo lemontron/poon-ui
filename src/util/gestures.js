@@ -150,11 +150,6 @@ export const usePanGestures = (el, opts = {}, deps) => {
 		el.current.addEventListener('touchmove', handlers.onTouchMove, listenerOptions);
 		el.current.addEventListener('touchend', handlers.onTouchEnd, listenerOptions);
 		el.current.addEventListener('wheel', handlers.onWheel, listenerOptions);
-		// if (opts.enablePointerControls) {
-		// 	el.current.addEventListener('pointerdown', handlers.onTouchStart, listenerOptions);
-		// 	el.current.addEventListener('pointermove', handlers.onTouchMove, listenerOptions);
-		// 	el.current.addEventListener('pointerup', handlers.onTouchEnd, listenerOptions);
-		// }
 
 		return () => {
 			if (!el.current) return;
@@ -162,20 +157,8 @@ export const usePanGestures = (el, opts = {}, deps) => {
 			el.current.removeEventListener('touchmove', handlers.onTouchMove);
 			el.current.removeEventListener('touchend', handlers.onTouchEnd);
 			el.current.removeEventListener('wheel', handlers.onWheel);
-			// if (opts.enablePointerControls) {
-			// 	el.current.removeEventListener('pointerdown', handlers.onTouchStart);
-			// 	el.current.removeEventListener('pointermove', handlers.onTouchMove);
-			// 	el.current.removeEventListener('pointerup', handlers.onTouchEnd);
-			// }
 		};
 	}, [handlers, deps]);
 
 	return {height, width};
 };
-
-document.addEventListener('touchstart', function(e) {
-	// is not near edge of view, exit.
-	if (e.pageX > 10 && e.pageX < window.innerWidth - 10) return;
-	// prevent swipe to navigate gesture.
-	e.preventDefault();
-});

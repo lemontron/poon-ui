@@ -19,6 +19,7 @@ export const Button = ({
 	loading,
 	submit,
 	fullWidth,
+	target,
 }) => {
 	const cn = c('btn', className, disabled && 'disabled', fullWidth && 'full-width', color && `btn-${color}`);
 
@@ -45,6 +46,7 @@ export const Button = ({
 			onTouchStart={onDown}
 			tabIndex={tabIndex}
 			children={renderInner()}
+			target={target}
 		/>
 	);
 };
