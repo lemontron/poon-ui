@@ -2,37 +2,6 @@ import React, { useMemo, forwardRef, useState, useRef, useEffect, Fragment, useI
 import { randomId, createBus, useBus } from 'poon-router/util.js';
 import { navigation } from 'poon-router';
 
-const array = new Array(12).fill(0);
-const ActivityIndicator = ({
-  size = 16,
-  color = '#fff'
-}) => {
-  const renderSegment = (x, i) => {
-    const style = {
-      'width': 1.7,
-      'borderRadius': 1,
-      'left': size / 2 - 1,
-      'height': size / 4,
-      'animationDelay': (-1.1 + .1 * i).toFixed(1) + 's',
-      'transform': `rotate(${30 * i}deg)`,
-      'backgroundColor': color,
-      'transformOrigin': `50% ${size / 2}px`
-    };
-    return /*#__PURE__*/React.createElement("div", {
-      key: i,
-      style: style
-    });
-  };
-  return /*#__PURE__*/React.createElement("div", {
-    className: "activity-indicator",
-    style: {
-      width: size,
-      height: size
-    },
-    children: array.map(renderSegment)
-  });
-};
-
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
 const bounce = (num, min, max) => {
   if (num > max) return max + (max + num) / 50;
@@ -397,23 +366,12 @@ const usePanGestures = (el, opts = {}, deps) => {
     el.current.addEventListener('touchmove', handlers.onTouchMove, listenerOptions);
     el.current.addEventListener('touchend', handlers.onTouchEnd, listenerOptions);
     el.current.addEventListener('wheel', handlers.onWheel, listenerOptions);
-    // if (opts.enablePointerControls) {
-    // 	el.current.addEventListener('pointerdown', handlers.onTouchStart, listenerOptions);
-    // 	el.current.addEventListener('pointermove', handlers.onTouchMove, listenerOptions);
-    // 	el.current.addEventListener('pointerup', handlers.onTouchEnd, listenerOptions);
-    // }
-
     return () => {
       if (!el.current) return;
       el.current.removeEventListener('touchstart', handlers.onTouchStart);
       el.current.removeEventListener('touchmove', handlers.onTouchMove);
       el.current.removeEventListener('touchend', handlers.onTouchEnd);
       el.current.removeEventListener('wheel', handlers.onWheel);
-      // if (opts.enablePointerControls) {
-      // 	el.current.removeEventListener('pointerdown', handlers.onTouchStart);
-      // 	el.current.removeEventListener('pointermove', handlers.onTouchMove);
-      // 	el.current.removeEventListener('pointerup', handlers.onTouchEnd);
-      // }
     };
   }, [handlers, deps]);
   return {
@@ -421,12 +379,6 @@ const usePanGestures = (el, opts = {}, deps) => {
     width
   };
 };
-document.addEventListener('touchstart', function (e) {
-  // is not near edge of view, exit.
-  if (e.pageX > 10 && e.pageX < window.innerWidth - 10) return;
-  // prevent swipe to navigate gesture.
-  e.preventDefault();
-});
 
 const BottomSheet = /*#__PURE__*/forwardRef(({
   className,
@@ -522,6 +474,37 @@ const showActionSheet = (title, options, callback) => bus.update({
   options,
   callback
 });
+
+const array = new Array(12).fill(0);
+const ActivityIndicator = ({
+  size = 16,
+  color = '#fff'
+}) => {
+  const renderSegment = (x, i) => {
+    const style = {
+      'width': 1.7,
+      'borderRadius': 1,
+      'left': size / 2 - 1,
+      'height': size / 4,
+      'animationDelay': (-1.1 + .1 * i).toFixed(1) + 's',
+      'transform': `rotate(${30 * i}deg)`,
+      'backgroundColor': color,
+      'transformOrigin': `50% ${size / 2}px`
+    };
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: style
+    });
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "activity-indicator",
+    style: {
+      width: size,
+      height: size
+    },
+    children: array.map(renderSegment)
+  });
+};
 
 const PullIndicator = /*#__PURE__*/forwardRef(({
   pull
@@ -646,7 +629,8 @@ const Button = ({
   iconImageUrl,
   loading,
   submit,
-  fullWidth
+  fullWidth,
+  target
 }) => {
   const cn = c('btn', className, disabled && 'disabled', fullWidth && 'full-width', color && `btn-${color}`);
   const renderInner = () => {
@@ -668,7 +652,8 @@ const Button = ({
     href: href,
     onTouchStart: onDown,
     tabIndex: tabIndex,
-    children: renderInner()
+    children: renderInner(),
+    target: target
   });
 };
 
@@ -769,27 +754,6 @@ const Avatar = ({
 Avatar.defaultProps = {
   variant: 'normal',
   getUrl: () => null
-};
-
-const BreadCrumbs = ({
-  path,
-  onClickPath
-}) => {
-  const slugs = path.split('/').filter(Boolean);
-  const renderSlug = (slug, i) => /*#__PURE__*/React.createElement(Fragment, {
-    key: slug + '_' + i
-  }, /*#__PURE__*/React.createElement(Touchable, {
-    onClick: () => onClickPath(),
-    children: slug
-  }), i < slugs.length - 1 ? /*#__PURE__*/React.createElement("span", null, " / ") : null);
-  if (slugs.length === 0) return null;
-  return /*#__PURE__*/React.createElement(ScrollView, {
-    horizontal: true,
-    className: "breadcrumbs"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    icon: "home",
-    onClick: () => onClickPath('/')
-  }), /*#__PURE__*/React.createElement("span", null, " / "), slugs.map(renderSlug));
 };
 
 const closeImage = {
@@ -970,6 +934,27 @@ const Card = /*#__PURE__*/forwardRef(({
   }) : null));
 });
 
+const BreadCrumbs = ({
+  path,
+  onClickPath
+}) => {
+  const slugs = path.split('/').filter(Boolean);
+  const renderSlug = (slug, i) => /*#__PURE__*/React.createElement(Fragment, {
+    key: slug + '_' + i
+  }, /*#__PURE__*/React.createElement(Touchable, {
+    onClick: () => onClickPath(),
+    children: slug
+  }), i < slugs.length - 1 ? /*#__PURE__*/React.createElement("span", null, " / ") : null);
+  if (slugs.length === 0) return null;
+  return /*#__PURE__*/React.createElement(ScrollView, {
+    horizontal: true,
+    className: "breadcrumbs"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    icon: "home",
+    onClick: () => onClickPath('/')
+  }), /*#__PURE__*/React.createElement("span", null, " / "), slugs.map(renderSlug));
+};
+
 const CheckBox = ({
   active,
   undetermined
@@ -1142,25 +1127,6 @@ const DashboardIcon = ({
   className: "springboard-icon-name"
 }, title));
 
-const DropdownItem = ({
-  title,
-  icon,
-  onClick,
-  href,
-  disabled,
-  children,
-  active
-}) => /*#__PURE__*/React.createElement(TouchableRow, {
-  className: "dropdown-item",
-  onClick: onClick,
-  disabled: disabled,
-  active: active,
-  children: children,
-  href: href,
-  leftIcon: icon,
-  title: title
-});
-
 const Emoji = ({
   emoji
 }) => /*#__PURE__*/React.createElement("span", {
@@ -1190,6 +1156,47 @@ const Fab = ({
 }), title && /*#__PURE__*/React.createElement("div", {
   className: "fab-title"
 }, title)));
+
+const DropdownItem = ({
+  title,
+  icon,
+  onClick,
+  href,
+  disabled,
+  children,
+  active
+}) => /*#__PURE__*/React.createElement(TouchableRow, {
+  className: "dropdown-item",
+  onClick: onClick,
+  disabled: disabled,
+  active: active,
+  children: children,
+  href: href,
+  leftIcon: icon,
+  title: title
+});
+
+const HeaderButton = ({
+  icon,
+  title,
+  badge,
+  loading,
+  disabled,
+  onClick,
+  active,
+  href
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: c('header-button center', title === 'Cancel' && 'header-cancel'),
+  onClick: onClick,
+  loading: loading,
+  disabled: disabled,
+  active: active,
+  href: href
+}, icon ? /*#__PURE__*/React.createElement(Icon, {
+  icon: icon
+}) : null, title ? /*#__PURE__*/React.createElement("span", null, title) : null, badge ? /*#__PURE__*/React.createElement("span", {
+  className: "badge"
+}, badge) : null);
 
 const FullScreen = ({
   title,
@@ -1222,28 +1229,6 @@ const FullScreen = ({
     className: "card-body"
   }, children), footer);
 };
-
-const HeaderButton = ({
-  icon,
-  title,
-  badge,
-  loading,
-  disabled,
-  onClick,
-  active,
-  href
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: c('header-button center', title === 'Cancel' && 'header-cancel'),
-  onClick: onClick,
-  loading: loading,
-  disabled: disabled,
-  active: active,
-  href: href
-}, icon ? /*#__PURE__*/React.createElement(Icon, {
-  icon: icon
-}) : null, title ? /*#__PURE__*/React.createElement("span", null, title) : null, badge ? /*#__PURE__*/React.createElement("span", {
-  className: "badge"
-}, badge) : null);
 
 const Image = ({
   ar,
@@ -1326,6 +1311,18 @@ const hideModal = () => {
   modalState.update([]);
 };
 
+const Pill = ({
+  title,
+  color,
+  onClick
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: "pill",
+  onClick: onClick,
+  style: {
+    backgroundColor: color
+  }
+}, title);
+
 const PercentBar = ({
   percent
 }) => /*#__PURE__*/React.createElement("div", {
@@ -1360,17 +1357,9 @@ const FilterButton = ({
   active: checked
 }));
 
-const Pill = ({
-  title,
-  color,
-  onClick
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: "pill",
-  onClick: onClick,
-  style: {
-    backgroundColor: color
-  }
-}, title);
+const ProgressIndicator = () => /*#__PURE__*/React.createElement("div", {
+  className: "progress-indicator"
+});
 
 const state = createBus();
 const Toast = () => {
@@ -1391,10 +1380,6 @@ const Toast = () => {
 const toast = state.update;
 
 const PoonOverlays = () => /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(Modal, null), /*#__PURE__*/React.createElement(ActionSheet, null), /*#__PURE__*/React.createElement(Alert, null), /*#__PURE__*/React.createElement(Toast, null));
-
-const ProgressIndicator = () => /*#__PURE__*/React.createElement("div", {
-  className: "progress-indicator"
-});
 
 const ProgressRing = ({
   color = '#fff',
@@ -2022,6 +2007,28 @@ const Window = /*#__PURE__*/forwardRef(({
   }))));
 });
 
+const cache = new Map();
+const memoize = func => function (...args) {
+  const key = args[0];
+  if (!cache.has(key)) cache.set(key, func.apply(this, args));
+  return cache.get(key);
+};
+const loadCss = memoize(url => new Promise(resolve => {
+  const el = document.createElement('link');
+  el.setAttribute('rel', 'stylesheet');
+  el.setAttribute('href', url);
+  el.onload = () => resolve();
+  document.head.appendChild(el);
+}));
+const loadScript = memoize((url, windowKey) => new Promise(resolve => {
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.async = true;
+  script.src = url;
+  script.onload = () => resolve(window[windowKey]);
+  document.head.appendChild(script);
+}));
+
 // Sync Viewport Size
 const syncSize = ({
   width,
@@ -2045,27 +2052,5 @@ const useVirtualKeyboard = () => useEffect(() => {
   vk.overlaysContent = true;
   return () => vk.overlaysContent = false;
 }, []);
-
-const cache = new Map();
-const memoize = func => function (...args) {
-  const key = args[0];
-  if (!cache.has(key)) cache.set(key, func.apply(this, args));
-  return cache.get(key);
-};
-const loadCss = memoize(url => new Promise(resolve => {
-  const el = document.createElement('link');
-  el.setAttribute('rel', 'stylesheet');
-  el.setAttribute('href', url);
-  el.onload = () => resolve();
-  document.head.appendChild(el);
-}));
-const loadScript = memoize((url, windowKey) => new Promise(resolve => {
-  const script = document.createElement('script');
-  script.type = 'text/javascript';
-  script.async = true;
-  script.src = url;
-  script.onload = () => resolve(window[windowKey]);
-  document.head.appendChild(script);
-}));
 
 export { ActionSheet, ActivityIndicator, Alert, AnimatedValue, Avatar, BottomSheet, BreadCrumbs, Button, Card, CheckBox, CircleCheck, ConnectionIndicator, CornerDialog, DashboardIcon, Dropdown, DropdownItem, Emoji, FLICK_SPEED, Fab, FilterButton, FullScreen, HeaderButton, Icon, Image, List, Modal, PercentBar, Pill, Placeholder, PoonOverlays, ProgressIndicator, ProgressRing, PullIndicator, RadioButton, Reveal, ScreenHeader, ScrollView, SegmentedController, Select, Shade, TabularRow, Tag, TextInput, Toast, Touchable, TouchableHighlight, TouchableRow, ViewPager, Window, bounce, c, clamp, cyrb53, easeOutCubic, hideModal, loadCss, loadScript, memoize, modalState, setRevealOrigin, showActionSheet, showAlert, showModal, toPercent, toast, useAnimatedValue, usePanGestures, useSize, useVirtualKeyboard };

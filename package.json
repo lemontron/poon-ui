@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "rollup": "rollup -c",
-    "patch": "npm version patch && npm publish"
+    "patch": "rollup -c && npm version patch && npm publish"
   },
   "keywords": [
     "react",
