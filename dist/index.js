@@ -1,9 +1,65 @@
-import React, { forwardRef, useState, useRef, useEffect, useMemo, Fragment, useImperativeHandle, Children, memo, createElement } from 'react';
+import React, { useMemo, forwardRef, useState, useRef, useEffect, Fragment, useImperativeHandle, Children, memo, createElement } from 'react';
 import { randomId, createBus, useBus } from 'poon-router/util.js';
 import { navigation } from 'poon-router';
 
 const c = (...rest) => rest.filter(Boolean).join(' ');
 const toPercent = val => `${val * 100}%`;
+const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
+const clone = obj => Object.assign({}, obj);
+const sameObject = (a, b) => Object.keys(a).every(key => a[key] === b[key]);
+const bounce = (num, min, max) => {
+  if (num > max) return max + (max + num) / 50;
+  if (num < min) return min - (min - num) / 50;
+  return num;
+};
+const easeOutCubic = t => --t * t * t + 1;
+
+class AnimatedValue {
+  constructor(initialValue) {
+    this.listeners = [];
+    this.value = initialValue;
+    this.oldValue = initialValue;
+  }
+  setValue = (value, end = true) => {
+    if (end) {
+      // Stop animations and set the checkpoint
+      delete this.id;
+      this.oldValue = value;
+    }
+    this.value = value;
+    this.listeners.forEach(fn => fn(value));
+  };
+  spring = (finalValue, duration = AnimatedValue.defaultAnimationDuration) => new Promise(resolve => {
+    if (finalValue === this.value) return; // cancel unnecessary animation
+
+    const t0 = this.id = performance.now(); // a unique id for this animation lifecycle
+    const oldValue = this.value;
+    const animate = t => {
+      if (t0 !== this.id) return;
+      const elapsed = Math.max(0, t - t0); // time hack
+      if (elapsed >= duration) {
+        this.setValue(finalValue, true);
+        resolve();
+      } else {
+        const d = (finalValue - oldValue) * easeOutCubic(elapsed / duration);
+        this.setValue(oldValue + d, false);
+        requestAnimationFrame(animate);
+      }
+    };
+    animate(t0);
+  });
+  on = fn => {
+    this.listeners.push(fn);
+    return () => this.listeners = this.listeners.filter(i => i !== fn);
+  };
+  stop = () => {
+    delete this.id;
+  };
+}
+AnimatedValue.defaultAnimationDuration = 300;
+const useAnimatedValue = initialValue => useMemo(() => {
+  return new AnimatedValue(initialValue);
+}, []);
 
 const Touchable = /*#__PURE__*/forwardRef(({
   href,
@@ -59,259 +115,6 @@ const Touchable = /*#__PURE__*/forwardRef(({
   }, children);
 });
 
-const FLICK_SPEED = .25; // pixels per ms
-const CUTOFF_INTERVAL = 50; // ms
-const listenerOptions = {
-  capture: false,
-  passive: false
-};
-const getVelocity = (lastV = 0, newV, elapsedTime) => {
-  const w1 = Math.min(elapsedTime, CUTOFF_INTERVAL) / CUTOFF_INTERVAL;
-  const w0 = 1 - w1;
-  return lastV * w0 + newV * w1;
-};
-const useSize = el => {
-  // console.log('SIZE:', el);
-  const [size, setSize] = useState({
-    'width': el.current?.clientWidth,
-    'height': el.current?.clientHeight
-  });
-  useEffect(() => {
-    // observe size of element
-    if (!el.current) return;
-    const ro = new ResizeObserver(entries => {
-      const e = entries[0].borderBoxSize[0];
-      setSize({
-        'height': e.blockSize,
-        'width': e.inlineSize
-      });
-    });
-    ro.observe(el.current);
-    return () => ro.disconnect();
-  }, [el.current]);
-  return size;
-};
-let responderEl; // The element currently capturing input
-
-const usePanGestures = (el, opts = {}, deps) => {
-  const {
-    width,
-    height
-  } = useSize(el);
-  const refs = useRef({
-    'id': randomId()
-  }).current;
-  const handlers = useMemo(() => {
-    if (!el.current) return {};
-    const logVelocity = () => {
-      // Log instantaneous velocity
-      const now = Date.now();
-      const elapsedTime = now - refs.last.ts;
-      if (elapsedTime > 0) {
-        const vx = (refs.x - refs.last.x) / elapsedTime;
-        const vy = (refs.y - refs.last.y) / elapsedTime;
-        refs.v = {
-          'x': getVelocity(refs.v.x, vx, elapsedTime),
-          'y': getVelocity(refs.v.y, vy, elapsedTime)
-        };
-        refs.last = {
-          'x': refs.x,
-          'y': refs.y,
-          'ts': now
-        };
-      }
-    };
-    const down = e => {
-      responderEl = null;
-      if (e.touches.length > 1) {
-        const dx = e.touches[0].clientX - e.touches[1].clientX;
-        const dy = e.touches[0].clientY - e.touches[1].clientY;
-        refs.pinch = {
-          d0: Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))
-        };
-        return;
-      }
-      const x = e.touches ? e.touches[0].clientX : e.clientX;
-      const y = e.touches ? e.touches[0].clientY : e.clientY;
-      Object.assign(refs, {
-        'width': width,
-        'height': height,
-        'current': {
-          x,
-          y
-        },
-        'touch': true,
-        'origin': {
-          x,
-          y
-        },
-        'locked': false,
-        'v': {
-          x: 0,
-          y: 0
-        },
-        's': {
-          x: 0,
-          y: 0
-        },
-        'd': {
-          x: 0,
-          y: 0
-        },
-        'flick': null,
-        'last': {
-          ts: Date.now(),
-          x,
-          y
-        }
-      });
-      if (opts.onDown) opts.onDown(refs);
-    };
-    const shouldCapture = e => {
-      if (opts.onCapture) return opts.onCapture(refs, e);
-      return true;
-    };
-    const move = e => {
-      if (responderEl && responderEl !== el.current) {
-        if (!responderEl.className.includes('scroller')) e.preventDefault();
-        return;
-      }
-      if (refs.pinch) {
-        if (e.touches.length === 2) {
-          const dx = e.touches[0].clientX - e.touches[1].clientX;
-          const dy = e.touches[0].clientY - e.touches[1].clientY;
-          refs.pinch.d = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
-          refs.pinch.ratio = refs.pinch.d / refs.pinch.d0;
-        } else {
-          delete refs.pinch;
-        }
-      }
-      refs.x = e.touches ? e.touches[0].clientX : e.clientX;
-      refs.y = e.touches ? e.touches[0].clientY : e.clientY;
-      logVelocity();
-      refs.d = {
-        'x': refs.x - refs.origin.x,
-        'y': refs.y - refs.origin.y
-      };
-      refs.abs = {
-        'x': Math.abs(refs.d.x),
-        'y': Math.abs(refs.d.y)
-      };
-      if (!refs.locked && (refs.abs.y > 10 || refs.abs.x > 10)) {
-        // lock scroll direction
-        refs.locked = refs.abs.y > refs.abs.x ? 'v' : 'h';
-      }
-      if (refs.locked) {
-        refs.touch = shouldCapture(e);
-        if (!refs.touch) return; // Let browser handle touch
-        responderEl = el.current; // capture event
-        if (opts.onMove) opts.onMove(refs, e);
-      }
-    };
-    const up = () => {
-      if (responderEl && responderEl !== el.current) return;
-      if (!refs.touch || !refs.locked) return;
-      logVelocity();
-      refs.s = {
-        'x': Math.abs(refs.v.x),
-        'y': Math.abs(refs.v.y)
-      };
-      refs.flick = {
-        'x': refs.locked === 'h' && refs.s.x >= FLICK_SPEED && Math.sign(refs.v.x),
-        'y': refs.locked === 'v' && refs.s.y >= FLICK_SPEED && Math.sign(refs.v.y)
-      };
-      if (opts.onUp) opts.onUp(refs);
-    };
-    const wheel = e => {
-      el.current.scrollTop += e.deltaY;
-      if (opts.onPan) opts.onPan({
-        d: {
-          x: e.deltaX,
-          y: e.deltaY
-        }
-      });
-    };
-    return {
-      onTouchStart: down,
-      onTouchMove: move,
-      onTouchEnd: up,
-      onWheel: wheel
-    };
-  }, [el, height, width, deps]);
-  useEffect(() => {
-    if (!el.current) return;
-    el.current.addEventListener('touchstart', handlers.onTouchStart, listenerOptions);
-    el.current.addEventListener('touchmove', handlers.onTouchMove, listenerOptions);
-    el.current.addEventListener('touchend', handlers.onTouchEnd, listenerOptions);
-    el.current.addEventListener('wheel', handlers.onWheel, listenerOptions);
-    return () => {
-      if (!el.current) return;
-      el.current.removeEventListener('touchstart', handlers.onTouchStart);
-      el.current.removeEventListener('touchmove', handlers.onTouchMove);
-      el.current.removeEventListener('touchend', handlers.onTouchEnd);
-      el.current.removeEventListener('wheel', handlers.onWheel);
-    };
-  }, [handlers, deps]);
-  return {
-    height,
-    width
-  };
-};
-
-const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
-const bounce = (num, min, max) => {
-  if (num > max) return max + (max + num) / 50;
-  if (num < min) return min - (min - num) / 50;
-  return num;
-};
-const easeOutCubic = t => --t * t * t + 1;
-class AnimatedValue {
-  constructor(initialValue) {
-    this.listeners = [];
-    this.value = initialValue;
-    this.oldValue = initialValue;
-  }
-  setValue = (value, force = true) => {
-    if (force) {
-      // Stop animations and set the checkpoint
-      delete this.id;
-      this.oldValue = value;
-    }
-    this.value = value;
-    this.listeners.forEach(fn => fn(value));
-  };
-  spring = (finalValue, duration = AnimatedValue.defaultAnimationDuration) => new Promise(resolve => {
-    if (finalValue === this.value) return; // cancel unnecessary animation
-
-    const t0 = this.id = performance.now(); // a unique id for this animation lifecycle
-    const oldValue = this.value;
-    const animate = t => {
-      if (t0 !== this.id) return;
-      const elapsed = Math.max(0, t - t0); // time hack
-      if (elapsed >= duration) {
-        this.setValue(finalValue, true);
-        resolve();
-      } else {
-        const d = (finalValue - oldValue) * easeOutCubic(elapsed / duration);
-        this.setValue(oldValue + d, false);
-        requestAnimationFrame(animate);
-      }
-    };
-    animate(t0);
-  });
-  on = fn => {
-    this.listeners.push(fn);
-    return () => this.listeners = this.listeners.filter(i => i !== fn);
-  };
-  stop = () => {
-    delete this.id;
-  };
-}
-AnimatedValue.defaultAnimationDuration = 300;
-const useAnimatedValue = initialValue => useMemo(() => {
-  return new AnimatedValue(initialValue);
-}, []);
-
 const iOS = /iPad|iPhone|iPod/.test(navigator.platform);
 const iconMap = {
   'os:back': iOS ? 'arrow_back_ios' : 'arrow_back',
@@ -334,6 +137,387 @@ const Icon = ({
   title: title,
   onClick: onClick,
   children: iconMap[icon] || icon
+});
+
+const TouchableRow = ({
+  title,
+  meta,
+  leftIcon,
+  href,
+  onClick,
+  onPressMore,
+  target,
+  children,
+  caret,
+  disabled,
+  RightComponent,
+  className,
+  active
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: c('touchable-highlight touchable-row', disabled && 'disabled', className),
+  onClick: onClick,
+  href: href,
+  target: target,
+  active: active
+}, /*#__PURE__*/React.createElement("div", {
+  className: "touchable-row-left"
+}, typeof leftIcon === 'string' ? /*#__PURE__*/React.createElement("div", {
+  className: "touchable-row-icon"
+}, /*#__PURE__*/React.createElement(Icon, {
+  icon: leftIcon
+})) : null, typeof leftIcon === 'object' ? /*#__PURE__*/React.createElement("div", {
+  className: "touchable-row-icon"
+}, leftIcon) : null, /*#__PURE__*/React.createElement("div", {
+  className: "touchable-row-content"
+}, title ? /*#__PURE__*/React.createElement("div", {
+  className: "touchable-row-title",
+  children: title
+}) : null, meta ? /*#__PURE__*/React.createElement("div", {
+  className: "meta",
+  children: meta
+}) : null, children)), RightComponent, onPressMore ? /*#__PURE__*/React.createElement(Touchable, {
+  onClick: onPressMore
+}, /*#__PURE__*/React.createElement(Icon, {
+  icon: "more_vert"
+})) : null, caret ? /*#__PURE__*/React.createElement(Icon, {
+  icon: "chevron_right"
+}) : null);
+
+const useSize = el => {
+  const [size, setSize] = useState({
+    'width': el.current?.clientWidth,
+    'height': el.current?.clientHeight
+  });
+  useEffect(() => {
+    // Observe size of element
+    if (!el.current) return;
+    const ro = new ResizeObserver(entries => {
+      const e = entries[0].borderBoxSize[0];
+      setSize({
+        'height': e.blockSize,
+        'width': e.inlineSize
+      });
+    });
+    ro.observe(el.current);
+    return ro.disconnect.bind(ro);
+  }, []);
+  return size;
+};
+
+const FLICK_SPEED$1 = .25; // Pixels per ms
+const CUTOFF_INTERVAL$1 = 50; // Milliseconds
+const LISTENER_OPTIONS$1 = {
+  capture: false,
+  passive: false
+};
+const getVelocity$1 = (lastV = 0, newV, elapsedTime) => {
+  const w1 = Math.min(elapsedTime, CUTOFF_INTERVAL$1) / CUTOFF_INTERVAL$1;
+  const w0 = 1 - w1;
+  return lastV * w0 + newV * w1;
+};
+let responderEl$1; // The element currently capturing input
+
+const getXY = (e, i = 0) => ({
+  'x': e.touches ? e.touches[i].clientX : e.clientX,
+  'y': e.touches ? e.touches[i].clientY : e.clientY
+});
+const useGesture = (el, opts = {}, deps) => {
+  const {
+    width,
+    height
+  } = useSize(el);
+  const refs = useRef({
+    'id': randomId()
+  }).current;
+  useEffect(() => {
+    if (!el.current) return;
+    const logVelocity = now => {
+      // Log instantaneous velocity
+      const elapsed = now - refs.last.ts;
+      if (elapsed > 0) {
+        const vx = (refs.x - refs.last.x) / elapsed;
+        const vy = (refs.y - refs.last.y) / elapsed;
+        refs.v = {
+          'x': getVelocity$1(refs.v.x, vx, elapsed),
+          'y': getVelocity$1(refs.v.y, vy, elapsed)
+        };
+        refs.last = {
+          'x': refs.x,
+          'y': refs.y,
+          'ts': now
+        };
+      }
+    };
+    const down = e => {
+      responderEl$1 = null;
+      const {
+        x,
+        y
+      } = getXY(e);
+      Object.assign(refs, {
+        'width': width,
+        'height': height,
+        'locked': false,
+        // Direction
+        'touch': true,
+        'origin': {
+          x,
+          y
+        },
+        // Initial touch position
+        'current': {
+          x,
+          y
+        },
+        // Current touch position
+        'v': {
+          x: 0,
+          y: 0
+        },
+        // Velocity
+        's': {
+          x: 0,
+          y: 0
+        },
+        // Speed
+        'd': {
+          x: 0,
+          y: 0
+        },
+        // Distance
+        'flick': null,
+        'last': {
+          ts: performance.now(),
+          x,
+          y
+        }
+      });
+      if (e.touches.length === 2) {
+        const touch1 = getXY(e, 1);
+        const dx = x - touch1.x,
+          dy = y - touch1.y;
+        refs.pinch = {
+          d0: Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))
+        };
+        return;
+      }
+      if (opts.onDown) opts.onDown(refs);
+    };
+    const shouldCapture = e => {
+      if (opts.onCapture) return opts.onCapture({
+        'direction': refs.locked,
+        'distance': refs.distance,
+        'size': refs.locked === 'x' ? refs.width : refs.height
+      });
+      return true;
+    };
+    const move = e => {
+      if (responderEl$1 && responderEl$1 !== el.current) return;
+      const {
+        x,
+        y
+      } = getXY(e);
+      if (refs.pinch) {
+        if (e.touches.length === 2) {
+          refs.locked = 'pinch'; // pinch mode
+
+          const touch1 = getXY(e, 1);
+          const dx = x - touch1.x;
+          const dy = y - touch1.y;
+          refs.pinch.d = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+          refs.pinch.scale = refs.pinch.d / refs.pinch.d0;
+          refs.pinch.center = {
+            x: (x + touch1.x) / 2,
+            y: (y + touch1.y) / 2
+          };
+          if (opts.onPinch) opts.onPinch(refs);
+        } else {
+          delete refs.pinch;
+        }
+      } else {
+        refs.x = x;
+        refs.y = y;
+        logVelocity(e.timeStamp);
+        refs.d = {
+          'x': refs.x - refs.origin.x,
+          'y': refs.y - refs.origin.y
+        };
+        refs.abs = {
+          'x': Math.abs(refs.d.x),
+          'y': Math.abs(refs.d.y)
+        };
+        if (!refs.locked && (refs.abs.y > 10 || refs.abs.x > 10)) {
+          // lock scroll direction
+          refs.locked = refs.abs.y > refs.abs.x ? 'y' : 'x';
+        }
+      }
+      if (refs.locked) {
+        // Reduce information
+        if (refs.locked === 'x') {
+          refs.distance = refs.d.x;
+          refs.size = refs.width;
+        }
+        if (refs.locked === 'y') {
+          refs.distance = refs.d.y;
+          refs.size = refs.height;
+        }
+        refs.touch = shouldCapture();
+        if (!refs.touch) return; // Let browser handle touch
+        responderEl$1 = el.current; // capture event
+
+        if (opts.onMove) opts.onMove({
+          'd': refs.d,
+          'direction': refs.locked,
+          'distance': refs.distance,
+          'velocity': refs.v[refs.locked],
+          'size': refs.size
+        }, e);
+      }
+    };
+    const up = e => {
+      if (responderEl$1 && responderEl$1 !== el.current) return;
+      if (!refs.touch || !refs.locked) return;
+      logVelocity(e.timeStamp);
+      const velocity = refs.v[refs.locked];
+      const speed = Math.abs(velocity);
+      const distance = refs.d[refs.locked];
+
+      // Detect flick by speed or distance
+      const flick = speed >= FLICK_SPEED$1 && Math.sign(velocity) || Math.abs(distance) > refs.size / 2 && Math.sign(distance);
+      if (opts.onUp) opts.onUp({
+        'direction': refs.locked,
+        'velocity': velocity,
+        'flick': flick,
+        'flickedLeft': refs.locked === 'x' && flick === -1,
+        'flickedRight': refs.locked === 'x' && flick === 1,
+        'flickedUp': refs.locked === 'y' && flick === -1,
+        'flickedDown': refs.locked === 'y' && flick === 1,
+        'springMs': speed > FLICK_SPEED$1 ? refs.size - Math.abs(distance) / speed : 300,
+        'size': refs.size
+      });
+    };
+    const wheel = e => {
+      el.current.scrollTop += e.deltaY;
+      if (opts.onPan) opts.onPan({
+        d: {
+          x: e.deltaX,
+          y: e.deltaY
+        }
+      });
+    };
+    el.current.addEventListener('touchstart', down, LISTENER_OPTIONS$1);
+    el.current.addEventListener('touchmove', move, LISTENER_OPTIONS$1);
+    el.current.addEventListener('touchend', up, LISTENER_OPTIONS$1);
+    el.current.addEventListener('wheel', wheel, LISTENER_OPTIONS$1);
+    if (opts.onDoubleTap) el.current.addEventListener('dblclick', opts.onDoubleTap, LISTENER_OPTIONS$1);
+    return () => {
+      if (!el.current) return;
+      el.current.removeEventListener('touchstart', down);
+      el.current.removeEventListener('touchmove', move);
+      el.current.removeEventListener('touchend', up);
+      el.current.removeEventListener('wheel', wheel);
+      if (opts.onDoubleTap) el.current.removeEventListener('dblclick', opts.onDoubleTap);
+    };
+  }, [el, height, width, deps]);
+  return {
+    height,
+    width
+  };
+};
+
+const BottomSheet = /*#__PURE__*/forwardRef(({
+  className,
+  visible,
+  pan,
+  children,
+  onClose,
+  onPress,
+  showShade,
+  showHandle
+}, ref) => {
+  const shadeEl = useRef();
+  const sheetEl = useRef();
+  const {
+    height
+  } = useGesture(sheetEl, {
+    onCapture: e => {
+      return e.direction === 'y';
+    },
+    onMove: e => {
+      pan.setValue(e.size - Math.max(e.distance / 100, e.distance));
+    },
+    onUp: e => {
+      if (e.flickedDown) return pan.spring(0, e.springMs).then(onClose);
+      pan.spring(e.height);
+    }
+  });
+  const close = () => pan.spring(0).then(onClose);
+  useEffect(() => {
+    if (!height) return;
+    return pan.on(value => {
+      sheetEl.current.style.transform = `translateY(-${value}px)`;
+      if (shadeEl.current) shadeEl.current.style.opacity = value / height;
+    });
+  }, [height]);
+  useEffect(() => {
+    if (!height) return;
+    if (visible) {
+      // show
+      pan.spring(height);
+    } else {
+      // hide
+      pan.spring(0).then(onClose);
+    }
+  }, [visible, height, onClose]);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "layer"
+  }, visible && showShade ? /*#__PURE__*/React.createElement("div", {
+    className: "shade shade-bottom-sheet",
+    ref: shadeEl,
+    onClick: close
+  }) : null, /*#__PURE__*/React.createElement("div", {
+    ref: sheetEl,
+    className: c('sheet', className),
+    onClick: onPress
+  }, showHandle ? /*#__PURE__*/React.createElement("div", {
+    className: "handle"
+  }) : null, children));
+});
+
+const bus = createBus(null);
+const pan = new AnimatedValue(0);
+const ActionSheet = () => {
+  const sheet = useBus(bus);
+  const renderOption = (option, i) => {
+    const clickOption = e => {
+      if (option.onClick) option.onClick();
+      if (sheet.callback) sheet.callback(option.value);
+      pan.spring(0).then(() => bus.update(0));
+    };
+    return /*#__PURE__*/React.createElement(TouchableRow, {
+      key: i,
+      title: option.name,
+      leftIcon: option.icon,
+      onClick: clickOption,
+      disabled: option.disabled,
+      target: option.target,
+      href: option.href
+    });
+  };
+  if (!sheet) return null;
+  return /*#__PURE__*/React.createElement(BottomSheet, {
+    pan: pan,
+    visible: !!sheet,
+    onClose: () => bus.update(null),
+    showShade: true
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "action-sheet-title"
+  }, sheet && sheet.title), /*#__PURE__*/React.createElement("hr", null), sheet.options.map(renderOption));
+};
+const showActionSheet = (title, options, callback) => bus.update({
+  title,
+  options,
+  callback
 });
 
 const PullIndicator = /*#__PURE__*/forwardRef(({
@@ -360,7 +544,7 @@ const ScrollView = /*#__PURE__*/forwardRef(({
   const pull = useAnimatedValue(0);
   const scrollY = useAnimatedValue(0);
   const scrollX = useAnimatedValue(0);
-  usePanGestures(el, {
+  useGesture(el, {
     onDown: () => {
       refs.canScrollVertical = el.current.scrollHeight > el.current.clientHeight;
       refs.canScrollHorizontal = el.current.scrollWidth > el.current.clientWidth;
@@ -370,13 +554,13 @@ const ScrollView = /*#__PURE__*/forwardRef(({
       scrollX.stop();
     },
     onCapture: e => {
-      if (e.locked === 'v') {
-        if (onRefresh && el.current.scrollTop === 0 && e.d.y > 0) return true; // pull to refresh
+      if (e.direction === 'y') {
+        if (onRefresh && el.current.scrollTop === 0 && e.distance > 0) return true; // pull to refresh
         if (!refs.canScrollVertical) return false; // not a scroller
-        if (refs.initScrollTop === 0 && e.d.y < 0) return true; // beginning to scroll down
+        if (refs.initScrollTop === 0 && e.distance < 0) return true; // beginning to scroll down
         return refs.initScrollTop > 0;
       }
-      if (e.locked === 'h') {
+      if (e.direction === 'x') {
         if (!refs.canScrollHorizontal) return false;
         return true;
         // return (refs.initScrollLeft > 0);
@@ -384,32 +568,36 @@ const ScrollView = /*#__PURE__*/forwardRef(({
     },
 
     onMove: e => {
-      if (e.locked === 'v') {
-        scrollY.setValue(refs.initScrollTop - e.d.y);
-      } else if (e.locked === 'h') {
-        scrollX.setValue(refs.initScrollLeft - e.d.x);
-      }
-      if (onRefresh && refs.initScrollTop === 0) {
-        // Reveal pull to refresh indicator
-        pull.setValue(Math.min(70, e.d.y));
+      if (e.direction === 'y') {
+        if (onRefresh && refs.initScrollTop === 0) {
+          // Reveal pull to refresh indicator
+          pull.setValue(Math.min(70, e.distance));
+        } else {
+          scrollY.setValue(refs.initScrollTop - e.distance);
+        }
+      } else if (e.locked === 'x') {
+        scrollX.setValue(refs.initScrollLeft - e.distance);
       }
     },
     onUp: e => {
-      if (e.locked === 'v') {
-        if (e.v.y) scrollY.spring(scrollY.value - e.v.y * 2000, 2000); // Coast scrolling
-      } else if (e.locked === 'h') {
-        if (e.v.x) scrollX.spring(scrollX.value - e.v.x * 2000, 2000); // Coast scrolling
-      }
-
-      if (onRefresh && refs.initScrollTop === 0) {
-        if (e.d.y > 70) {
-          pull.spring(0).then(onRefresh);
-        } else {
-          pull.spring(0);
+      if (e.direction === 'y') {
+        if (onRefresh && refs.initScrollTop === 0) {
+          // Pull to refresh
+          if (e.distance > 70) {
+            pull.spring(0).then(onRefresh);
+          } else {
+            pull.spring(0);
+          }
+        } else if (e.velocity) {
+          // Coast scrolling
+          scrollY.spring(scrollY.value - e.velocity * 2000, 2000);
         }
+      } else if (e.locked === 'h') {
+        if (e.velocity) scrollX.spring(scrollX.value - e.velocity * 2000, 2000); // Coast scrolling
       }
     }
   });
+
   useEffect(() => {
     // Scrolling Y
     return scrollY.on(val => {
@@ -596,166 +784,6 @@ const showAlert = (alert, options) => new Promise(resolve => {
   }]);
 });
 
-const TouchableRow = ({
-  title,
-  meta,
-  leftIcon,
-  href,
-  onClick,
-  onPressMore,
-  target,
-  children,
-  caret,
-  disabled,
-  RightComponent,
-  className,
-  active
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: c('touchable-highlight touchable-row', disabled && 'disabled', className),
-  onClick: onClick,
-  href: href,
-  target: target,
-  active: active
-}, /*#__PURE__*/React.createElement("div", {
-  className: "touchable-row-left"
-}, typeof leftIcon === 'string' ? /*#__PURE__*/React.createElement("div", {
-  className: "touchable-row-icon"
-}, /*#__PURE__*/React.createElement(Icon, {
-  icon: leftIcon
-})) : null, typeof leftIcon === 'object' ? /*#__PURE__*/React.createElement("div", {
-  className: "touchable-row-icon"
-}, leftIcon) : null, /*#__PURE__*/React.createElement("div", {
-  className: "touchable-row-content"
-}, title ? /*#__PURE__*/React.createElement("div", {
-  className: "touchable-row-title",
-  children: title
-}) : null, meta ? /*#__PURE__*/React.createElement("div", {
-  className: "meta",
-  children: meta
-}) : null, children)), RightComponent, onPressMore ? /*#__PURE__*/React.createElement(Touchable, {
-  onClick: onPressMore
-}, /*#__PURE__*/React.createElement(Icon, {
-  icon: "more_vert"
-})) : null, caret ? /*#__PURE__*/React.createElement(Icon, {
-  icon: "chevron_right"
-}) : null);
-
-const BottomSheet = /*#__PURE__*/forwardRef(({
-  className,
-  visible,
-  pan,
-  children,
-  onClose,
-  onPress,
-  showShade,
-  showHandle
-}, ref) => {
-  const shadeEl = useRef();
-  const sheetEl = useRef();
-  const {
-    height
-  } = usePanGestures(sheetEl, {
-    onMove: e => {
-      pan.setValue(e.height - Math.max(e.d.y / 100, e.d.y));
-    },
-    onUp: e => {
-      if (e.flick.y === 1 || e.d.y > e.height / 2) {
-        close();
-      } else {
-        pan.spring(e.height);
-      }
-    }
-  });
-  const close = () => pan.spring(0).then(onClose);
-  useEffect(() => {
-    if (!height) return;
-    return pan.on(value => {
-      sheetEl.current.style.transform = `translateY(-${value}px)`;
-      if (shadeEl.current) shadeEl.current.style.opacity = value / height;
-    });
-  }, [height]);
-  useEffect(() => {
-    if (!height) return;
-    if (visible) {
-      // show
-      pan.spring(height);
-    } else {
-      // hide
-      pan.spring(0).then(onClose);
-    }
-  }, [visible, height, onClose]);
-  return /*#__PURE__*/React.createElement("div", {
-    className: "layer"
-  }, visible && showShade ? /*#__PURE__*/React.createElement("div", {
-    className: "shade shade-bottom-sheet",
-    ref: shadeEl,
-    onClick: close
-  }) : null, /*#__PURE__*/React.createElement("div", {
-    ref: sheetEl,
-    className: c('sheet', className),
-    onClick: onPress
-  }, showHandle ? /*#__PURE__*/React.createElement("div", {
-    className: "handle"
-  }) : null, children));
-});
-
-const bus = createBus(null);
-const pan = new AnimatedValue(0);
-const ActionSheet = () => {
-  const sheet = useBus(bus);
-  const renderOption = (option, i) => {
-    const clickOption = e => {
-      if (option.onClick) option.onClick();
-      if (sheet.callback) sheet.callback(option.value);
-      pan.spring(0).then(() => bus.update(0));
-    };
-    return /*#__PURE__*/React.createElement(TouchableRow, {
-      key: i,
-      title: option.name,
-      leftIcon: option.icon,
-      onClick: clickOption,
-      disabled: option.disabled,
-      target: option.target,
-      href: option.href
-    });
-  };
-  if (!sheet) return null;
-  return /*#__PURE__*/React.createElement(BottomSheet, {
-    pan: pan,
-    visible: !!sheet,
-    onClose: () => bus.update(null),
-    showShade: true
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "action-sheet-title"
-  }, sheet && sheet.title), /*#__PURE__*/React.createElement("hr", null), sheet.options.map(renderOption));
-};
-const showActionSheet = (title, options, callback) => bus.update({
-  title,
-  options,
-  callback
-});
-
-const Avatar = ({
-  imageId,
-  className,
-  variant,
-  getUrl
-}) => {
-  if (!imageId) return /*#__PURE__*/React.createElement("div", {
-    draggable: false,
-    className: c('avatar', className)
-  });
-  return /*#__PURE__*/React.createElement("img", {
-    draggable: false,
-    className: c('avatar', className),
-    src: getUrl(imageId, variant)
-  });
-};
-Avatar.defaultProps = {
-  variant: 'normal',
-  getUrl: () => null
-};
-
 const BreadCrumbs = ({
   path,
   onClickPath
@@ -776,15 +804,6 @@ const BreadCrumbs = ({
     onClick: () => onClickPath('/')
   }), /*#__PURE__*/React.createElement("span", null, " / "), slugs.map(renderSlug));
 };
-
-const CheckBox = ({
-  active,
-  undetermined
-}) => /*#__PURE__*/React.createElement("div", {
-  className: c('toggle-check', active && 'active', undetermined && 'undetermined')
-}, /*#__PURE__*/React.createElement(Icon, {
-  icon: undetermined ? 'horizontal_rule' : active ? 'check' : null
-}));
 
 const closeImage = {
   'card': 'os:back',
@@ -881,32 +900,25 @@ const Card = /*#__PURE__*/forwardRef(({
   });
   const {
     width
-  } = usePanGestures(el, {
+  } = useGesture(el, {
     onCapture: e => {
       if (!allowBack) return;
       if (disableGestures) return;
-      return e.locked === 'h' && e.d.x > 0;
+      return e.direction === 'x' && e.distance > 0;
     },
     onMove: e => {
-      pan.setValue(Math.max(0, e.d.x));
+      pan.setValue(Math.max(0, e.distance));
     },
     onUp: e => {
-      if (e.flick.x === 1 || e.d.x > e.width / 2) {
-        close();
-      } else {
-        pan.spring(0);
-      }
+      if (e.flickedRight) return close();
+      pan.spring(0); // Return to start
     }
   });
 
   // Trigger animation on visibility change
   useEffect(() => {
     if (!width || !animateIn) return;
-    if (isVisible) {
-      pan.spring(0);
-    } else {
-      pan.spring(width);
-    }
+    pan.spring(isVisible ? 0 : width);
   }, [animateIn, isVisible, width]);
   useEffect(() => {
     return pan.on(value => {
@@ -985,6 +997,36 @@ const ConnectionIndicator = ({
   }, /*#__PURE__*/React.createElement(ActivityIndicator, null), status));
 };
 
+const Avatar = ({
+  imageId,
+  className,
+  variant,
+  getUrl
+}) => {
+  if (!imageId) return /*#__PURE__*/React.createElement("div", {
+    draggable: false,
+    className: c('avatar', className)
+  });
+  return /*#__PURE__*/React.createElement("img", {
+    draggable: false,
+    className: c('avatar', className),
+    src: getUrl(imageId, variant)
+  });
+};
+Avatar.defaultProps = {
+  variant: 'normal',
+  getUrl: () => null
+};
+
+const CheckBox = ({
+  active,
+  undetermined
+}) => /*#__PURE__*/React.createElement("div", {
+  className: c('toggle-check', active && 'active', undetermined && 'undetermined')
+}, /*#__PURE__*/React.createElement(Icon, {
+  icon: undetermined ? 'horizontal_rule' : active ? 'check' : null
+}));
+
 const CornerDialog = ({
   title,
   children,
@@ -1002,43 +1044,6 @@ const CornerDialog = ({
   })), children);
 };
 
-const Dropdown = ({
-  position,
-  button,
-  content
-}) => {
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    if (!visible) return;
-    const dismiss = e => {
-      const insideDropdown = e.composedPath().some(el => {
-        return el.classList && el.classList.contains('dropdown-content');
-      });
-      // if (debug) console.log('Debug', insideDropdown ? 'Inside' : 'Outside');
-      if (!insideDropdown) setVisible(false);
-    };
-    setTimeout(() => {
-      window.addEventListener('click', dismiss, {
-        passive: false
-      });
-    }, 0);
-    return () => window.removeEventListener('click', dismiss);
-  }, [visible]);
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
-    className: "dropdown"
-  }, /*#__PURE__*/React.createElement("div", {
-    children: button,
-    className: "dropdown-button",
-    onClick: () => {
-      console.log('show');
-      setVisible(true);
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    className: c('dropdown-content', position || 'top-right', visible ? 'visible' : 'hidden'),
-    children: content
-  })));
-};
-
 let origin = {};
 const Reveal = /*#__PURE__*/forwardRef(({
   children,
@@ -1046,12 +1051,12 @@ const Reveal = /*#__PURE__*/forwardRef(({
   headerRight,
   onClose,
   isVisible,
-  className,
-  screen // From poon-router
+  animateIn,
+  className
 }, ref) => {
   const el = useRef();
   const innerEl = useRef();
-  const pan = useAnimatedValue(0);
+  const pan = useAnimatedValue(animateIn ? 0 : 1);
   const close = () => navigation.goBack(1);
   useImperativeHandle(ref, () => ({
     close
@@ -1059,24 +1064,32 @@ const Reveal = /*#__PURE__*/forwardRef(({
   const {
     width,
     height
-  } = usePanGestures(el, {
-    onMove: e => {},
-    onUp: e => {}
+  } = useGesture(el, {
+    onCapture(e) {
+      return e.direction === 'x' && e.distance > 0;
+    },
+    onMove(e) {
+      pan.setValue(1 - e.distance / e.size);
+    },
+    onUp(e) {
+      if (e.flickedRight) return close();
+      pan.spring(1);
+    }
   });
   useEffect(() => {
+    if (!animateIn) return;
     if (isVisible) {
       pan.spring(1);
     } else {
       pan.spring(0);
     }
-  }, [isVisible]);
+  }, [animateIn, isVisible]);
   useEffect(() => {
     return pan.on(val => {
       const inverse = 1 - val;
       const revealX = origin.x * inverse;
       const revealY = origin.y * inverse;
       if (el.current) {
-        // el.current.style.opacity = val;
         el.current.style.transform = `translate(${revealX}px, ${revealY}px)`;
         el.current.style.width = toPercent(val);
         el.current.style.height = toPercent(val);
@@ -1153,6 +1166,43 @@ const DropdownItem = ({
   title: title
 });
 
+const Dropdown = ({
+  position,
+  button,
+  content
+}) => {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (!visible) return;
+    const dismiss = e => {
+      const insideDropdown = e.composedPath().some(el => {
+        return el.classList && el.classList.contains('dropdown-content');
+      });
+      // if (debug) console.log('Debug', insideDropdown ? 'Inside' : 'Outside');
+      if (!insideDropdown) setVisible(false);
+    };
+    setTimeout(() => {
+      window.addEventListener('click', dismiss, {
+        passive: false
+      });
+    }, 0);
+    return () => window.removeEventListener('click', dismiss);
+  }, [visible]);
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "dropdown"
+  }, /*#__PURE__*/React.createElement("div", {
+    children: button,
+    className: "dropdown-button",
+    onClick: () => {
+      console.log('show');
+      setVisible(true);
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: c('dropdown-content', position || 'top-right', visible ? 'visible' : 'hidden'),
+    children: content
+  })));
+};
+
 const Fab = ({
   icon,
   title,
@@ -1208,36 +1258,171 @@ const FullScreen = ({
   }, children), footer);
 };
 
-const List = ({
-  title,
-  items = [],
-  keyExtractor = r => r._id,
-  renderItem,
-  loading,
-  className,
-  ListEmptyComponent,
-  HeaderComponent,
-  children,
-  showSeparators = true
-}) => {
-  const renderList = () => {
-    if (loading || !items) return null;
-    if (ListEmptyComponent && items.length === 0) return ListEmptyComponent;
-    return items.map((item, i) => /*#__PURE__*/React.createElement(Fragment, {
-      key: keyExtractor(item)
-    }, renderItem(item, i), showSeparators && i < items.length - 1 && /*#__PURE__*/React.createElement("hr", null)));
+class Animation {
+  constructor(initialValue) {
+    this.listeners = [];
+    this.values = initialValue;
+    this.initialValues = clone(initialValue);
+  }
+  set = (values, end = true) => {
+    Object.assign(this.values, values);
+    if (end) this.end();
+    this.listeners.forEach(fn => fn(this.values));
   };
-  const renderChild = (child, i) => /*#__PURE__*/React.createElement(Fragment, {
-    key: i
-  }, child, i < children.length - 1 && /*#__PURE__*/React.createElement("hr", null));
+  spring = (finalValues, duration = Animation.defaultDuration) => new Promise(resolve => {
+    if (sameObject(finalValues, this.values)) return; // cancel unnecessary animation
+
+    const t0 = this.id = performance.now(); // a unique id for this animation lifecycle
+    const oldValues = clone(this.values);
+    const animate = t => {
+      if (t0 !== this.id) return;
+      const elapsed = Math.max(0, t - t0); // time hack
+      if (elapsed >= duration) {
+        this.set(finalValues, true);
+        resolve();
+      } else {
+        const intermediateValues = Object.keys(finalValues).reduce((acc, key) => {
+          acc[key] = oldValues[key] + (finalValues[key] - oldValues[key]) * easeOutCubic(elapsed / duration);
+          // console.log(key, oldValues[key], acc[key]);
+          return acc;
+        }, {});
+        this.set(intermediateValues, false);
+        requestAnimationFrame(animate);
+      }
+    };
+    animate(t0);
+  });
+  on = fn => {
+    this.listeners.push(fn);
+    return () => this.listeners = this.listeners.filter(i => i !== fn);
+  };
+  stop = () => {
+    delete this.id;
+  };
+  end = () => {
+    delete this.id;
+    this.initialValues = clone(this.values);
+  };
+}
+Animation.defaultDuration = 300;
+const useAnimation = initialValue => useMemo(() => {
+  return new Animation(initialValue);
+}, []);
+
+const GalleryItem = ({
+  children,
+  onClose
+}) => {
+  const el = useRef(null);
+  const anim = useAnimation({
+    zoom: 1,
+    panX: 0,
+    panY: 0
+  });
+  useEffect(() => {
+    return anim.on(val => {
+      el.current.style.transform = `scale(${val.zoom}) translateX(${val.panX / val.zoom}px) translateY(${val.panY / val.zoom}px)`;
+    });
+  }, []);
+  const getLimits = () => {
+    const img = el.current.querySelector('img');
+
+    // console.log('Zoomed:', img.clientHeight * anim.values.zoom, 'Regular:', img.clientHeight);
+
+    const width = img.clientWidth * anim.values.zoom;
+    const height = img.clientHeight * anim.values.zoom;
+    return {
+      'maxPanX': width > el.current.clientWidth ? (width - el.current.clientWidth) / 2 : 0,
+      'maxPanY': height > el.current.clientHeight ? (height - el.current.clientHeight) / 2 : 0
+    };
+  };
+  useGesture(el, {
+    onCapture: e => {
+      const {
+        maxPanX,
+        maxPanY
+      } = getLimits();
+      if (e.direction === 'x' && maxPanX > 0) return true;
+      if (e.direction === 'y' && maxPanY > 0) return true;
+      return !!e.pinch;
+    },
+    onPinch: e => {
+      const {
+        maxPanX,
+        maxPanY
+      } = getLimits();
+      const zoom = anim.initialValues.zoom * e.pinch.scale;
+      anim.set({
+        'zoom': zoom,
+        'panX': clamp(anim.initialValues.panX, -maxPanX, maxPanX),
+        'panY': clamp(anim.initialValues.panY, -maxPanY, maxPanY)
+      }, false);
+    },
+    onMove: e => {
+      if (e.locked === 'pinch') return; // skip pan if pinching
+      if (anim.values.zoom <= 1) return;
+      const {
+        maxPanX,
+        maxPanY
+      } = getLimits();
+      anim.set({
+        'panX': maxPanX && clamp(anim.initialValues.panX + e.d.x, -maxPanX, maxPanX),
+        'panY': maxPanY && clamp(anim.initialValues.panY + e.d.y, -maxPanY, maxPanY)
+      }, false);
+    },
+    onUp: e => {
+      if (anim.values.zoom < 1) return anim.spring({
+        'zoom': 1,
+        'panX': 0,
+        'panY': 0
+      });
+      if (anim.values.zoom > 3) return anim.spring({
+        'zoom': 3
+      });
+      anim.end();
+    },
+    onDoubleTap: e => {
+      if (anim.values.zoom === 1) {
+        anim.spring({
+          'zoom': 3
+        });
+      } else {
+        anim.spring({
+          'zoom': 1,
+          'panX': 0,
+          'panY': 0
+        });
+      }
+    }
+  }, []);
   return /*#__PURE__*/React.createElement("div", {
-    className: c('list', className)
-  }, title ? /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement("div", {
-    className: "list-title"
-  }, title), /*#__PURE__*/React.createElement("hr", null)) : null, HeaderComponent, items.length || children ? /*#__PURE__*/React.createElement("div", {
-    className: "list-body"
-  }, renderList(), Children.map(children, renderChild)) : ListEmptyComponent);
+    className: "gallery-item",
+    ref: el,
+    children: children
+  });
 };
+
+const HeaderButton = ({
+  icon,
+  title,
+  badge,
+  loading,
+  disabled,
+  onClick,
+  active,
+  href
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: c('header-button center', title === 'Cancel' && 'header-cancel'),
+  onClick: onClick,
+  loading: loading,
+  disabled: disabled,
+  active: active,
+  href: href
+}, icon ? /*#__PURE__*/React.createElement(Icon, {
+  icon: icon
+}) : null, title ? /*#__PURE__*/React.createElement("span", null, title) : null, badge ? /*#__PURE__*/React.createElement("span", {
+  className: "badge"
+}, badge) : null);
 
 const Image = ({
   ar,
@@ -1274,38 +1459,36 @@ const Image = ({
   }, children) : null);
 };
 
-const HeaderButton = ({
-  icon,
+const List = ({
   title,
-  badge,
+  items = [],
+  keyExtractor = r => r._id,
+  renderItem,
   loading,
-  disabled,
-  onClick,
-  active,
-  href
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: c('header-button center', title === 'Cancel' && 'header-cancel'),
-  onClick: onClick,
-  loading: loading,
-  disabled: disabled,
-  active: active,
-  href: href
-}, icon ? /*#__PURE__*/React.createElement(Icon, {
-  icon: icon
-}) : null, title ? /*#__PURE__*/React.createElement("span", null, title) : null, badge ? /*#__PURE__*/React.createElement("span", {
-  className: "badge"
-}, badge) : null);
-
-const PercentBar = ({
-  percent
-}) => /*#__PURE__*/React.createElement("div", {
-  className: "percent-bar"
-}, /*#__PURE__*/React.createElement("div", {
-  className: "percent-bar-inner",
-  style: {
-    width: `${percent * 100}%`
-  }
-}));
+  className,
+  ListEmptyComponent,
+  HeaderComponent,
+  children,
+  showSeparators = true
+}) => {
+  const renderList = () => {
+    if (loading || !items) return null;
+    if (ListEmptyComponent && items.length === 0) return ListEmptyComponent;
+    return items.map((item, i) => /*#__PURE__*/React.createElement(Fragment, {
+      key: keyExtractor(item)
+    }, renderItem(item, i), showSeparators && i < items.length - 1 && /*#__PURE__*/React.createElement("hr", null)));
+  };
+  const renderChild = (child, i) => /*#__PURE__*/React.createElement(Fragment, {
+    key: i
+  }, child, i < children.length - 1 && /*#__PURE__*/React.createElement("hr", null));
+  return /*#__PURE__*/React.createElement("div", {
+    className: c('list', className)
+  }, title ? /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "list-title"
+  }, title), /*#__PURE__*/React.createElement("hr", null)) : null, HeaderComponent, items.length || children ? /*#__PURE__*/React.createElement("div", {
+    className: "list-body"
+  }, renderList(), Children.map(children, renderChild)) : ListEmptyComponent);
+};
 
 const modalState = createBus([]);
 const renderModal = modal => /*#__PURE__*/React.createElement("div", {
@@ -1321,18 +1504,6 @@ const showModal = children => modalState.update([...modalState.state, {
 const hideModal = () => {
   modalState.update([]);
 };
-
-const Pill = ({
-  title,
-  color,
-  onClick
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: "pill",
-  onClick: onClick,
-  style: {
-    backgroundColor: color
-  }
-}, title);
 
 const FilterButton = ({
   title,
@@ -1356,6 +1527,29 @@ const FilterButton = ({
 }) : /*#__PURE__*/React.createElement(CheckBox, {
   active: checked
 }));
+
+const PercentBar = ({
+  percent
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "percent-bar"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "percent-bar-inner",
+  style: {
+    width: `${percent * 100}%`
+  }
+}));
+
+const Pill = ({
+  title,
+  color,
+  onClick
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: "pill",
+  onClick: onClick,
+  style: {
+    backgroundColor: color
+  }
+}, title);
 
 const state = createBus();
 const Toast = () => {
@@ -1714,21 +1908,209 @@ const TextInput = /*#__PURE__*/forwardRef(({
   }) : null, RightComponent, renderSpinner(), renderClearButton());
 });
 
+const TouchableHighlight = ({
+  href,
+  onClick,
+  children,
+  disabled,
+  className
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: c('touchable-highlight', disabled && 'disabled', className),
+  onClick: onClick,
+  href: href,
+  children: children
+});
+
+const FLICK_SPEED = .25; // pixels per ms
+const CUTOFF_INTERVAL = 50; // ms
+const LISTENER_OPTIONS = {
+  capture: false,
+  passive: false
+};
+const getVelocity = (lastV = 0, newV, elapsedTime) => {
+  const w1 = Math.min(elapsedTime, CUTOFF_INTERVAL) / CUTOFF_INTERVAL;
+  const w0 = 1 - w1;
+  return lastV * w0 + newV * w1;
+};
+let responderEl; // The element currently capturing input
+
+const usePanGestures = (el, opts = {}, deps) => {
+  const {
+    width,
+    height
+  } = useSize(el);
+  const refs = useRef({
+    'id': randomId()
+  }).current;
+  useEffect(() => {
+    if (!el.current) return;
+    const logVelocity = now => {
+      // Log instantaneous velocity
+      const elapsed = now - refs.last.ts;
+      if (elapsed > 0) {
+        const vx = (refs.x - refs.last.x) / elapsed;
+        const vy = (refs.y - refs.last.y) / elapsed;
+        refs.v = {
+          'x': getVelocity(refs.v.x, vx, elapsed),
+          'y': getVelocity(refs.v.y, vy, elapsed)
+        };
+        refs.last = {
+          'x': refs.x,
+          'y': refs.y,
+          'ts': now
+        };
+      }
+    };
+    const down = e => {
+      responderEl = null;
+      const x = e.touches ? e.touches[0].clientX : e.clientX;
+      const y = e.touches ? e.touches[0].clientY : e.clientY;
+      Object.assign(refs, {
+        'width': width,
+        'height': height,
+        'current': {
+          x,
+          y
+        },
+        'touch': true,
+        'origin': {
+          x,
+          y
+        },
+        'locked': false,
+        'v': {
+          x: 0,
+          y: 0
+        },
+        's': {
+          x: 0,
+          y: 0
+        },
+        'd': {
+          x: 0,
+          y: 0
+        },
+        'flick': null,
+        'last': {
+          ts: performance.now(),
+          x,
+          y
+        }
+      });
+      if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        refs.pinch = {
+          d0: Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))
+        };
+        return;
+      }
+      if (opts.onDown) opts.onDown(refs);
+    };
+    const shouldCapture = e => {
+      if (opts.onCapture) return opts.onCapture(refs, e);
+      return true;
+    };
+    const move = e => {
+      if (responderEl && responderEl !== el.current) return;
+      if (refs.pinch) {
+        if (e.touches.length === 2) {
+          refs.locked = 'pinch'; // pinch mode
+
+          const dx = e.touches[0].clientX - e.touches[1].clientX;
+          const dy = e.touches[0].clientY - e.touches[1].clientY;
+          refs.pinch.d = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+          refs.pinch.scale = refs.pinch.d / refs.pinch.d0;
+          refs.pinch.center = {
+            x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+            y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+          };
+          if (opts.onPinch) opts.onPinch(refs);
+        } else {
+          delete refs.pinch;
+        }
+      } else {
+        refs.x = e.touches ? e.touches[0].clientX : e.clientX;
+        refs.y = e.touches ? e.touches[0].clientY : e.clientY;
+        logVelocity(e.timeStamp);
+        refs.d = {
+          'x': refs.x - refs.origin.x,
+          'y': refs.y - refs.origin.y
+        };
+        refs.abs = {
+          'x': Math.abs(refs.d.x),
+          'y': Math.abs(refs.d.y)
+        };
+        if (!refs.locked && (refs.abs.y > 10 || refs.abs.x > 10)) {
+          // lock scroll direction
+          refs.locked = refs.abs.y > refs.abs.x ? 'v' : 'h';
+        }
+      }
+      if (refs.locked) {
+        // Reduce information
+        if (refs.locked === 'h') refs.distance = refs.d.x;
+        if (refs.locked === 'v') refs.distance = refs.d.y;
+        refs.touch = shouldCapture(e);
+        if (!refs.touch) return; // Let browser handle touch
+        responderEl = el.current; // capture event
+
+        if (opts.onMove) opts.onMove(refs, e);
+      }
+    };
+    const up = e => {
+      if (responderEl && responderEl !== el.current) return;
+      if (!refs.touch || !refs.locked) return;
+      logVelocity(e.timeStamp);
+      refs.s = {
+        'x': Math.abs(refs.v.x),
+        'y': Math.abs(refs.v.y)
+      };
+      refs.flick = {
+        'x': refs.locked === 'h' && refs.s.x >= FLICK_SPEED && Math.sign(refs.v.x),
+        'y': refs.locked === 'v' && refs.s.y >= FLICK_SPEED && Math.sign(refs.v.y)
+      };
+      if (opts.onUp) opts.onUp(refs);
+    };
+    const wheel = e => {
+      el.current.scrollTop += e.deltaY;
+      if (opts.onPan) opts.onPan({
+        d: {
+          x: e.deltaX,
+          y: e.deltaY
+        }
+      });
+    };
+    el.current.addEventListener('touchstart', down, LISTENER_OPTIONS);
+    el.current.addEventListener('touchmove', move, LISTENER_OPTIONS);
+    el.current.addEventListener('touchend', up, LISTENER_OPTIONS);
+    el.current.addEventListener('wheel', wheel, LISTENER_OPTIONS);
+    if (opts.onDoubleTap) el.current.addEventListener('dblclick', opts.onDoubleTap, LISTENER_OPTIONS);
+    return () => {
+      if (!el.current) return;
+      el.current.removeEventListener('touchstart', down);
+      el.current.removeEventListener('touchmove', move);
+      el.current.removeEventListener('touchend', up);
+      el.current.removeEventListener('wheel', wheel);
+      if (opts.onDoubleTap) el.current.removeEventListener('dblclick', opts.onDoubleTap);
+    };
+  }, [el, height, width, deps]);
+  return {
+    height,
+    width
+  };
+};
+
 const PagerDot = ({
   pan,
-  i,
-  width
+  i
 }) => {
   const el = useRef();
   useEffect(() => {
-    if (!width) return;
-    const stop = i * width;
-    const tabWidth = width / 3;
     return pan.on(value => {
-      const d = Math.min(Math.abs(stop - value), tabWidth);
-      el.current.style.opacity = Math.min(1, 1.5 - d / tabWidth);
+      const dist = Math.abs(i - value);
+      el.current.style.opacity = Math.max(.5, 1 - dist);
     });
-  }, [width]);
+  }, []);
   return /*#__PURE__*/React.createElement("div", {
     className: "pager-dot",
     ref: el,
@@ -1741,19 +2123,15 @@ const PagerTabTitle = ({
   title,
   i,
   pan,
-  width,
   onPress
 }) => {
   const el = useRef();
   useEffect(() => {
-    if (!width) return;
-    const stop = i * width;
-    const tabWidth = width / 3;
     return pan.on(value => {
-      const d = Math.min(Math.abs(stop - value), tabWidth);
-      el.current.style.opacity = 1.5 - d / tabWidth;
+      const dist = Math.abs(i - value);
+      el.current.style.opacity = Math.max(0.5, 1 - dist);
     });
-  }, [width]);
+  }, []);
   return /*#__PURE__*/React.createElement("div", {
     children: title,
     className: "pager-tabs-title",
@@ -1769,97 +2147,69 @@ const ViewPager = /*#__PURE__*/forwardRef(({
   children,
   vertical,
   dots,
-  className
+  className,
+  page = 0
 }, ref) => {
-  const pan = useAnimatedValue(0);
+  const pan = useAnimatedValue(page);
   const indicatorEl = useRef();
   const scrollerEl = useRef();
   const refs = useRef({}).current;
+  const lastIndex = Children.count(children) - 1;
+  const orientation = vertical ? 'y' : 'x';
+  const clampPage = i => clamp(i, 0, lastIndex);
   useImperativeHandle(ref, () => ({
-    scrollToPage: i => {
-      if (vertical) {
-        pan.spring(i * height);
-      } else {
-        pan.spring(i * width);
-      }
-    }
+    scrollToPage: i => pan.spring(i)
   }));
   const {
     width,
     height
-  } = usePanGestures(scrollerEl, {
+  } = useGesture(scrollerEl, {
     enablePointerControls: true,
     onCapture: e => {
-      // release control when scrolled to left edge
-      if (vertical) {
-        if (e.locked === 'v') {
-          if (e.d.y < 0) return true;
-          return refs.initPan - e.d.y > 0;
-        }
-      } else {
-        if (e.locked === 'h') {
-          if (e.d.x < 0) return true;
-          return refs.initPan - e.d.x > 0;
-        }
+      if (e.direction === orientation) {
+        if (e.distance < 0) return true; // Don't capture at the left edge
+        return refs.initPan - e.distance / e.size > 0;
       }
     },
     onDown: e => {
-      if (vertical) {
-        refs.currentPage = Math.round(pan.value / e.height);
-        refs.initPan = pan.value;
-      } else {
-        refs.currentPage = Math.round(pan.value / e.width);
-        refs.initPan = pan.value;
-      }
+      refs.currentPage = Math.round(pan.value);
+      refs.initPan = pan.value;
     },
     onMove: e => {
-      if (vertical) {
-        const val = clamp(refs.initPan - e.d.y, 0, e.height * (children.length - 1));
-        pan.setValue(val);
-      } else {
-        const val = clamp(refs.initPan - e.d.x, 0, e.width * (children.length - 1));
-        pan.setValue(val);
-      }
-    },
-    onUp: e => {
-      if (vertical) {
-        if (e.flick.y < 0) {
-          // increment page
-          pan.spring(height * clamp(refs.currentPage + 1, 0, children.length - 1));
-        } else if (e.flick.y > 0) {
-          // decrement page
-          pan.spring(height * clamp(refs.currentPage - 1, 0, children.length - 1));
-        } else {
-          const landingPage = clamp(Math.round(pan.value / e.height), 0, children.length - 1);
-          pan.spring(landingPage * height);
-        }
-      } else {
-        if (e.flick.x < 0) {
-          // increment page
-          pan.spring(width * clamp(refs.currentPage + 1, 0, children.length - 1));
-        } else if (e.flick.x > 0) {
-          // decrement page
-          pan.spring(width * clamp(refs.currentPage - 1, 0, children.length - 1));
-        } else {
-          const landingPage = clamp(Math.round(pan.value / e.width), 0, children.length - 1);
-          pan.spring(landingPage * width);
-        }
-      }
+      const val = clampPage(refs.initPan - e.distance / e.size);
+      pan.setValue(val);
     },
     onPan: e => {
-      console.log('Pan:', e.d.x, e.d.y);
-      pan.setValue(clamp(pan.value + e.d.x, 0, width * (children.length - 1)));
+      // ScrollWheel
+      pan.setValue(clampPage(pan.value + e.d.x / width));
+    },
+    onUp: e => {
+      if (e.flickedLeft || e.flickedDown) {
+        // Increment page
+        if (refs.currentPage < lastIndex) pan.spring(refs.currentPage + 1, e.springMs);
+      } else if (e.flickedRight || e.flickedUp) {
+        // Decrement page
+        if (refs.currentPage > 0) pan.spring(refs.currentPage - 1, e.springMs);
+      } else {
+        // Snap back to current page
+        const landingPage = clampPage(Math.round(pan.value));
+        pan.spring(landingPage);
+      }
     }
   }, [children]);
   useEffect(() => {
+    pan.spring(page);
+  }, [page]);
+  useEffect(() => {
     return pan.on(value => {
-      scrollerEl.current.style.transform = `translate${vertical ? 'Y' : 'X'}(-${value}px)`;
-      if (indicatorEl.current) indicatorEl.current.style.transform = `translateX(${value / children.length}px)`;
+      if (vertical) {
+        scrollerEl.current.style.transform = `translateY(-${value * height}px)`;
+      } else {
+        scrollerEl.current.style.transform = `translateX(-${value * width}px)`;
+        if (indicatorEl.current) indicatorEl.current.style.transform = `translateX(${toPercent(value)})`;
+      }
     });
-  }, [width]);
-  const changeTab = i => {
-    pan.spring(i * width);
-  };
+  }, [vertical, height, width]);
   return /*#__PURE__*/React.createElement("div", {
     className: c('pager', vertical ? 'vertical' : 'horizontal', className)
   }, titles ? /*#__PURE__*/React.createElement("div", {
@@ -1869,13 +2219,12 @@ const ViewPager = /*#__PURE__*/forwardRef(({
     title: title,
     pan: pan,
     i: i,
-    width: width,
-    onPress: changeTab
+    onPress: pan.spring
   })), width ? /*#__PURE__*/React.createElement("div", {
     className: "pager-tabs-indicator",
     ref: indicatorEl,
     style: {
-      width: width / titles.length
+      width: toPercent(1 / titles.length)
     }
   }) : null) : null, /*#__PURE__*/React.createElement("div", {
     className: "pager-scroller"
@@ -1883,18 +2232,17 @@ const ViewPager = /*#__PURE__*/forwardRef(({
     className: "pager-canvas",
     ref: scrollerEl,
     style: {
-      transform: vertical ? 'translateX(0px)' : 'translateY(0px)'
+      transform: vertical ? `translateY(-${toPercent(page)})` : `translateX(-${toPercent(page)})`
     }
-  }, React.Children.map(children, (child, i) => /*#__PURE__*/React.createElement("div", {
+  }, Children.map(children, (child, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     className: "pager-page",
     children: child
   })))), dots ? /*#__PURE__*/React.createElement("div", {
     className: "pager-dots"
-  }, React.Children.map(children, (child, i) => /*#__PURE__*/React.createElement(PagerDot, {
+  }, Children.map(children, (child, i) => /*#__PURE__*/React.createElement(PagerDot, {
     key: i,
     pan: pan,
-    width: width,
     i: i
   }))) : null);
 });
@@ -1908,13 +2256,13 @@ const Window = /*#__PURE__*/forwardRef(({
   hasScrollView = true,
   headerRight,
   onClose,
-  isVisible
+  isVisible,
+  presentation = 'modal'
 }, ref) => {
   const shadeEl = useRef();
   const el = useRef();
   const pan = useAnimatedValue(0);
   const close = () => {
-    console.log('close window');
     if (onClose) {
       pan.spring(0).then(onClose);
     } else {
@@ -1926,16 +2274,16 @@ const Window = /*#__PURE__*/forwardRef(({
   }));
   const {
     height
-  } = usePanGestures(el, {
+  } = useGesture(el, {
+    onCapture: e => {
+      return e.direction === 'y' && e.distance > 0;
+    },
     onMove: e => {
-      pan.setValue(height - Math.max(0, e.d.y));
+      pan.setValue(height - Math.max(0, e.distance));
     },
     onUp: e => {
-      if (e.flick.y === 1 || e.d.y > e.height / 2) {
-        close();
-      } else {
-        pan.spring(e.height);
-      }
+      if (e.flickedDown) return close();
+      pan.spring(e.size);
     }
   });
   useEffect(() => {
@@ -1954,7 +2302,7 @@ const Window = /*#__PURE__*/forwardRef(({
       if (el.current) el.current.style.transform = `translateY(-${value}px)`;
       if (shadeEl.current) {
         shadeEl.current.style.display = value ? 'block' : 'none';
-        shadeEl.current.style.opacity = value / height * .8;
+        shadeEl.current.style.opacity = value / height;
       }
       [...cards].forEach(el => {
         el.style.transform = `scale(${1 - .04 * percent})`;
@@ -1964,14 +2312,12 @@ const Window = /*#__PURE__*/forwardRef(({
   return /*#__PURE__*/React.createElement("div", {
     className: "layer"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "shade",
+    className: `shade shade-${presentation}`,
     ref: shadeEl
   }), /*#__PURE__*/React.createElement("div", {
-    className: "window",
+    className: `window window-${presentation}`,
     ref: el
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "window-content"
-  }, /*#__PURE__*/React.createElement(ScreenHeader, {
+  }, presentation === 'modal' ? /*#__PURE__*/React.createElement(ScreenHeader, {
     title: title,
     presentation: "modal",
     onClose: close,
@@ -1985,26 +2331,13 @@ const Window = /*#__PURE__*/forwardRef(({
       loading: searchLoading
     })) : null,
     headerRight: headerRight
-  }), hasScrollView ? /*#__PURE__*/React.createElement(ScrollView, {
+  }) : null, hasScrollView ? /*#__PURE__*/React.createElement(ScrollView, {
     className: "card-body",
     children: children
   }) : /*#__PURE__*/React.createElement("div", {
     className: "card-body",
     children: children
-  }))));
-});
-
-const TouchableHighlight = ({
-  href,
-  onClick,
-  children,
-  disabled,
-  className
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: c('touchable-highlight', disabled && 'disabled', className),
-  onClick: onClick,
-  href: href,
-  children: children
+  })));
 });
 
 const cache = new Map();
@@ -2053,4 +2386,4 @@ const useVirtualKeyboard = () => useEffect(() => {
   return () => vk.overlaysContent = false;
 }, []);
 
-export { ActionSheet, ActivityIndicator, Alert, AnimatedValue, Avatar, BottomSheet, BreadCrumbs, Button, Card, CheckBox, CircleCheck, ConnectionIndicator, CornerDialog, DashboardIcon, Dropdown, DropdownItem, Emoji, FLICK_SPEED, Fab, FilterButton, FullScreen, HeaderButton, Icon, Image, List, Modal, PercentBar, Pill, Placeholder, PoonOverlays, ProgressIndicator, ProgressRing, PullIndicator, RadioButton, Reveal, ScreenHeader, ScrollView, SegmentedController, Select, Shade, TabularRow, Tag, TextInput, Toast, Touchable, TouchableHighlight, TouchableRow, ViewPager, Window, bounce, c, clamp, cyrb53, easeOutCubic, hideModal, loadCss, loadScript, memoize, modalState, setRevealOrigin, showActionSheet, showAlert, showModal, toPercent, toast, useAnimatedValue, usePanGestures, useSize, useVirtualKeyboard };
+export { ActionSheet, ActivityIndicator, Alert, AnimatedValue, Animation, Avatar, BottomSheet, BreadCrumbs, Button, Card, CheckBox, CircleCheck, ConnectionIndicator, CornerDialog, DashboardIcon, Dropdown, DropdownItem, Emoji, Fab, FilterButton, FullScreen, GalleryItem, HeaderButton, Icon, Image, List, Modal, PercentBar, Pill, Placeholder, PoonOverlays, ProgressIndicator, ProgressRing, PullIndicator, RadioButton, Reveal, ScreenHeader, ScrollView, SegmentedController, Select, Shade, TabularRow, Tag, TextInput, Toast, Touchable, TouchableHighlight, TouchableRow, ViewPager, Window, bounce, c, clamp, clone, cyrb53, easeOutCubic, hideModal, loadCss, loadScript, memoize, modalState, sameObject, setRevealOrigin, showActionSheet, showAlert, showModal, toPercent, toast, useAnimatedValue, useAnimation, useGesture, usePanGestures, useSize, useVirtualKeyboard };

@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { randomId } from 'poon-router/util.js';
 import { useSize } from './size.js';
 
-const FLICK_SPEED = .25; // pixels per ms
-const CUTOFF_INTERVAL = 50; // ms
+const FLICK_SPEED = .25; // Pixels per ms
+const CUTOFF_INTERVAL = 50; // Milliseconds
 const LISTENER_OPTIONS = {capture: false, passive: false};
 
 const getVelocity = (lastV = 0, newV, elapsedTime) => {
@@ -12,9 +12,15 @@ const getVelocity = (lastV = 0, newV, elapsedTime) => {
     return (lastV * w0) + (newV * w1);
 };
 
+
 let responderEl; // The element currently capturing input
 
-export const usePanGestures = (el, opts = {}, deps) => {
+const getXY = (e, i = 0) => ({
+    'x': e.touches ? e.touches[i].clientX : e.clientX,
+    'y': e.touches ? e.touches[i].clientY : e.clientY,
+});
+
+export const useGesture = (el, opts = {}, deps) => {
     const {width, height} = useSize(el);
     const refs = useRef({'id': randomId()}).current;
 
@@ -34,25 +40,24 @@ export const usePanGestures = (el, opts = {}, deps) => {
         const down = (e) => {
             responderEl = null;
 
-            const x = e.touches ? e.touches[0].clientX : e.clientX;
-            const y = e.touches ? e.touches[0].clientY : e.clientY;
+            const {x, y} = getXY(e);
             Object.assign(refs, {
                 'width': width,
                 'height': height,
-                'current': {x, y},
+                'locked': false, // Direction
                 'touch': true,
-                'origin': {x, y},
-                'locked': false,
-                'v': {x: 0, y: 0},
-                's': {x: 0, y: 0},
-                'd': {x: 0, y: 0},
+                'origin': {x, y}, // Initial touch position
+                'current': {x, y}, // Current touch position
+                'v': {x: 0, y: 0}, // Velocity
+                's': {x: 0, y: 0}, // Speed
+                'd': {x: 0, y: 0}, // Distance
                 'flick': null,
                 'last': {ts: performance.now(), x, y},
             });
 
             if (e.touches.length === 2) {
-                const dx = (e.touches[0].clientX - e.touches[1].clientX);
-                const dy = (e.touches[0].clientY - e.touches[1].clientY);
+                const touch1 = getXY(e, 1);
+                const dx = (x - touch1.x), dy = (y - touch1.y);
                 refs.pinch = {d0: Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))};
                 return;
             }
@@ -61,52 +66,72 @@ export const usePanGestures = (el, opts = {}, deps) => {
         };
 
         const shouldCapture = (e) => {
-            if (opts.onCapture) return opts.onCapture(refs, e);
+            if (opts.onCapture) return opts.onCapture({
+                'direction': refs.locked,
+                'distance': refs.distance,
+                'size': refs.locked === 'x' ? refs.width : refs.height,
+            });
             return true;
         };
 
         const move = (e) => {
             if (responderEl && responderEl !== el.current) return;
 
+            const {x, y} = getXY(e);
+
             if (refs.pinch) {
                 if (e.touches.length === 2) {
                     refs.locked = 'pinch'; // pinch mode
 
-                    const dx = (e.touches[0].clientX - e.touches[1].clientX);
-                    const dy = (e.touches[0].clientY - e.touches[1].clientY);
+                    const touch1 = getXY(e, 1);
+
+                    const dx = (x - touch1.x);
+                    const dy = (y - touch1.y);
 
                     refs.pinch.d = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
                     refs.pinch.scale = (refs.pinch.d / refs.pinch.d0);
                     refs.pinch.center = {
-                        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
-                        y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+                        x: (x + touch1.x) / 2,
+                        y: (y + touch1.y) / 2,
                     };
                     if (opts.onPinch) opts.onPinch(refs);
                 } else {
                     delete refs.pinch;
                 }
             } else {
-                refs.x = e.touches ? e.touches[0].clientX : e.clientX;
-                refs.y = e.touches ? e.touches[0].clientY : e.clientY;
+                refs.x = x;
+                refs.y = y;
                 logVelocity(e.timeStamp);
                 refs.d = {'x': (refs.x - refs.origin.x), 'y': (refs.y - refs.origin.y)};
                 refs.abs = {'x': Math.abs(refs.d.x), 'y': Math.abs(refs.d.y)};
 
                 if (!refs.locked && (refs.abs.y > 10 || refs.abs.x > 10)) { // lock scroll direction
-                    refs.locked = (refs.abs.y > refs.abs.x) ? 'v' : 'h';
+                    refs.locked = (refs.abs.y > refs.abs.x) ? 'y' : 'x';
                 }
             }
 
             if (refs.locked) {
                 // Reduce information
-                if (refs.locked === 'h') refs.distance = refs.d.x;
-                if (refs.locked === 'v') refs.distance = refs.d.y;
+                if (refs.locked === 'x') {
+                    refs.distance = refs.d.x;
+                    refs.size = refs.width;
+                }
+                if (refs.locked === 'y') {
+                    refs.distance = refs.d.y;
+                    refs.size = refs.height;
+                }
 
                 refs.touch = shouldCapture(e);
                 if (!refs.touch) return; // Let browser handle touch
                 responderEl = el.current; // capture event
 
-                if (opts.onMove) opts.onMove(refs, e);
+                if (opts.onMove) opts.onMove({
+                    'd': refs.d,
+                    'direction': refs.locked,
+                    'distance': refs.distance,
+                    'velocity': refs.v[refs.locked],
+                    'size': refs.size,
+                }, e);
             }
         };
 
@@ -114,12 +139,26 @@ export const usePanGestures = (el, opts = {}, deps) => {
             if (responderEl && responderEl !== el.current) return;
             if (!refs.touch || !refs.locked) return;
             logVelocity(e.timeStamp);
-            refs.s = {'x': Math.abs(refs.v.x), 'y': Math.abs(refs.v.y)};
-            refs.flick = {
-                'x': refs.locked === 'h' && refs.s.x >= FLICK_SPEED && Math.sign(refs.v.x),
-                'y': refs.locked === 'v' && refs.s.y >= FLICK_SPEED && Math.sign(refs.v.y),
-            };
-            if (opts.onUp) opts.onUp(refs);
+
+            const velocity = refs.v[refs.locked];
+            const speed = Math.abs(velocity);
+            const distance = refs.d[refs.locked];
+
+            // Detect flick by speed or distance
+            const flick = (speed >= FLICK_SPEED && Math.sign(velocity)) ||
+                (Math.abs(distance) > (refs.size / 2) && Math.sign(distance));
+
+            if (opts.onUp) opts.onUp({
+                'direction': refs.locked,
+                'velocity': velocity,
+                'flick': flick,
+                'flickedLeft': (refs.locked === 'x' && flick === -1),
+                'flickedRight': (refs.locked === 'x' && flick === 1),
+                'flickedUp': (refs.locked === 'y' && flick === -1),
+                'flickedDown': (refs.locked === 'y' && flick === 1),
+                'springMs': (speed > FLICK_SPEED) ? (refs.size - Math.abs(distance) / speed) : 300,
+                'size': refs.size,
+            });
         };
 
         const wheel = (e) => {
