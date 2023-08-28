@@ -1,6 +1,37 @@
-import React, { useMemo, forwardRef, useState, useRef, useEffect, Fragment, useImperativeHandle, Children, memo, createElement } from 'react';
-import { randomId, createBus, useBus } from 'poon-router/util.js';
+import React, { useMemo, forwardRef, useState, useRef, useEffect, Fragment, useImperativeHandle, Children, createElement, memo } from 'react';
+import { createBus, useBus, randomId } from 'poon-router/util.js';
 import { navigation } from 'poon-router';
+
+const array = new Array(12).fill(0);
+const ActivityIndicator = ({
+  size = 16,
+  color = '#fff'
+}) => {
+  const renderSegment = (x, i) => {
+    const style = {
+      'width': 1.7,
+      'borderRadius': 1,
+      'left': size / 2 - 1,
+      'height': size / 4,
+      'animationDelay': (-1.1 + .1 * i).toFixed(1) + 's',
+      'transform': `rotate(${30 * i}deg)`,
+      'backgroundColor': color,
+      'transformOrigin': `50% ${size / 2}px`
+    };
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: style
+    });
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "activity-indicator",
+    style: {
+      width: size,
+      height: size
+    },
+    children: array.map(renderSegment)
+  });
+};
 
 const c = (...rest) => rest.filter(Boolean).join(' ');
 const toPercent = val => `${val * 100}%`;
@@ -13,14 +44,19 @@ const bounce = (num, min, max) => {
   return num;
 };
 const easeOutCubic = t => --t * t * t + 1;
+const createClamp = (min, max) => {
+  return val => clamp(val, min, max);
+};
 
 class AnimatedValue {
-  constructor(initialValue) {
+  constructor(initialValue, id) {
+    this.id = id;
     this.listeners = [];
     this.value = initialValue;
     this.oldValue = initialValue;
   }
   setValue = (value, end = true) => {
+    if (isNaN(value)) return console.warn('Cant animate NaN');
     if (end) {
       // Stop animations and set the checkpoint
       delete this.id;
@@ -204,31 +240,32 @@ const useSize = el => {
   return size;
 };
 
-const FLICK_SPEED$1 = .25; // Pixels per ms
-const CUTOFF_INTERVAL$1 = 50; // Milliseconds
-const LISTENER_OPTIONS$1 = {
+const FLICK_SPEED = .25; // Pixels per ms
+const CUTOFF_INTERVAL = 50; // Milliseconds
+const LISTENER_OPTIONS = {
   capture: false,
   passive: false
 };
-const getVelocity$1 = (lastV = 0, newV, elapsedTime) => {
-  const w1 = Math.min(elapsedTime, CUTOFF_INTERVAL$1) / CUTOFF_INTERVAL$1;
+const getVelocity = (lastV = 0, newV, elapsedTime) => {
+  const w1 = Math.min(elapsedTime, CUTOFF_INTERVAL) / CUTOFF_INTERVAL;
   const w0 = 1 - w1;
   return lastV * w0 + newV * w1;
 };
-let responderEl$1; // The element currently capturing input
+let responderEl; // The element currently capturing input
 
-const getXY = (e, i = 0) => ({
-  'x': e.touches ? e.touches[i].clientX : e.clientX,
-  'y': e.touches ? e.touches[i].clientY : e.clientY
-});
+const getXY = (e, i = 0) => {
+  return {
+    'x': e.touches ? e.touches[i].clientX : e.clientX,
+    'y': e.touches ? e.touches[i].clientY : e.clientY
+  };
+};
 const useGesture = (el, opts = {}, deps) => {
   const {
     width,
     height
   } = useSize(el);
-  const refs = useRef({
-    'id': randomId()
-  }).current;
+  const refs = useRef({}).current; // Internal key values
+
   useEffect(() => {
     if (!el.current) return;
     const logVelocity = now => {
@@ -238,8 +275,8 @@ const useGesture = (el, opts = {}, deps) => {
         const vx = (refs.x - refs.last.x) / elapsed;
         const vy = (refs.y - refs.last.y) / elapsed;
         refs.v = {
-          'x': getVelocity$1(refs.v.x, vx, elapsed),
-          'y': getVelocity$1(refs.v.y, vy, elapsed)
+          'x': getVelocity(refs.v.x, vx, elapsed),
+          'y': getVelocity(refs.v.y, vy, elapsed)
         };
         refs.last = {
           'x': refs.x,
@@ -249,27 +286,51 @@ const useGesture = (el, opts = {}, deps) => {
       }
     };
     const down = e => {
-      responderEl$1 = null;
+      if (e.touches.length === 2) {
+        // The first touch already happened
+        const t0 = getXY(e, 0),
+          t1 = getXY(e, 1); // Get two touches
+        const dx = t0.x - t1.x,
+          dy = t0.y - t1.y; // Distance between touches
+        refs.pinch = {
+          d0: Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))
+        };
+        return;
+      }
+
+      // Clear previous values
+      responderEl = null;
+      for (let key in refs) delete refs[key];
       const {
         x,
         y
       } = getXY(e);
       Object.assign(refs, {
+        'x': x,
+        'y': y,
+        'size': {
+          'x': width,
+          'y': height
+        },
+        // Size of the element
         'width': width,
+        // Todo: remove
         'height': height,
+        // Todo: remove
         'locked': false,
         // Direction
-        'touch': true,
+        'touch': false,
+        // Whether we've captured the touch
         'origin': {
           x,
           y
         },
         // Initial touch position
-        'current': {
-          x,
-          y
+        'd': {
+          x: 0,
+          y: 0
         },
-        // Current touch position
+        // Distance
         'v': {
           x: 0,
           y: 0
@@ -280,61 +341,42 @@ const useGesture = (el, opts = {}, deps) => {
           y: 0
         },
         // Speed
-        'd': {
-          x: 0,
-          y: 0
-        },
-        // Distance
         'flick': null,
         'last': {
-          ts: performance.now(),
+          'ts': e.timeStamp,
           x,
           y
         }
       });
-      if (e.touches.length === 2) {
-        const touch1 = getXY(e, 1);
-        const dx = x - touch1.x,
-          dy = y - touch1.y;
-        refs.pinch = {
-          d0: Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))
-        };
-        return;
-      }
-      if (opts.onDown) opts.onDown(refs);
+      if (opts.onDown) opts.onDown(refs); // Consider if this needs to stay
     };
-    const shouldCapture = e => {
-      if (opts.onCapture) return opts.onCapture({
-        'direction': refs.locked,
-        'distance': refs.distance,
-        'size': refs.locked === 'x' ? refs.width : refs.height
-      });
-      return true;
-    };
+
     const move = e => {
-      if (responderEl$1 && responderEl$1 !== el.current) return;
-      const {
-        x,
-        y
-      } = getXY(e);
+      if (responderEl && responderEl !== el.current) return;
       if (refs.pinch) {
+        // Pinch mode
         if (e.touches.length === 2) {
           refs.locked = 'pinch'; // pinch mode
 
-          const touch1 = getXY(e, 1);
-          const dx = x - touch1.x;
-          const dy = y - touch1.y;
+          const t0 = getXY(e, 0),
+            t1 = getXY(e, 1);
+          const dx = t0.x - t1.x,
+            dy = t0.y - t1.y;
           refs.pinch.d = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
-          refs.pinch.scale = refs.pinch.d / refs.pinch.d0;
-          refs.pinch.center = {
-            x: (x + touch1.x) / 2,
-            y: (y + touch1.y) / 2
-          };
-          if (opts.onPinch) opts.onPinch(refs);
-        } else {
-          delete refs.pinch;
+          if (opts.onPinch) opts.onPinch({
+            'center': {
+              'x': (t0.x + t1.x) / 2,
+              'y': (t0.y + t1.y) / 2
+            },
+            'scale': refs.pinch.d / refs.pinch.d0
+          });
         }
       } else {
+        // Single touch mode
+        const {
+          x,
+          y
+        } = getXY(e);
         refs.x = x;
         refs.y = y;
         logVelocity(e.timeStamp);
@@ -342,74 +384,86 @@ const useGesture = (el, opts = {}, deps) => {
           'x': refs.x - refs.origin.x,
           'y': refs.y - refs.origin.y
         };
-        refs.abs = {
-          'x': Math.abs(refs.d.x),
-          'y': Math.abs(refs.d.y)
-        };
-        if (!refs.locked && (refs.abs.y > 10 || refs.abs.x > 10)) {
-          // lock scroll direction
-          refs.locked = refs.abs.y > refs.abs.x ? 'y' : 'x';
+        if (!refs.locked) {
+          // Consider locking scroll direction
+          const absX = Math.abs(refs.d.x),
+            absY = Math.abs(refs.d.y); // Get absolute distance
+          if (absY > 10 || absX > 10) refs.locked = absY > absX ? 'y' : 'x';
         }
       }
       if (refs.locked) {
         // Reduce information
         if (refs.locked === 'x') {
           refs.distance = refs.d.x;
-          refs.size = refs.width;
-        }
-        if (refs.locked === 'y') {
+        } else if (refs.locked === 'y') {
           refs.distance = refs.d.y;
-          refs.size = refs.height;
         }
-        refs.touch = shouldCapture();
-        if (!refs.touch) return; // Let browser handle touch
-        responderEl$1 = el.current; // capture event
+        if (!refs.touch) {
+          // Check if we should start capturing
+          refs.touch = opts.onCapture({
+            'direction': refs.locked,
+            'distance': refs.d[refs.locked],
+            'size': refs.size[refs.locked],
+            'pinch': refs.pinch
+          });
 
-        if (opts.onMove) opts.onMove({
-          'd': refs.d,
-          'direction': refs.locked,
-          'distance': refs.distance,
-          'velocity': refs.v[refs.locked],
-          'size': refs.size
-        }, e);
+          // if (refs.touch) console.log('Captured!', el.current);
+        }
+
+        if (refs.touch) {
+          e.stopPropagation();
+          responderEl = el.current; // capture event
+
+          if (opts.onMove) opts.onMove({
+            'd': refs.d,
+            'direction': refs.locked,
+            'distance': refs.d[refs.locked],
+            'velocity': refs.v[refs.locked],
+            'size': refs.size[refs.locked]
+          }, e);
+        }
       }
     };
     const up = e => {
-      if (responderEl$1 && responderEl$1 !== el.current) return;
-      if (!refs.touch || !refs.locked) return;
+      if (e.touches.length > 0) return; // Still touching, not actually up
+      if (responderEl && responderEl !== el.current) return;
+      if (!refs.touch) return;
       logVelocity(e.timeStamp);
       const velocity = refs.v[refs.locked];
       const speed = Math.abs(velocity);
       const distance = refs.d[refs.locked];
-
-      // Detect flick by speed or distance
-      const flick = speed >= FLICK_SPEED$1 && Math.sign(velocity) || Math.abs(distance) > refs.size / 2 && Math.sign(distance);
-      if (opts.onUp) opts.onUp({
-        'direction': refs.locked,
-        'velocity': velocity,
-        'flick': flick,
-        'flickedLeft': refs.locked === 'x' && flick === -1,
-        'flickedRight': refs.locked === 'x' && flick === 1,
-        'flickedUp': refs.locked === 'y' && flick === -1,
-        'flickedDown': refs.locked === 'y' && flick === 1,
-        'springMs': speed > FLICK_SPEED$1 ? refs.size - Math.abs(distance) / speed : 300,
-        'size': refs.size
-      });
+      const size = refs.size[refs.locked];
+      if (refs.locked) {
+        // Detect flick by speed or distance
+        const flick = speed >= FLICK_SPEED && Math.sign(velocity) || Math.abs(distance) > size / 2 && Math.sign(distance);
+        if (opts.onUp) opts.onUp({
+          'flick': flick * -1,
+          // Invert direction for use with pagers
+          'flickMs': Math.min((size - Math.abs(distance)) / speed, 300),
+          'direction': refs.locked,
+          'velocity': velocity,
+          'size': size
+        });
+      }
     };
     const wheel = e => {
       el.current.scrollTop += e.deltaY;
       if (opts.onPan) opts.onPan({
-        d: {
-          x: e.deltaX,
-          y: e.deltaY
+        'x': {
+          'distance': e.deltaX,
+          'size': width
+        },
+        'y': {
+          'distance': e.deltaY,
+          'size': height
         }
       });
     };
-    el.current.addEventListener('touchstart', down, LISTENER_OPTIONS$1);
-    el.current.addEventListener('touchmove', move, LISTENER_OPTIONS$1);
-    el.current.addEventListener('touchend', up, LISTENER_OPTIONS$1);
-    el.current.addEventListener('wheel', wheel, LISTENER_OPTIONS$1);
-    if (opts.onDoubleTap) el.current.addEventListener('dblclick', opts.onDoubleTap, LISTENER_OPTIONS$1);
+    el.current.addEventListener('touchstart', down, LISTENER_OPTIONS);
+    el.current.addEventListener('touchmove', move, LISTENER_OPTIONS);
+    el.current.addEventListener('touchend', up, LISTENER_OPTIONS);
+    el.current.addEventListener('wheel', wheel, LISTENER_OPTIONS);
+    if (opts.onDoubleTap) el.current.addEventListener('dblclick', opts.onDoubleTap, LISTENER_OPTIONS);
     return () => {
       if (!el.current) return;
       el.current.removeEventListener('touchstart', down);
@@ -447,8 +501,8 @@ const BottomSheet = /*#__PURE__*/forwardRef(({
       pan.setValue(e.size - Math.max(e.distance / 100, e.distance));
     },
     onUp: e => {
-      if (e.flickedDown) return pan.spring(0, e.springMs).then(onClose);
-      pan.spring(e.height);
+      if (e.flick === -1) return pan.spring(0, e.flickMs).then(onClose);
+      pan.spring(e.size);
     }
   });
   const close = () => pan.spring(0).then(onClose);
@@ -520,6 +574,27 @@ const showActionSheet = (title, options, callback) => bus.update({
   callback
 });
 
+const Avatar = ({
+  imageId,
+  className,
+  variant,
+  getUrl
+}) => {
+  if (!imageId) return /*#__PURE__*/React.createElement("div", {
+    draggable: false,
+    className: c('avatar', className)
+  });
+  return /*#__PURE__*/React.createElement("img", {
+    draggable: false,
+    className: c('avatar', className),
+    src: getUrl(imageId, variant)
+  });
+};
+Avatar.defaultProps = {
+  variant: 'normal',
+  getUrl: () => null
+};
+
 const PullIndicator = /*#__PURE__*/forwardRef(({
   pull
 }, ref) => {
@@ -542,18 +617,9 @@ const ScrollView = /*#__PURE__*/forwardRef(({
   const spinnerEl = useRef();
   const refs = useRef({}).current;
   const pull = useAnimatedValue(0);
-  const scrollY = useAnimatedValue(0);
-  const scrollX = useAnimatedValue(0);
+  const scroll = useAnimatedValue(0);
   useGesture(el, {
-    onDown: () => {
-      refs.canScrollVertical = el.current.scrollHeight > el.current.clientHeight;
-      refs.canScrollHorizontal = el.current.scrollWidth > el.current.clientWidth;
-      refs.initScrollTop = el.current.scrollTop;
-      refs.initScrollLeft = el.current.scrollLeft;
-      scrollY.stop();
-      scrollX.stop();
-    },
-    onCapture: e => {
+    onCapture(e) {
       if (e.direction === 'y') {
         if (onRefresh && el.current.scrollTop === 0 && e.distance > 0) return true; // pull to refresh
         if (!refs.canScrollVertical) return false; // not a scroller
@@ -567,19 +633,26 @@ const ScrollView = /*#__PURE__*/forwardRef(({
       }
     },
 
-    onMove: e => {
+    onDown() {
+      refs.canScrollVertical = el.current.scrollHeight > el.current.clientHeight;
+      refs.canScrollHorizontal = el.current.scrollWidth > el.current.clientWidth;
+      refs.initScrollTop = el.current.scrollTop;
+      refs.initScrollLeft = el.current.scrollLeft;
+      scroll.stop();
+    },
+    onMove(e) {
       if (e.direction === 'y') {
         if (onRefresh && refs.initScrollTop === 0) {
           // Reveal pull to refresh indicator
           pull.setValue(Math.min(70, e.distance));
         } else {
-          scrollY.setValue(refs.initScrollTop - e.distance);
+          scroll.setValue(refs.initScrollTop - e.distance);
         }
       } else if (e.locked === 'x') {
-        scrollX.setValue(refs.initScrollLeft - e.distance);
+        scroll.setValue(refs.initScrollLeft - e.distance);
       }
     },
-    onUp: e => {
+    onUp(e) {
       if (e.direction === 'y') {
         if (onRefresh && refs.initScrollTop === 0) {
           // Pull to refresh
@@ -590,23 +663,22 @@ const ScrollView = /*#__PURE__*/forwardRef(({
           }
         } else if (e.velocity) {
           // Coast scrolling
-          scrollY.spring(scrollY.value - e.velocity * 2000, 2000);
+          scroll.spring(scroll.value - e.velocity * 2000, 2000);
         }
-      } else if (e.locked === 'h') {
-        if (e.velocity) scrollX.spring(scrollX.value - e.velocity * 2000, 2000); // Coast scrolling
+      } else if (e.direction === 'h') {
+        if (e.velocity) scroll.spring(scroll.value - e.velocity * 2000, 2000); // Coast scrolling
       }
     }
   });
 
   useEffect(() => {
-    // Scrolling Y
-    return scrollY.on(val => {
-      el.current.scrollTop = val;
+    return scroll.on(val => {
+      if (horizontal) {
+        el.current.scrollLeft = val;
+      } else {
+        el.current.scrollTop = val;
+      }
     });
-  }, []);
-  useEffect(() => {
-    // Scrolling X
-    return scrollX.on(val => el.current.scrollLeft = val);
   }, []);
   useEffect(() => {
     if (!onRefresh) return;
@@ -616,7 +688,7 @@ const ScrollView = /*#__PURE__*/forwardRef(({
       spinnerEl.current.style.opacity = percent;
     });
   }, []);
-  const scroll = () => {
+  const handleScroll = () => {
     navigator.virtualKeyboard?.hide();
     document.activeElement.blur();
   };
@@ -628,41 +700,10 @@ const ScrollView = /*#__PURE__*/forwardRef(({
   })) : null, /*#__PURE__*/React.createElement("div", {
     className: c('scroller', className, horizontal ? 'horizontal' : 'vertical'),
     ref: el,
-    onScroll: scroll,
+    onScroll: handleScroll,
     children: children
   }));
 });
-
-const array = new Array(12).fill(0);
-const ActivityIndicator = ({
-  size = 16,
-  color = '#fff'
-}) => {
-  const renderSegment = (x, i) => {
-    const style = {
-      'width': 1.7,
-      'borderRadius': 1,
-      'left': size / 2 - 1,
-      'height': size / 4,
-      'animationDelay': (-1.1 + .1 * i).toFixed(1) + 's',
-      'transform': `rotate(${30 * i}deg)`,
-      'backgroundColor': color,
-      'transformOrigin': `50% ${size / 2}px`
-    };
-    return /*#__PURE__*/React.createElement("div", {
-      key: i,
-      style: style
-    });
-  };
-  return /*#__PURE__*/React.createElement("div", {
-    className: "activity-indicator",
-    style: {
-      width: size,
-      height: size
-    },
-    children: array.map(renderSegment)
-  });
-};
 
 const Button = ({
   className,
@@ -784,27 +825,6 @@ const showAlert = (alert, options) => new Promise(resolve => {
   }]);
 });
 
-const BreadCrumbs = ({
-  path,
-  onClickPath
-}) => {
-  const slugs = path.split('/').filter(Boolean);
-  const renderSlug = (slug, i) => /*#__PURE__*/React.createElement(Fragment, {
-    key: slug + '_' + i
-  }, /*#__PURE__*/React.createElement(Touchable, {
-    onClick: () => onClickPath(),
-    children: slug
-  }), i < slugs.length - 1 ? /*#__PURE__*/React.createElement("span", null, " / ") : null);
-  if (slugs.length === 0) return null;
-  return /*#__PURE__*/React.createElement(ScrollView, {
-    horizontal: true,
-    className: "breadcrumbs"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    icon: "home",
-    onClick: () => onClickPath('/')
-  }), /*#__PURE__*/React.createElement("span", null, " / "), slugs.map(renderSlug));
-};
-
 const closeImage = {
   'card': 'os:back',
   'modal': 'os:close'
@@ -879,9 +899,7 @@ const Card = /*#__PURE__*/forwardRef(({
   children,
   footer,
   headerRight,
-  hasScrollView = true,
   SearchComponent,
-  scrollerRef,
   disableGestures,
   onDrop,
   isVisible = true,
@@ -910,7 +928,7 @@ const Card = /*#__PURE__*/forwardRef(({
       pan.setValue(Math.max(0, e.distance));
     },
     onUp: e => {
-      if (e.flickedRight) return close();
+      if (e.flick === -1) return close();
       pan.spring(0); // Return to start
     }
   });
@@ -962,11 +980,7 @@ const Card = /*#__PURE__*/forwardRef(({
     onDragEnter: onDrop && startDrag,
     onDragLeave: onDrop && cancelDrag,
     onDrop: onDrop && drop
-  }, renderHeader(), hasScrollView ? /*#__PURE__*/React.createElement(ScrollView, {
-    className: "card-body",
-    ref: scrollerRef,
-    children: children
-  }) : /*#__PURE__*/React.createElement("div", {
+  }, renderHeader(), /*#__PURE__*/React.createElement("div", {
     className: "card-body",
     children: children
   }), footer, dropping ? /*#__PURE__*/React.createElement(Placeholder, {
@@ -997,36 +1011,6 @@ const ConnectionIndicator = ({
   }, /*#__PURE__*/React.createElement(ActivityIndicator, null), status));
 };
 
-const Avatar = ({
-  imageId,
-  className,
-  variant,
-  getUrl
-}) => {
-  if (!imageId) return /*#__PURE__*/React.createElement("div", {
-    draggable: false,
-    className: c('avatar', className)
-  });
-  return /*#__PURE__*/React.createElement("img", {
-    draggable: false,
-    className: c('avatar', className),
-    src: getUrl(imageId, variant)
-  });
-};
-Avatar.defaultProps = {
-  variant: 'normal',
-  getUrl: () => null
-};
-
-const CheckBox = ({
-  active,
-  undetermined
-}) => /*#__PURE__*/React.createElement("div", {
-  className: c('toggle-check', active && 'active', undetermined && 'undetermined')
-}, /*#__PURE__*/React.createElement(Icon, {
-  icon: undetermined ? 'horizontal_rule' : active ? 'check' : null
-}));
-
 const CornerDialog = ({
   title,
   children,
@@ -1043,6 +1027,36 @@ const CornerDialog = ({
     onClick: onClose
   })), children);
 };
+
+const BreadCrumbs = ({
+  path,
+  onClickPath
+}) => {
+  const slugs = path.split('/').filter(Boolean);
+  const renderSlug = (slug, i) => /*#__PURE__*/React.createElement(Fragment, {
+    key: slug + '_' + i
+  }, /*#__PURE__*/React.createElement(Touchable, {
+    onClick: () => onClickPath(),
+    children: slug
+  }), i < slugs.length - 1 ? /*#__PURE__*/React.createElement("span", null, " / ") : null);
+  if (slugs.length === 0) return null;
+  return /*#__PURE__*/React.createElement(ScrollView, {
+    horizontal: true,
+    className: "breadcrumbs"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    icon: "home",
+    onClick: () => onClickPath('/')
+  }), /*#__PURE__*/React.createElement("span", null, " / "), slugs.map(renderSlug));
+};
+
+const CheckBox = ({
+  active,
+  undetermined
+}) => /*#__PURE__*/React.createElement("div", {
+  className: c('toggle-check', active && 'active', undetermined && 'undetermined')
+}, /*#__PURE__*/React.createElement(Icon, {
+  icon: undetermined ? 'horizontal_rule' : active ? 'check' : null
+}));
 
 let origin = {};
 const Reveal = /*#__PURE__*/forwardRef(({
@@ -1072,7 +1086,7 @@ const Reveal = /*#__PURE__*/forwardRef(({
       pan.setValue(1 - e.distance / e.size);
     },
     onUp(e) {
-      if (e.flickedRight) return close();
+      if (e.flick === -1) return close();
       pan.spring(1);
     }
   });
@@ -1140,32 +1154,6 @@ const DashboardIcon = ({
   className: "springboard-icon-name"
 }, title));
 
-const Emoji = ({
-  emoji
-}) => /*#__PURE__*/React.createElement("span", {
-  className: "emoji",
-  children: emoji
-});
-
-const DropdownItem = ({
-  title,
-  icon,
-  onClick,
-  href,
-  disabled,
-  children,
-  active
-}) => /*#__PURE__*/React.createElement(TouchableRow, {
-  className: "dropdown-item",
-  onClick: onClick,
-  disabled: disabled,
-  active: active,
-  children: children,
-  href: href,
-  leftIcon: icon,
-  title: title
-});
-
 const Dropdown = ({
   position,
   button,
@@ -1203,6 +1191,25 @@ const Dropdown = ({
   })));
 };
 
+const DropdownItem = ({
+  title,
+  icon,
+  onClick,
+  href,
+  disabled,
+  children,
+  active
+}) => /*#__PURE__*/React.createElement(TouchableRow, {
+  className: "dropdown-item",
+  onClick: onClick,
+  disabled: disabled,
+  active: active,
+  children: children,
+  href: href,
+  leftIcon: icon,
+  title: title
+});
+
 const Fab = ({
   icon,
   title,
@@ -1225,38 +1232,6 @@ const Fab = ({
 }), title && /*#__PURE__*/React.createElement("div", {
   className: "fab-title"
 }, title)));
-
-const FullScreen = ({
-  title,
-  children,
-  footer,
-  headerRight,
-  SearchComponent
-}) => {
-  const el = useRef();
-  const pan = useAnimatedValue(0);
-  const close = () => {
-    pan.spring(0).then(() => navigation.goBack());
-  };
-  useEffect(() => {
-    pan.spring(1);
-    return pan.on(value => {
-      el.current.style.opacity = value;
-    });
-  }, []);
-  return /*#__PURE__*/React.createElement("div", {
-    className: "fullscreen",
-    ref: el
-  }, /*#__PURE__*/React.createElement(ScreenHeader, {
-    title: title,
-    presentation: "full",
-    onClose: close,
-    headerRight: headerRight,
-    SearchComponent: SearchComponent
-  }), /*#__PURE__*/React.createElement(ScrollView, {
-    className: "card-body"
-  }, children), footer);
-};
 
 class Animation {
   constructor(initialValue) {
@@ -1337,7 +1312,7 @@ const GalleryItem = ({
     };
   };
   useGesture(el, {
-    onCapture: e => {
+    onCapture(e) {
       const {
         maxPanX,
         maxPanY
@@ -1346,20 +1321,20 @@ const GalleryItem = ({
       if (e.direction === 'y' && maxPanY > 0) return true;
       return !!e.pinch;
     },
-    onPinch: e => {
+    onPinch(e) {
+      // console.log('Pinch:', anim.initialValues.zoom, e.scale);
       const {
         maxPanX,
         maxPanY
       } = getLimits();
-      const zoom = anim.initialValues.zoom * e.pinch.scale;
+      const zoom = anim.initialValues.zoom * e.scale;
       anim.set({
         'zoom': zoom,
         'panX': clamp(anim.initialValues.panX, -maxPanX, maxPanX),
         'panY': clamp(anim.initialValues.panY, -maxPanY, maxPanY)
       }, false);
     },
-    onMove: e => {
-      if (e.locked === 'pinch') return; // skip pan if pinching
+    onMove(e) {
       if (anim.values.zoom <= 1) return;
       const {
         maxPanX,
@@ -1370,7 +1345,7 @@ const GalleryItem = ({
         'panY': maxPanY && clamp(anim.initialValues.panY + e.d.y, -maxPanY, maxPanY)
       }, false);
     },
-    onUp: e => {
+    onUp(e) {
       if (anim.values.zoom < 1) return anim.spring({
         'zoom': 1,
         'panX': 0,
@@ -1381,7 +1356,7 @@ const GalleryItem = ({
       });
       anim.end();
     },
-    onDoubleTap: e => {
+    onDoubleTap() {
       if (anim.values.zoom === 1) {
         anim.spring({
           'zoom': 3
@@ -1400,6 +1375,45 @@ const GalleryItem = ({
     ref: el,
     children: children
   });
+};
+
+const Emoji = ({
+  emoji
+}) => /*#__PURE__*/React.createElement("span", {
+  className: "emoji",
+  children: emoji
+});
+
+const FullScreen = ({
+  title,
+  children,
+  footer,
+  headerRight,
+  SearchComponent
+}) => {
+  const el = useRef();
+  const pan = useAnimatedValue(0);
+  const close = () => {
+    pan.spring(0).then(() => navigation.goBack());
+  };
+  useEffect(() => {
+    pan.spring(1);
+    return pan.on(value => {
+      el.current.style.opacity = value;
+    });
+  }, []);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "fullscreen",
+    ref: el
+  }, /*#__PURE__*/React.createElement(ScreenHeader, {
+    title: title,
+    presentation: "full",
+    onClose: close,
+    headerRight: headerRight,
+    SearchComponent: SearchComponent
+  }), /*#__PURE__*/React.createElement(ScrollView, {
+    className: "card-body"
+  }, children), footer);
 };
 
 const HeaderButton = ({
@@ -1505,6 +1519,18 @@ const hideModal = () => {
   modalState.update([]);
 };
 
+const Pill = ({
+  title,
+  color,
+  onClick
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: "pill",
+  onClick: onClick,
+  style: {
+    backgroundColor: color
+  }
+}, title);
+
 const FilterButton = ({
   title,
   LeftComponent,
@@ -1538,18 +1564,6 @@ const PercentBar = ({
     width: `${percent * 100}%`
   }
 }));
-
-const Pill = ({
-  title,
-  color,
-  onClick
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: "pill",
-  onClick: onClick,
-  style: {
-    backgroundColor: color
-  }
-}, title);
 
 const state = createBus();
 const Toast = () => {
@@ -1735,51 +1749,6 @@ const Select = ({
   }, renderOptions());
 };
 
-const TabularRow = ({
-  leftText,
-  rightText
-}) => /*#__PURE__*/React.createElement("div", {
-  className: "tabular-row"
-}, /*#__PURE__*/React.createElement("div", {
-  className: "tabular-row-left"
-}, leftText), /*#__PURE__*/React.createElement("div", {
-  className: "tabular-row-right"
-}, rightText));
-
-const cyrb53 = (str, seed = 0) => {
-  let h1 = 0xdeadbeef ^ seed,
-    h2 = 0x41c6ce57 ^ seed;
-  for (let i = 0, ch; i < str.length; i++) {
-    ch = str.charCodeAt(i);
-    h1 = Math.imul(h1 ^ ch, 2654435761);
-    h2 = Math.imul(h2 ^ ch, 1597334677);
-  }
-  h1 = Math.imul(h1 ^ h1 >>> 16, 2246822507);
-  h1 ^= Math.imul(h2 ^ h2 >>> 13, 3266489909);
-  h2 = Math.imul(h2 ^ h2 >>> 16, 2246822507);
-  h2 ^= Math.imul(h1 ^ h1 >>> 13, 3266489909);
-  return 4294967296 * (2097151 & h2) + (h1 >>> 0);
-};
-
-const f = 360 / Math.pow(2, 53);
-const hashColor = tag => {
-  return `hsl(${180 - f * cyrb53(tag)}, 100%, 50%)`;
-};
-const Tag = /*#__PURE__*/memo(({
-  tag,
-  count
-}) => {
-  const fg = hashColor(tag);
-  return /*#__PURE__*/React.createElement("div", {
-    className: "tag",
-    style: {
-      borderColor: fg,
-      color: fg
-    },
-    children: `${tag}  ${count || ''}`
-  });
-});
-
 const autoCompleteMap = {
   'code': 'one-time-code'
 };
@@ -1908,197 +1877,16 @@ const TextInput = /*#__PURE__*/forwardRef(({
   }) : null, RightComponent, renderSpinner(), renderClearButton());
 });
 
-const TouchableHighlight = ({
-  href,
-  onClick,
-  children,
-  disabled,
-  className
-}) => /*#__PURE__*/React.createElement(Touchable, {
-  className: c('touchable-highlight', disabled && 'disabled', className),
-  onClick: onClick,
-  href: href,
-  children: children
-});
-
-const FLICK_SPEED = .25; // pixels per ms
-const CUTOFF_INTERVAL = 50; // ms
-const LISTENER_OPTIONS = {
-  capture: false,
-  passive: false
-};
-const getVelocity = (lastV = 0, newV, elapsedTime) => {
-  const w1 = Math.min(elapsedTime, CUTOFF_INTERVAL) / CUTOFF_INTERVAL;
-  const w0 = 1 - w1;
-  return lastV * w0 + newV * w1;
-};
-let responderEl; // The element currently capturing input
-
-const usePanGestures = (el, opts = {}, deps) => {
-  const {
-    width,
-    height
-  } = useSize(el);
-  const refs = useRef({
-    'id': randomId()
-  }).current;
-  useEffect(() => {
-    if (!el.current) return;
-    const logVelocity = now => {
-      // Log instantaneous velocity
-      const elapsed = now - refs.last.ts;
-      if (elapsed > 0) {
-        const vx = (refs.x - refs.last.x) / elapsed;
-        const vy = (refs.y - refs.last.y) / elapsed;
-        refs.v = {
-          'x': getVelocity(refs.v.x, vx, elapsed),
-          'y': getVelocity(refs.v.y, vy, elapsed)
-        };
-        refs.last = {
-          'x': refs.x,
-          'y': refs.y,
-          'ts': now
-        };
-      }
-    };
-    const down = e => {
-      responderEl = null;
-      const x = e.touches ? e.touches[0].clientX : e.clientX;
-      const y = e.touches ? e.touches[0].clientY : e.clientY;
-      Object.assign(refs, {
-        'width': width,
-        'height': height,
-        'current': {
-          x,
-          y
-        },
-        'touch': true,
-        'origin': {
-          x,
-          y
-        },
-        'locked': false,
-        'v': {
-          x: 0,
-          y: 0
-        },
-        's': {
-          x: 0,
-          y: 0
-        },
-        'd': {
-          x: 0,
-          y: 0
-        },
-        'flick': null,
-        'last': {
-          ts: performance.now(),
-          x,
-          y
-        }
-      });
-      if (e.touches.length === 2) {
-        const dx = e.touches[0].clientX - e.touches[1].clientX;
-        const dy = e.touches[0].clientY - e.touches[1].clientY;
-        refs.pinch = {
-          d0: Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))
-        };
-        return;
-      }
-      if (opts.onDown) opts.onDown(refs);
-    };
-    const shouldCapture = e => {
-      if (opts.onCapture) return opts.onCapture(refs, e);
-      return true;
-    };
-    const move = e => {
-      if (responderEl && responderEl !== el.current) return;
-      if (refs.pinch) {
-        if (e.touches.length === 2) {
-          refs.locked = 'pinch'; // pinch mode
-
-          const dx = e.touches[0].clientX - e.touches[1].clientX;
-          const dy = e.touches[0].clientY - e.touches[1].clientY;
-          refs.pinch.d = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
-          refs.pinch.scale = refs.pinch.d / refs.pinch.d0;
-          refs.pinch.center = {
-            x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
-            y: (e.touches[0].clientY + e.touches[1].clientY) / 2
-          };
-          if (opts.onPinch) opts.onPinch(refs);
-        } else {
-          delete refs.pinch;
-        }
-      } else {
-        refs.x = e.touches ? e.touches[0].clientX : e.clientX;
-        refs.y = e.touches ? e.touches[0].clientY : e.clientY;
-        logVelocity(e.timeStamp);
-        refs.d = {
-          'x': refs.x - refs.origin.x,
-          'y': refs.y - refs.origin.y
-        };
-        refs.abs = {
-          'x': Math.abs(refs.d.x),
-          'y': Math.abs(refs.d.y)
-        };
-        if (!refs.locked && (refs.abs.y > 10 || refs.abs.x > 10)) {
-          // lock scroll direction
-          refs.locked = refs.abs.y > refs.abs.x ? 'v' : 'h';
-        }
-      }
-      if (refs.locked) {
-        // Reduce information
-        if (refs.locked === 'h') refs.distance = refs.d.x;
-        if (refs.locked === 'v') refs.distance = refs.d.y;
-        refs.touch = shouldCapture(e);
-        if (!refs.touch) return; // Let browser handle touch
-        responderEl = el.current; // capture event
-
-        if (opts.onMove) opts.onMove(refs, e);
-      }
-    };
-    const up = e => {
-      if (responderEl && responderEl !== el.current) return;
-      if (!refs.touch || !refs.locked) return;
-      logVelocity(e.timeStamp);
-      refs.s = {
-        'x': Math.abs(refs.v.x),
-        'y': Math.abs(refs.v.y)
-      };
-      refs.flick = {
-        'x': refs.locked === 'h' && refs.s.x >= FLICK_SPEED && Math.sign(refs.v.x),
-        'y': refs.locked === 'v' && refs.s.y >= FLICK_SPEED && Math.sign(refs.v.y)
-      };
-      if (opts.onUp) opts.onUp(refs);
-    };
-    const wheel = e => {
-      el.current.scrollTop += e.deltaY;
-      if (opts.onPan) opts.onPan({
-        d: {
-          x: e.deltaX,
-          y: e.deltaY
-        }
-      });
-    };
-    el.current.addEventListener('touchstart', down, LISTENER_OPTIONS);
-    el.current.addEventListener('touchmove', move, LISTENER_OPTIONS);
-    el.current.addEventListener('touchend', up, LISTENER_OPTIONS);
-    el.current.addEventListener('wheel', wheel, LISTENER_OPTIONS);
-    if (opts.onDoubleTap) el.current.addEventListener('dblclick', opts.onDoubleTap, LISTENER_OPTIONS);
-    return () => {
-      if (!el.current) return;
-      el.current.removeEventListener('touchstart', down);
-      el.current.removeEventListener('touchmove', move);
-      el.current.removeEventListener('touchend', up);
-      el.current.removeEventListener('wheel', wheel);
-      if (opts.onDoubleTap) el.current.removeEventListener('dblclick', opts.onDoubleTap);
-    };
-  }, [el, height, width, deps]);
-  return {
-    height,
-    width
-  };
-};
+const TabularRow = ({
+  leftText,
+  rightText
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "tabular-row"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "tabular-row-left"
+}, leftText), /*#__PURE__*/React.createElement("div", {
+  className: "tabular-row-right"
+}, rightText));
 
 const PagerDot = ({
   pan,
@@ -2156,44 +1944,43 @@ const ViewPager = /*#__PURE__*/forwardRef(({
   const refs = useRef({}).current;
   const lastIndex = Children.count(children) - 1;
   const orientation = vertical ? 'y' : 'x';
-  const clampPage = i => clamp(i, 0, lastIndex);
+  const clamp = createClamp(0, lastIndex);
   useImperativeHandle(ref, () => ({
-    scrollToPage: i => pan.spring(i)
+    scrollToPage: i => pan.spring(clamp(i))
   }));
   const {
     width,
     height
   } = useGesture(scrollerEl, {
-    enablePointerControls: true,
-    onCapture: e => {
+    pointerControls: true,
+    onCapture(e) {
       if (e.direction === orientation) {
         if (e.distance < 0) return true; // Don't capture at the left edge
         return refs.initPan - e.distance / e.size > 0;
       }
     },
-    onDown: e => {
+    onDown(e) {
       refs.currentPage = Math.round(pan.value);
       refs.initPan = pan.value;
     },
-    onMove: e => {
-      const val = clampPage(refs.initPan - e.distance / e.size);
+    onMove(e) {
+      const val = clamp(refs.initPan - e.distance / e.size);
       pan.setValue(val);
     },
-    onPan: e => {
+    onPan(components) {
       // ScrollWheel
-      pan.setValue(clampPage(pan.value + e.d.x / width));
+      const e = components[orientation];
+      const pos = pan.value - e.distance / e.size;
+      pan.setValue(clamp(pos));
     },
-    onUp: e => {
-      if (e.flickedLeft || e.flickedDown) {
-        // Increment page
-        if (refs.currentPage < lastIndex) pan.spring(refs.currentPage + 1, e.springMs);
-      } else if (e.flickedRight || e.flickedUp) {
-        // Decrement page
-        if (refs.currentPage > 0) pan.spring(refs.currentPage - 1, e.springMs);
+    onUp(e) {
+      if (e.flick) {
+        const page = clamp(refs.currentPage + e.flick);
+        pan.spring(page, e.flickMs);
       } else {
         // Snap back to current page
-        const landingPage = clampPage(Math.round(pan.value));
-        pan.spring(landingPage);
+        const page = clamp(Math.round(pan.value));
+        pan.spring(page);
       }
     }
   }, [children]);
@@ -2206,8 +1993,8 @@ const ViewPager = /*#__PURE__*/forwardRef(({
         scrollerEl.current.style.transform = `translateY(-${value * height}px)`;
       } else {
         scrollerEl.current.style.transform = `translateX(-${value * width}px)`;
-        if (indicatorEl.current) indicatorEl.current.style.transform = `translateX(${toPercent(value)})`;
       }
+      if (indicatorEl.current) indicatorEl.current.style.transform = `translateX(${toPercent(value)})`;
     });
   }, [vertical, height, width]);
   return /*#__PURE__*/React.createElement("div", {
@@ -2253,7 +2040,6 @@ const Window = /*#__PURE__*/forwardRef(({
   search,
   onChangeSearch,
   searchLoading,
-  hasScrollView = true,
   headerRight,
   onClose,
   isVisible,
@@ -2282,7 +2068,7 @@ const Window = /*#__PURE__*/forwardRef(({
       pan.setValue(height - Math.max(0, e.distance));
     },
     onUp: e => {
-      if (e.flickedDown) return close();
+      if (e.flick === -1) return close();
       pan.spring(e.size);
     }
   });
@@ -2331,13 +2117,57 @@ const Window = /*#__PURE__*/forwardRef(({
       loading: searchLoading
     })) : null,
     headerRight: headerRight
-  }) : null, hasScrollView ? /*#__PURE__*/React.createElement(ScrollView, {
-    className: "card-body",
-    children: children
-  }) : /*#__PURE__*/React.createElement("div", {
+  }) : null, /*#__PURE__*/React.createElement("div", {
     className: "card-body",
     children: children
   })));
+});
+
+const TouchableHighlight = ({
+  href,
+  onClick,
+  children,
+  disabled,
+  className
+}) => /*#__PURE__*/React.createElement(Touchable, {
+  className: c('touchable-highlight', disabled && 'disabled', className),
+  onClick: onClick,
+  href: href,
+  children: children
+});
+
+const cyrb53 = (str, seed = 0) => {
+  let h1 = 0xdeadbeef ^ seed,
+    h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0, ch; i < str.length; i++) {
+    ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ h1 >>> 16, 2246822507);
+  h1 ^= Math.imul(h2 ^ h2 >>> 13, 3266489909);
+  h2 = Math.imul(h2 ^ h2 >>> 16, 2246822507);
+  h2 ^= Math.imul(h1 ^ h1 >>> 13, 3266489909);
+  return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+};
+
+const f = 360 / Math.pow(2, 53);
+const hashColor = tag => {
+  return `hsl(${180 - f * cyrb53(tag)}, 100%, 50%)`;
+};
+const Tag = /*#__PURE__*/memo(({
+  tag,
+  count
+}) => {
+  const fg = hashColor(tag);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "tag",
+    style: {
+      borderColor: fg,
+      color: fg
+    },
+    children: `${tag}  ${count || ''}`
+  });
 });
 
 const cache = new Map();
@@ -2386,4 +2216,4 @@ const useVirtualKeyboard = () => useEffect(() => {
   return () => vk.overlaysContent = false;
 }, []);
 
-export { ActionSheet, ActivityIndicator, Alert, AnimatedValue, Animation, Avatar, BottomSheet, BreadCrumbs, Button, Card, CheckBox, CircleCheck, ConnectionIndicator, CornerDialog, DashboardIcon, Dropdown, DropdownItem, Emoji, Fab, FilterButton, FullScreen, GalleryItem, HeaderButton, Icon, Image, List, Modal, PercentBar, Pill, Placeholder, PoonOverlays, ProgressIndicator, ProgressRing, PullIndicator, RadioButton, Reveal, ScreenHeader, ScrollView, SegmentedController, Select, Shade, TabularRow, Tag, TextInput, Toast, Touchable, TouchableHighlight, TouchableRow, ViewPager, Window, bounce, c, clamp, clone, cyrb53, easeOutCubic, hideModal, loadCss, loadScript, memoize, modalState, sameObject, setRevealOrigin, showActionSheet, showAlert, showModal, toPercent, toast, useAnimatedValue, useAnimation, useGesture, usePanGestures, useSize, useVirtualKeyboard };
+export { ActionSheet, ActivityIndicator, Alert, AnimatedValue, Animation, Avatar, BottomSheet, BreadCrumbs, Button, Card, CheckBox, CircleCheck, ConnectionIndicator, CornerDialog, DashboardIcon, Dropdown, DropdownItem, Emoji, Fab, FilterButton, FullScreen, GalleryItem, HeaderButton, Icon, Image, List, Modal, PercentBar, Pill, Placeholder, PoonOverlays, ProgressIndicator, ProgressRing, PullIndicator, RadioButton, Reveal, ScreenHeader, ScrollView, SegmentedController, Select, Shade, TabularRow, Tag, TextInput, Toast, Touchable, TouchableHighlight, TouchableRow, ViewPager, Window, bounce, c, clamp, clone, createClamp, cyrb53, easeOutCubic, hideModal, loadCss, loadScript, memoize, modalState, sameObject, setRevealOrigin, showActionSheet, showAlert, showModal, toPercent, toast, useAnimatedValue, useAnimation, useGesture, useSize, useVirtualKeyboard };

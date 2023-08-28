@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "rollup": "rollup -c",
+    "rollup": "rollup -c --watch",
     "patch": "rollup -c && git commit -a -m \"publish\" && npm version patch && npm publish"
   },
   "keywords": [

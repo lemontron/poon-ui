@@ -132,18 +132,18 @@ i.text-input-clear {font-size:18px;}
 }
 
 /* SHADES */
-.shade {position:absolute; top:0; left:0; bottom:0; right:0; background:var(--shade-color); opacity:0;}
+.shade {position:absolute; top:0; left:0; bottom:0; right:0; background:var(--shade-color); opacity:0; will-change:opacity;}
 .shade-fullscreen {background:#000;}
 .shade-bottom-sheet {background:rgba(10, 0, 10, .8); pointer-events:all;}
 .handle {position:absolute; top:5px; left:50%; margin-left:-20px; width:40px; height:4px; border-radius:5px; background:#999;}
 
 /* DIFFERENT STACK TYPES */
 .layer {position:absolute; top:0; left:0; right:0; bottom:0; pointer-events:none; overflow:hidden;}
-.card {position:absolute; top:0; left:0; bottom:0; right:0; height:var(--viewport-height); width:var(--viewport-width); background:var(--bg); display:flex; flex-direction:column; pointer-events:auto;}
+.card {position:absolute; top:0; left:0; bottom:0; right:0; height:var(--viewport-height); width:var(--viewport-width); background:var(--bg); display:flex; flex-direction:column; pointer-events:auto; will-change:transform;}
 .card.animate {transform:translateX(100%);}
 .card-body {flex:1; padding-bottom:env(keyboard-inset-height); display:flex; flex-direction:column; min-height:0; position:relative; overflow:hidden;}
 .fullscreen {position:absolute; top:0; left:0; right:0; background:#000; height:var(--viewport-height); display:flex; flex-direction:column;}
-.window {position:absolute; top:100%; left:0; right:0; pointer-events:auto; max-width:100%; display:flex; flex-direction:column; margin:0 auto; overflow:hidden; touch-action:pan-y;}
+.window {position:absolute; top:100%; left:0; right:0; pointer-events:auto; max-width:100%; display:flex; flex-direction:column; margin:0 auto; overflow:hidden; touch-action:pan-y; will-change:transform;}
 .window-fullscreen {height:var(--viewport-height);}
 .window-modal {height:calc(var(--viewport-height) - 10px); width:var(--window-width); background:#111; border-top-left-radius:var(--window-radius); border-top-right-radius:var(--window-radius);}
 
@@ -214,7 +214,7 @@ i.text-input-clear {font-size:18px;}
 .placeholder-message {opacity:.5; text-decoration:underline; text-decoration-skip:auto;}
 
 /* ACTION SHEET */
-.sheet {position:absolute; top:100%; left:0; right:0; background-color:#000; pointer-events:all;}
+.sheet {position:absolute; top:100%; left:0; right:0; background-color:#000; pointer-events:all; padding-bottom:var(--safe-area-inset-bottom);}
 .action-sheet-title {padding:10px; color:#656;}
 .sheet .touchable-row .material-icons {font-size:16px;}
 
