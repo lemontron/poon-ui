@@ -19,3 +19,7 @@ export const easeOutCubic = (t) => (--t) * t * t + 1;
 export const createClamp = (min, max) => {
 	return val => clamp(val, min, max);
 };
+
+export const lerp = (val, v0, v1) => {
+	return (1 - val) * v0 + val * v1;
+};

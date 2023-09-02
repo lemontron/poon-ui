@@ -20,7 +20,7 @@ export class AnimatedValue {
 	};
 
 	spring = (finalValue, duration = AnimatedValue.defaultAnimationDuration) => new Promise(resolve => {
-		if (finalValue === this.value) return; // cancel unnecessary animation
+		if (finalValue === this.value) return resolve(); // cancel unnecessary animation
 
 		const t0 = this.id = performance.now(); // a unique id for this animation lifecycle
 		const oldValue = this.value;
@@ -45,7 +45,7 @@ export class AnimatedValue {
 		return () => this.listeners = this.listeners.filter(i => i !== fn);
 	};
 
-	stop = () => {
+	end = () => {
 		delete this.id;
 	};
 }

@@ -38,6 +38,8 @@ export const useGesture = (el, opts = {}, deps) => {
 		};
 
 		const down = (e) => {
+			if (e.pageX < 10) e.preventDefault();
+
 			if (e.touches.length === 2) { // The first touch already happened
 				const t0 = getXY(e, 0), t1 = getXY(e, 1); // Get two touches
 				const dx = (t0.x - t1.x), dy = (t0.y - t1.y); // Distance between touches

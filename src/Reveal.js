@@ -2,7 +2,7 @@ import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react
 import { navigation } from 'poon-router';
 import { useAnimatedValue } from './util/animated';
 import { ScreenHeader } from './ScreenHeader';
-import { c, toPercent } from './util/index.js';
+import { c, lerp, toPercent } from './util/index.js';
 import { useGesture } from './util/gesture.js';
 
 let origin = {};
@@ -54,14 +54,13 @@ export const Reveal = forwardRef(({
 			const revealX = (origin.x * inverse);
 			const revealY = (origin.y * inverse);
 
-			if (el.current) {
-				el.current.style.transform = `translate(${revealX}px, ${revealY}px)`;
-				el.current.style.width = toPercent(val);
-				el.current.style.height = toPercent(val);
-			}
-			if (innerEl.current) {
-				innerEl.current.style.transform = `translate(${-1 * revealX}px, ${-1 * revealY}px)`;
-			}
+			el.current.style.transform = `translate(${revealX}px, ${revealY}px)`;
+			el.current.style.width = toPercent(val);
+			el.current.style.height = toPercent(val);
+			innerEl.current.style.transform = `translate(${-1 * revealX}px, ${-1 * revealY}px)`;
+			innerEl.current.style.opacity = val;
+
+			// el.current.style.borderRadius = lerp(val, 50, 0) + 'px';
 		});
 	}, [width, height]);
 

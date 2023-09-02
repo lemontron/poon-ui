@@ -41,7 +41,7 @@ const PagerTabTitle = ({title, i, pan, onPress}) => {
 	);
 };
 
-export const ViewPager = forwardRef(({titles, children, vertical, dots, className, page = 0}, ref) => {
+export const ViewPager = forwardRef(({titles, children, vertical, dots, className, page = 0, gap = 0}, ref) => {
 	const pan = useAnimatedValue(page);
 	const indicatorEl = useRef();
 	const scrollerEl = useRef();
@@ -63,6 +63,7 @@ export const ViewPager = forwardRef(({titles, children, vertical, dots, classNam
 			}
 		},
 		onDown(e) {
+			pan.end();
 			refs.currentPage = Math.round(pan.value);
 			refs.initPan = pan.value;
 		},
@@ -93,9 +94,9 @@ export const ViewPager = forwardRef(({titles, children, vertical, dots, classNam
 	useEffect(() => {
 		return pan.on(value => {
 			if (vertical) {
-				scrollerEl.current.style.transform = `translateY(-${value * height}px)`;
+				scrollerEl.current.style.transform = `translateY(-${(value * height) + (gap * value)}px)`;
 			} else {
-				scrollerEl.current.style.transform = `translateX(-${value * width}px)`;
+				scrollerEl.current.style.transform = `translateX(-${(value * width) + (gap * value)}px)`;
 			}
 			if (indicatorEl.current) indicatorEl.current.style.transform = `translateX(${toPercent(value)})`;
 		});
@@ -127,10 +128,19 @@ export const ViewPager = forwardRef(({titles, children, vertical, dots, classNam
 				<div
 					className="pager-canvas"
 					ref={scrollerEl}
-					style={{transform: vertical ? `translateY(-${toPercent(page)})` : `translateX(-${toPercent(page)})`}}
+					style={{
+						transform: vertical ?
+							`translateY(calc(-${toPercent(page)} - ${page * gap}px))` :
+							`translateX(calc(-${toPercent(page)} - ${page * gap}px))`,
+					}}
 				>
 					{Children.map(children, (child, i) => (
-						<div key={i} className="pager-page" children={child}/>
+						<div
+							key={i}
+							className="pager-page"
+							children={child}
+							style={vertical ? {marginBottom: gap} : {marginRight: gap}}
+						/>
 					))}
 				</div>
 			</div>

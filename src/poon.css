@@ -147,7 +147,7 @@ i.text-input-clear {font-size:18px;}
 .window-fullscreen {height:var(--viewport-height);}
 .window-modal {height:calc(var(--viewport-height) - 10px); width:var(--window-width); background:#111; border-top-left-radius:var(--window-radius); border-top-right-radius:var(--window-radius);}
 
-.reveal {pointer-events:auto; overflow:hidden;}
+.reveal {pointer-events:auto; overflow:hidden; background:#111;}
 
 /* FILE UPLOAD */
 .drop-zone {position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255, 255, 255, .2); pointer-events:none;}
@@ -232,7 +232,7 @@ i.text-input-clear {font-size:18px;}
 
 /* GALLERY */
 .gallery-item {flex:1; height:100%; display:flex; align-items:center; justify-content:center;}
-.gallery-item img {max-width:100%; max-height:100%; -webkit-touch-callout:none; -webkit-user-select:none;}
+.gallery-item img {max-width:100%; max-height:100%; -webkit-user-select:none;}
 
 /* ALERT */
 .alert-backdrop {pointer-events:all; background:rgba(0, 0, 0, 0); transition:background 300ms; animation:alertBackDrop 300ms;}
@@ -246,7 +246,7 @@ i.text-input-clear {font-size:18px;}
 .alert-message {color:#ccc;}
 .alert-buttons {display:flex; flex-direction:column; border-top:1px solid #333; gap:1px; background:#333; max-height:200px;}
 .alert-buttons-horizontal {flex-direction:row;}
-.alert-button {padding:10px; width:100%; background:#111;}
+.alert-button {height:var(--input-height); align-items:center; justify-content:center; gap:10px; flex:1; display:flex; background:#111;}
 .alert-button.destructive {color:#f00;}
 .alert-bottom {padding:20px;}
 
@@ -298,3 +298,9 @@ i.filter-button-caret {margin:0 -4px; font-size:18px;}
 /* CORNER DIALOG */
 .corner-dialog {position:absolute; bottom:20px; right:20px; background:#111; border-radius:var(--window-radius);}
 .corner-dialog-title {display:flex; justify-content:space-between; padding:10px; align-items:center;}
+
+/* NOTIFICATION */
+.notifications-container {padding:10px;}
+.notification {background:rgba(33, 33, 33, .8); padding:10px; border-radius:var(--window-radius); backdrop-filter:blur(14px); pointer-events:auto; display:flex; gap:10px; align-items:center; justify-content:space-between; margin:0 auto 10px auto; max-width:400px;}
+.notification-title {font-weight:bold; margin-bottom:5px;}
+.notification-body {font-size:12px;}

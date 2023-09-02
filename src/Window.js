@@ -65,7 +65,7 @@ export const Window = forwardRef(({
 				shadeEl.current.style.opacity = (value / height);
 			}
 			[...cards].forEach(el => {
-				el.style.transform = `scale(${1 - (.04 * percent)})`;
+				el.parentElement.style.transform = `scale(${1 - (.04 * percent)})`;
 			});
 		});
 	}, [height]);

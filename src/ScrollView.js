@@ -12,25 +12,21 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 	const scroll = useAnimatedValue(0);
 
 	useGesture(el, {
+		onDown() {
+			refs.canScrollVertical = (el.current.scrollHeight > el.current.clientHeight);
+			refs.canScrollHorizontal = (el.current.scrollWidth > el.current.clientWidth);
+			refs.initScrollTop = el.current.scrollTop;
+			refs.initScrollLeft = el.current.scrollLeft;
+			scroll.end();
+		},
 		onCapture(e) {
+			if (e.direction === 'x') return refs.canScrollHorizontal;
 			if (e.direction === 'y') {
 				if (onRefresh && el.current.scrollTop === 0 && e.distance > 0) return true; // pull to refresh
 				if (!refs.canScrollVertical) return false; // not a scroller
 				if (refs.initScrollTop === 0 && e.distance < 0) return true; // beginning to scroll down
 				return (refs.initScrollTop > 0);
 			}
-			if (e.direction === 'x') {
-				if (!refs.canScrollHorizontal) return false;
-				return true;
-				// return (refs.initScrollLeft > 0);
-			}
-		},
-		onDown() {
-			refs.canScrollVertical = (el.current.scrollHeight > el.current.clientHeight);
-			refs.canScrollHorizontal = (el.current.scrollWidth > el.current.clientWidth);
-			refs.initScrollTop = el.current.scrollTop;
-			refs.initScrollLeft = el.current.scrollLeft;
-			scroll.stop();
 		},
 		onMove(e) {
 			if (e.direction === 'y') {
@@ -39,7 +35,7 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 				} else {
 					scroll.setValue(refs.initScrollTop - e.distance);
 				}
-			} else if (e.locked === 'x') {
+			} else if (e.direction === 'x') {
 				scroll.setValue(refs.initScrollLeft - e.distance);
 			}
 		},
