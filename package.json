@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "rollup": "rollup -c --watch",
-    "build": "rollup -c"
+    "build": "npx rollup -c"
   },
   "keywords": [
     "react",
