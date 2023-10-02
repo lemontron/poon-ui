@@ -1208,13 +1208,6 @@ const DropdownItem = ({
   title: title
 });
 
-const Emoji = ({
-  emoji
-}) => /*#__PURE__*/React.createElement("span", {
-  className: "emoji",
-  children: emoji
-});
-
 const Fab = ({
   icon,
   title,
@@ -1237,6 +1230,13 @@ const Fab = ({
 }), title && /*#__PURE__*/React.createElement("div", {
   className: "fab-title"
 }, title)));
+
+const Emoji = ({
+  emoji
+}) => /*#__PURE__*/React.createElement("span", {
+  className: "emoji",
+  children: emoji
+});
 
 const FullScreen = ({
   title,
@@ -1778,34 +1778,6 @@ const SegmentedController = ({
   })));
 };
 
-const Select = ({
-  options,
-  value,
-  disabled,
-  autoComplete,
-  onChangeValue
-}) => {
-  const renderOptions = () => {
-    if (options instanceof Array) return options.map(option => /*#__PURE__*/React.createElement("option", {
-      key: option.value,
-      value: option.value,
-      children: option.name
-    }));
-    Object.keys(options).map(key => /*#__PURE__*/React.createElement("option", {
-      key: key,
-      value: key,
-      children: options[key]
-    }));
-  };
-  return /*#__PURE__*/React.createElement("select", {
-    className: c('text select', disabled && 'disabled'),
-    onChange: e => onChangeValue(e.target.value),
-    value: value,
-    disabled: disabled,
-    autoComplete: autoComplete
-  }, renderOptions());
-};
-
 const TabularRow = ({
   leftText,
   rightText
@@ -1851,133 +1823,33 @@ const Tag = /*#__PURE__*/memo(({
   });
 });
 
-const autoCompleteMap = {
-  'code': 'one-time-code'
-};
-const typeMap = {
-  'phone': 'tel',
-  'code': 'tel'
-};
-const TextInput = /*#__PURE__*/forwardRef(({
-  placeholder,
-  value = '',
-  icon,
-  type = 'text',
-  dnt,
+const Select = ({
+  options,
+  value,
   disabled,
-  rows = 0,
-  className,
-  onFocus,
   autoComplete,
-  onClick,
-  maxLength,
-  id,
-  onChangeText = () => null,
-  autoFocus,
-  loading,
-  RightComponent,
-  countryCode,
-  onChangePhone,
-  lowerCase,
-  min,
-  max,
-  onPressCountry,
-  countries
-}, ref) => {
-  const [_value, _setValue] = useState(value); // internal value
-
-  const renderInput = () => {
-    let tagName = type === 'textarea' || rows ? 'textarea' : 'input';
-    const changeText = e => {
-      let value = e.target.value;
-      _setValue(value);
-      if (type === 'phone') {
-        value = value.replace(/[^0-9]/g, '');
-      } else {
-        if (lowerCase) value = value.toLowerCase();
-        if (maxLength) value = value.slice(0, maxLength);
-        if (type === 'username') value = value.replace(/\s/g, '');
-      }
-      onChangeText(value);
-    };
-    const renderValue = value => {
-      if (type === 'phone' && countryCode) {
-        const country = countries.find(r => r.code === countryCode);
-        const chars = value.split('');
-        return country.example.split('').map(char => {
-          if (chars.length) return char === 'X' ? chars.shift() : char;
-        }).filter(Boolean).join('');
-      }
-      return value;
-    };
-    return /*#__PURE__*/createElement(tagName, {
-      'type': typeMap[type] || type,
-      'autoComplete': autoCompleteMap[type],
-      'maxLength': maxLength,
-      'className': c('text', disabled && 'disabled', dnt && 'fs-hide', className),
-      'readOnly': disabled,
-      'onChange': changeText,
-      'value': renderValue(value),
-      'autoCapitalize': lowerCase && 'none',
-      placeholder,
-      rows,
-      onFocus,
-      onClick,
-      id,
-      autoFocus,
-      ref,
-      min,
-      max
-    });
-  };
-  const renderIcon = () => {
-    if (icon) return /*#__PURE__*/React.createElement(Icon, {
-      className: "text-input-icon",
-      icon: icon
-    });
-    if (type === 'username') return /*#__PURE__*/React.createElement("span", {
-      className: "text-input-icon"
-    }, "@");
-    if (type === 'search') return /*#__PURE__*/React.createElement(Icon, {
-      className: "text-input-icon",
-      icon: "search"
-    });
-  };
-  const renderClearButton = () => {
-    if (type !== 'search') return null;
-    if (value) return /*#__PURE__*/React.createElement(Touchable, {
-      onClick: () => onChangeText('')
-    }, /*#__PURE__*/React.createElement(Icon, {
-      icon: "cancel",
-      className: "text-input-clear"
+  onChangeValue
+}) => {
+  const renderOptions = () => {
+    if (options instanceof Array) return options.map(option => /*#__PURE__*/React.createElement("option", {
+      key: option.value,
+      value: option.value,
+      children: option.name
+    }));
+    Object.keys(options).map(key => /*#__PURE__*/React.createElement("option", {
+      key: key,
+      value: key,
+      children: options[key]
     }));
   };
-  const renderSpinner = () => {
-    if (!loading) return null;
-    return /*#__PURE__*/React.createElement("div", {
-      className: "text-input-spinner"
-    }, /*#__PURE__*/React.createElement(ActivityIndicator, {
-      size: 18
-    }));
-  };
-  const renderCountryButton = () => {
-    const country = countries ? countries.find(r => r.code === countryCode) : null;
-    if (!country) return null; // fix me??
-
-    return /*#__PURE__*/React.createElement(Touchable, {
-      className: "text-input-country",
-      onClick: onPressCountry
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "emoji"
-    }, country.flag), country.prefix);
-  };
-  return /*#__PURE__*/React.createElement("div", {
-    className: "text-input"
-  }, type === 'phone' && renderCountryButton(), renderIcon(), renderInput(), icon ? /*#__PURE__*/React.createElement("img", {
-    className: "text-input-icon",
-    src: icon
-  }) : null, RightComponent, renderSpinner(), renderClearButton());
-});
+  return /*#__PURE__*/React.createElement("select", {
+    className: c('text select', disabled && 'disabled'),
+    onChange: e => onChangeValue(e.target.value),
+    value: value,
+    disabled: disabled,
+    autoComplete: autoComplete
+  }, renderOptions());
+};
 
 const TouchableHighlight = ({
   href,
@@ -2143,6 +2015,134 @@ const ViewPager = /*#__PURE__*/forwardRef(({
     pan: pan,
     i: i
   }))) : null);
+});
+
+const autoCompleteMap = {
+  'code': 'one-time-code'
+};
+const typeMap = {
+  'phone': 'tel',
+  'code': 'tel'
+};
+const TextInput = /*#__PURE__*/forwardRef(({
+  placeholder,
+  value = '',
+  icon,
+  type = 'text',
+  dnt,
+  disabled,
+  rows = 0,
+  className,
+  onFocus,
+  autoComplete,
+  onClick,
+  maxLength,
+  id,
+  onChangeText = () => null,
+  autoFocus,
+  loading,
+  RightComponent,
+  countryCode,
+  onChangePhone,
+  lowerCase,
+  min,
+  max,
+  onPressCountry,
+  countries
+}, ref) => {
+  const [_value, _setValue] = useState(value); // internal value
+
+  const renderInput = () => {
+    let tagName = type === 'textarea' || rows ? 'textarea' : 'input';
+    const changeText = e => {
+      let value = e.target.value;
+      _setValue(value);
+      if (type === 'phone') {
+        value = value.replace(/[^0-9]/g, '');
+      } else {
+        if (lowerCase) value = value.toLowerCase();
+        if (maxLength) value = value.slice(0, maxLength);
+        if (type === 'username') value = value.replace(/\s/g, '');
+      }
+      onChangeText(value);
+    };
+    const renderValue = value => {
+      if (type === 'phone' && countryCode) {
+        const country = countries.find(r => r.code === countryCode);
+        const chars = value.split('');
+        return country.example.split('').map(char => {
+          if (chars.length) return char === 'X' ? chars.shift() : char;
+        }).filter(Boolean).join('');
+      }
+      return value;
+    };
+    return /*#__PURE__*/createElement(tagName, {
+      'type': typeMap[type] || type,
+      'autoComplete': autoCompleteMap[type],
+      'maxLength': maxLength,
+      'className': c('text', disabled && 'disabled', dnt && 'fs-hide', className),
+      'readOnly': disabled,
+      'onChange': changeText,
+      'value': renderValue(value),
+      'autoCapitalize': lowerCase && 'none',
+      placeholder,
+      rows,
+      onFocus,
+      onClick,
+      id,
+      autoFocus,
+      ref,
+      min,
+      max
+    });
+  };
+  const renderIcon = () => {
+    if (icon) return /*#__PURE__*/React.createElement(Icon, {
+      className: "text-input-icon",
+      icon: icon
+    });
+    if (type === 'username') return /*#__PURE__*/React.createElement("span", {
+      className: "text-input-icon"
+    }, "@");
+    if (type === 'search') return /*#__PURE__*/React.createElement(Icon, {
+      className: "text-input-icon",
+      icon: "search"
+    });
+  };
+  const renderClearButton = () => {
+    if (type !== 'search') return null;
+    if (value) return /*#__PURE__*/React.createElement(Touchable, {
+      onClick: () => onChangeText('')
+    }, /*#__PURE__*/React.createElement(Icon, {
+      icon: "cancel",
+      className: "text-input-clear"
+    }));
+  };
+  const renderSpinner = () => {
+    if (!loading) return null;
+    return /*#__PURE__*/React.createElement("div", {
+      className: "text-input-spinner"
+    }, /*#__PURE__*/React.createElement(ActivityIndicator, {
+      size: 18
+    }));
+  };
+  const renderCountryButton = () => {
+    const country = countries ? countries.find(r => r.code === countryCode) : null;
+    if (!country) return null; // fix me??
+
+    return /*#__PURE__*/React.createElement(Touchable, {
+      className: "text-input-country",
+      onClick: onPressCountry
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "emoji"
+    }, country.flag), country.prefix);
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "text-input"
+  }, type === 'phone' && renderCountryButton(), renderIcon(), renderInput(), icon ? /*#__PURE__*/React.createElement("img", {
+    className: "text-input-icon",
+    src: icon
+  }) : null, RightComponent, renderSpinner(), renderClearButton());
 });
 
 const Window = /*#__PURE__*/forwardRef(({
