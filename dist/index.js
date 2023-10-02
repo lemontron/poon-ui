@@ -2,37 +2,6 @@ import React, { useMemo, forwardRef, useState, useRef, useEffect, Fragment, useI
 import { createBus, useBus, randomId } from 'poon-router/util.js';
 import { navigation } from 'poon-router';
 
-const array = new Array(12).fill(0);
-const ActivityIndicator = ({
-  size = 16,
-  color = '#fff'
-}) => {
-  const renderSegment = (x, i) => {
-    const style = {
-      'width': 1.7,
-      'borderRadius': 1,
-      'left': size / 2 - 1,
-      'height': size / 4,
-      'animationDelay': (-1.1 + .1 * i).toFixed(1) + 's',
-      'transform': `rotate(${30 * i}deg)`,
-      'backgroundColor': color,
-      'transformOrigin': `50% ${size / 2}px`
-    };
-    return /*#__PURE__*/React.createElement("div", {
-      key: i,
-      style: style
-    });
-  };
-  return /*#__PURE__*/React.createElement("div", {
-    className: "activity-indicator",
-    style: {
-      width: size,
-      height: size
-    },
-    children: array.map(renderSegment)
-  });
-};
-
 const c = (...rest) => rest.filter(Boolean).join(' ');
 const toPercent = val => `${val * 100}%`;
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
@@ -578,25 +547,35 @@ const showActionSheet = (title, options, callback) => bus.update({
   callback
 });
 
-const Avatar = ({
-  imageId,
-  className,
-  variant,
-  getUrl
+const array = new Array(12).fill(0);
+const ActivityIndicator = ({
+  size = 16,
+  color = '#fff'
 }) => {
-  if (!imageId) return /*#__PURE__*/React.createElement("div", {
-    draggable: false,
-    className: c('avatar', className)
+  const renderSegment = (x, i) => {
+    const style = {
+      'width': 1.7,
+      'borderRadius': 1,
+      'left': size / 2 - 1,
+      'height': size / 4,
+      'animationDelay': (-1.1 + .1 * i).toFixed(1) + 's',
+      'transform': `rotate(${30 * i}deg)`,
+      'backgroundColor': color,
+      'transformOrigin': `50% ${size / 2}px`
+    };
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: style
+    });
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "activity-indicator",
+    style: {
+      width: size,
+      height: size
+    },
+    children: array.map(renderSegment)
   });
-  return /*#__PURE__*/React.createElement("img", {
-    draggable: false,
-    className: c('avatar', className),
-    src: getUrl(imageId, variant)
-  });
-};
-Avatar.defaultProps = {
-  variant: 'normal',
-  getUrl: () => null
 };
 
 const PullIndicator = /*#__PURE__*/forwardRef(({
@@ -703,27 +682,6 @@ const ScrollView = /*#__PURE__*/forwardRef(({
     children: children
   }));
 });
-
-const BreadCrumbs = ({
-  path,
-  onClickPath
-}) => {
-  const slugs = path.split('/').filter(Boolean);
-  const renderSlug = (slug, i) => /*#__PURE__*/React.createElement(Fragment, {
-    key: slug + '_' + i
-  }, /*#__PURE__*/React.createElement(Touchable, {
-    onClick: () => onClickPath(),
-    children: slug
-  }), i < slugs.length - 1 ? /*#__PURE__*/React.createElement("span", null, " / ") : null);
-  if (slugs.length === 0) return null;
-  return /*#__PURE__*/React.createElement(ScrollView, {
-    horizontal: true,
-    className: "breadcrumbs"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    icon: "home",
-    onClick: () => onClickPath('/')
-  }), /*#__PURE__*/React.createElement("span", null, " / "), slugs.map(renderSlug));
-};
 
 const Button = ({
   className,
@@ -845,25 +803,46 @@ const showAlert = (alert, options) => new Promise(resolve => {
   }]);
 });
 
-const CircleCheck = ({
-  active
+const Avatar = ({
+  imageId,
+  className,
+  variant,
+  getUrl
 }) => {
-  return /*#__PURE__*/React.createElement("div", {
-    className: c('circle-check', active && 'active')
-  }, /*#__PURE__*/React.createElement(Icon, {
-    icon: "check"
-  }));
+  if (!imageId) return /*#__PURE__*/React.createElement("div", {
+    draggable: false,
+    className: c('avatar', className)
+  });
+  return /*#__PURE__*/React.createElement("img", {
+    draggable: false,
+    className: c('avatar', className),
+    src: getUrl(imageId, variant)
+  });
+};
+Avatar.defaultProps = {
+  variant: 'normal',
+  getUrl: () => null
 };
 
-const ConnectionIndicator = ({
-  status
+const BreadCrumbs = ({
+  path,
+  onClickPath
 }) => {
-  if (status === 'connected') return null;
-  return /*#__PURE__*/React.createElement("div", {
-    className: "connection-indicator"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "bubble"
-  }, /*#__PURE__*/React.createElement(ActivityIndicator, null), status));
+  const slugs = path.split('/').filter(Boolean);
+  const renderSlug = (slug, i) => /*#__PURE__*/React.createElement(Fragment, {
+    key: slug + '_' + i
+  }, /*#__PURE__*/React.createElement(Touchable, {
+    onClick: () => onClickPath(),
+    children: slug
+  }), i < slugs.length - 1 ? /*#__PURE__*/React.createElement("span", null, " / ") : null);
+  if (slugs.length === 0) return null;
+  return /*#__PURE__*/React.createElement(ScrollView, {
+    horizontal: true,
+    className: "breadcrumbs"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    icon: "home",
+    onClick: () => onClickPath('/')
+  }), /*#__PURE__*/React.createElement("span", null, " / "), slugs.map(renderSlug));
 };
 
 const closeImage = {
@@ -1040,6 +1019,44 @@ const CheckBox = ({
   icon: undetermined ? 'horizontal_rule' : active ? 'check' : null
 }));
 
+const CircleCheck = ({
+  active
+}) => {
+  return /*#__PURE__*/React.createElement("div", {
+    className: c('circle-check', active && 'active')
+  }, /*#__PURE__*/React.createElement(Icon, {
+    icon: "check"
+  }));
+};
+
+const ConnectionIndicator = ({
+  status
+}) => {
+  if (status === 'connected') return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "connection-indicator"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bubble"
+  }, /*#__PURE__*/React.createElement(ActivityIndicator, null), status));
+};
+
+const CornerDialog = ({
+  title,
+  children,
+  isVisible,
+  onClose
+}) => {
+  if (!isVisible) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "corner-dialog"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "corner-dialog-title"
+  }, title, /*#__PURE__*/React.createElement(Icon, {
+    icon: "close",
+    onClick: onClose
+  })), children);
+};
+
 let origin = {};
 const Reveal = /*#__PURE__*/forwardRef(({
   children,
@@ -1135,6 +1152,43 @@ const DashboardIcon = ({
   className: "springboard-icon-name"
 }, title));
 
+const Dropdown = ({
+  position,
+  button,
+  content
+}) => {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (!visible) return;
+    const dismiss = e => {
+      const insideDropdown = e.composedPath().some(el => {
+        return el.classList && el.classList.contains('dropdown-content');
+      });
+      // if (debug) console.log('Debug', insideDropdown ? 'Inside' : 'Outside');
+      if (!insideDropdown) setVisible(false);
+    };
+    setTimeout(() => {
+      window.addEventListener('click', dismiss, {
+        passive: false
+      });
+    }, 0);
+    return () => window.removeEventListener('click', dismiss);
+  }, [visible]);
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "dropdown"
+  }, /*#__PURE__*/React.createElement("div", {
+    children: button,
+    className: "dropdown-button",
+    onClick: () => {
+      console.log('show');
+      setVisible(true);
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: c('dropdown-content', position || 'top-right', visible ? 'visible' : 'hidden'),
+    children: content
+  })));
+};
+
 const DropdownItem = ({
   title,
   icon,
@@ -1153,23 +1207,6 @@ const DropdownItem = ({
   leftIcon: icon,
   title: title
 });
-
-const CornerDialog = ({
-  title,
-  children,
-  isVisible,
-  onClose
-}) => {
-  if (!isVisible) return null;
-  return /*#__PURE__*/React.createElement("div", {
-    className: "corner-dialog"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "corner-dialog-title"
-  }, title, /*#__PURE__*/React.createElement(Icon, {
-    icon: "close",
-    onClick: onClose
-  })), children);
-};
 
 const Emoji = ({
   emoji
@@ -1231,43 +1268,6 @@ const FullScreen = ({
   }), /*#__PURE__*/React.createElement(ScrollView, {
     className: "card-body"
   }, children), footer);
-};
-
-const Dropdown = ({
-  position,
-  button,
-  content
-}) => {
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    if (!visible) return;
-    const dismiss = e => {
-      const insideDropdown = e.composedPath().some(el => {
-        return el.classList && el.classList.contains('dropdown-content');
-      });
-      // if (debug) console.log('Debug', insideDropdown ? 'Inside' : 'Outside');
-      if (!insideDropdown) setVisible(false);
-    };
-    setTimeout(() => {
-      window.addEventListener('click', dismiss, {
-        passive: false
-      });
-    }, 0);
-    return () => window.removeEventListener('click', dismiss);
-  }, [visible]);
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
-    className: "dropdown"
-  }, /*#__PURE__*/React.createElement("div", {
-    children: button,
-    className: "dropdown-button",
-    onClick: () => {
-      console.log('show');
-      setVisible(true);
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    className: c('dropdown-content', position || 'top-right', visible ? 'visible' : 'hidden'),
-    children: content
-  })));
 };
 
 class Animation {
@@ -1436,6 +1436,41 @@ const HeaderButton = ({
   className: "badge"
 }, badge) : null);
 
+const Image = ({
+  ar,
+  url,
+  alt,
+  className,
+  children,
+  base64Png
+}) => {
+  const renderImg = () => {
+    if (url) return /*#__PURE__*/React.createElement("img", {
+      src: url,
+      className: "img-real",
+      alt: alt,
+      draggable: false
+    });
+    if (base64Png) return /*#__PURE__*/React.createElement("img", {
+      src: `data:image/png;base64,${base64Png}`
+    });
+    return /*#__PURE__*/React.createElement("div", {
+      className: "img-real",
+      alt: alt,
+      draggable: false
+    });
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: c('img', className)
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      paddingTop: (ar || 1) * 100 + '%'
+    }
+  }), renderImg(), children ? /*#__PURE__*/React.createElement("div", {
+    className: "img-inside"
+  }, children) : null);
+};
+
 const List = ({
   title,
   items = [],
@@ -1480,41 +1515,6 @@ const showModal = children => modalState.update([...modalState.state, {
 }]);
 const hideModal = () => {
   modalState.update([]);
-};
-
-const Image = ({
-  ar,
-  url,
-  alt,
-  className,
-  children,
-  base64Png
-}) => {
-  const renderImg = () => {
-    if (url) return /*#__PURE__*/React.createElement("img", {
-      src: url,
-      className: "img-real",
-      alt: alt,
-      draggable: false
-    });
-    if (base64Png) return /*#__PURE__*/React.createElement("img", {
-      src: `data:image/png;base64,${base64Png}`
-    });
-    return /*#__PURE__*/React.createElement("div", {
-      className: "img-real",
-      alt: alt,
-      draggable: false
-    });
-  };
-  return /*#__PURE__*/React.createElement("div", {
-    className: c('img', className)
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      paddingTop: (ar || 1) * 100 + '%'
-    }
-  }), renderImg(), children ? /*#__PURE__*/React.createElement("div", {
-    className: "img-inside"
-  }, children) : null);
 };
 
 const state$1 = createBus([]);
@@ -1599,10 +1599,6 @@ const Pill = ({
   }
 }, title);
 
-const ProgressIndicator = () => /*#__PURE__*/React.createElement("div", {
-  className: "progress-indicator"
-});
-
 const FilterButton = ({
   title,
   LeftComponent,
@@ -1645,6 +1641,10 @@ const Toast = () => {
 const toast = state.update;
 
 const PoonOverlays = () => /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(Notifications, null), /*#__PURE__*/React.createElement(Modal, null), /*#__PURE__*/React.createElement(ActionSheet, null), /*#__PURE__*/React.createElement(Alert, null), /*#__PURE__*/React.createElement(Toast, null));
+
+const ProgressIndicator = () => /*#__PURE__*/React.createElement("div", {
+  className: "progress-indicator"
+});
 
 const ProgressRing = ({
   color = '#fff',
@@ -1992,95 +1992,6 @@ const TouchableHighlight = ({
   children: children
 });
 
-const Window = /*#__PURE__*/forwardRef(({
-  children,
-  title,
-  search,
-  onChangeSearch,
-  searchLoading,
-  headerRight,
-  onClose,
-  isVisible,
-  presentation = 'modal'
-}, ref) => {
-  const shadeEl = useRef();
-  const el = useRef();
-  const pan = useAnimatedValue(0);
-  const close = () => {
-    if (onClose) {
-      pan.spring(0).then(onClose);
-    } else {
-      navigation.goBack(1);
-    }
-  };
-  useImperativeHandle(ref, () => ({
-    close
-  }));
-  const {
-    height
-  } = useGesture(el, {
-    onCapture: e => {
-      return e.direction === 'y' && e.distance > 0;
-    },
-    onMove: e => {
-      pan.setValue(height - Math.max(0, e.distance));
-    },
-    onUp: e => {
-      if (e.flick === -1) return close();
-      pan.spring(e.size);
-    }
-  });
-  useEffect(() => {
-    if (!height) return;
-    if (isVisible || onClose) {
-      // onClose is here because the window is in a modal if there is an onClose
-      pan.spring(height);
-    } else {
-      pan.spring(0);
-    }
-  }, [isVisible, height]);
-  useEffect(() => {
-    const cards = document.querySelectorAll('.card');
-    return pan.on(value => {
-      const percent = value / height;
-      if (el.current) el.current.style.transform = `translateY(-${value}px)`;
-      if (shadeEl.current) {
-        shadeEl.current.style.display = value ? 'block' : 'none';
-        shadeEl.current.style.opacity = value / height;
-      }
-      [...cards].forEach(el => {
-        el.parentElement.style.transform = `scale(${1 - .04 * percent})`;
-      });
-    });
-  }, [height]);
-  return /*#__PURE__*/React.createElement("div", {
-    className: "layer"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: `shade shade-${presentation}`,
-    ref: shadeEl
-  }), /*#__PURE__*/React.createElement("div", {
-    className: `window window-${presentation}`,
-    ref: el
-  }, presentation === 'modal' ? /*#__PURE__*/React.createElement(ScreenHeader, {
-    title: title,
-    presentation: "modal",
-    onClose: close,
-    SearchComponent: onChangeSearch ? /*#__PURE__*/React.createElement("div", {
-      className: "header-search"
-    }, /*#__PURE__*/React.createElement(TextInput, {
-      placeholder: "Search",
-      type: "search",
-      value: search,
-      onChangeText: onChangeSearch,
-      loading: searchLoading
-    })) : null,
-    headerRight: headerRight
-  }) : null, /*#__PURE__*/React.createElement("div", {
-    className: "card-body",
-    children: children
-  })));
-});
-
 const PagerDot = ({
   pan,
   i
@@ -2232,6 +2143,95 @@ const ViewPager = /*#__PURE__*/forwardRef(({
     pan: pan,
     i: i
   }))) : null);
+});
+
+const Window = /*#__PURE__*/forwardRef(({
+  children,
+  title,
+  search,
+  onChangeSearch,
+  searchLoading,
+  headerRight,
+  onClose,
+  isVisible,
+  presentation = 'modal'
+}, ref) => {
+  const shadeEl = useRef();
+  const el = useRef();
+  const pan = useAnimatedValue(0);
+  const close = () => {
+    if (onClose) {
+      pan.spring(0).then(onClose);
+    } else {
+      navigation.goBack(1);
+    }
+  };
+  useImperativeHandle(ref, () => ({
+    close
+  }));
+  const {
+    height
+  } = useGesture(el, {
+    onCapture: e => {
+      return e.direction === 'y' && e.distance > 0;
+    },
+    onMove: e => {
+      pan.setValue(height - Math.max(0, e.distance));
+    },
+    onUp: e => {
+      if (e.flick === -1) return close();
+      pan.spring(e.size);
+    }
+  });
+  useEffect(() => {
+    if (!height) return;
+    if (isVisible || onClose) {
+      // onClose is here because the window is in a modal if there is an onClose
+      pan.spring(height);
+    } else {
+      pan.spring(0);
+    }
+  }, [isVisible, height]);
+  useEffect(() => {
+    const cards = document.querySelectorAll('.card');
+    return pan.on(value => {
+      const percent = value / height;
+      if (el.current) el.current.style.transform = `translateY(-${value}px)`;
+      if (shadeEl.current) {
+        shadeEl.current.style.display = value ? 'block' : 'none';
+        shadeEl.current.style.opacity = value / height;
+      }
+      [...cards].forEach(el => {
+        el.parentElement.style.transform = `scale(${1 - .04 * percent})`;
+      });
+    });
+  }, [height]);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "layer"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: `shade shade-${presentation}`,
+    ref: shadeEl
+  }), /*#__PURE__*/React.createElement("div", {
+    className: `window window-${presentation}`,
+    ref: el
+  }, presentation === 'modal' ? /*#__PURE__*/React.createElement(ScreenHeader, {
+    title: title,
+    presentation: "modal",
+    onClose: close,
+    SearchComponent: onChangeSearch ? /*#__PURE__*/React.createElement("div", {
+      className: "header-search"
+    }, /*#__PURE__*/React.createElement(TextInput, {
+      placeholder: "Search",
+      type: "search",
+      value: search,
+      onChangeText: onChangeSearch,
+      loading: searchLoading
+    })) : null,
+    headerRight: headerRight
+  }) : null, /*#__PURE__*/React.createElement("div", {
+    className: "card-body",
+    children: children
+  })));
 });
 
 const cache = new Map();

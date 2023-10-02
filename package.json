@@ -1,6 +1,6 @@
 {
   "name": "poon-ui",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "description": "The provocative UI framework that's so native it's indecent!",
   "type": "module",
   "main": "dist/index.js",
@@ -20,13 +20,13 @@
     "url": "https://github.com/jamesloper/poon-ui"
   },
   "devDependencies": {
-    "@babel/cli": "^7.22.9",
-    "@babel/core": "^7.22.9",
-    "@babel/preset-env": "^7.22.9",
-    "@babel/preset-react": "^7.22.5",
+    "@babel/cli": "^7.23.0",
+    "@babel/core": "^7.23.0",
+    "@babel/preset-env": "^7.22.20",
+    "@babel/preset-react": "^7.22.15",
     "@rollup/plugin-babel": "^6.0.3",
     "@rollup/plugin-multi-entry": "^6.0.0",
-    "@rollup/plugin-node-resolve": "^15.1.0",
+    "@rollup/plugin-node-resolve": "^15.2.1",
     "@rollup/plugin-terser": "^0.4.3",
     "rollup-plugin-filesize": "^10.0.0"
   },
