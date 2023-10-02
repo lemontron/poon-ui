@@ -1,0 +1,6 @@
+.idea
+.DS_Store
+.github
+node_modules
+src
+rollup.config.js
