@@ -44,7 +44,7 @@ const Notification = ({
 	}, []);
 
 	return (
-		<div className="notification" ref={el}>
+		<div ref={el}>
 			<div>
 				<div className="notification-title">{title}</div>
 				<div className="notification-body">{body}</div>
@@ -61,7 +61,7 @@ export const Notifications = () => {
 
 	if (notifications.length === 0) return null;
 	return (
-		<div className="layer notifications-container">
+		<div className="layer poon-notifications">
 			{notifications.map(data => <Notification {...data}/>)}
 		</div>
 	);

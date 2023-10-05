@@ -22,15 +22,15 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 		onCapture(e) {
 			if (e.direction === 'x') return refs.canScrollHorizontal;
 			if (e.direction === 'y') {
-				if (onRefresh && el.current.scrollTop === 0 && e.distance > 0) return true; // pull to refresh
-				if (!refs.canScrollVertical) return false; // not a scroller
+				if (onRefresh && el.current.scrollTop === 0 && e.distance > 0) return true; // Capture pull to refresh
+				if (!refs.canScrollVertical) return false; // Don't capture if can't scroll
 				if (refs.initScrollTop === 0 && e.distance < 0) return true; // beginning to scroll down
 				return (refs.initScrollTop > 0);
 			}
 		},
 		onMove(e) {
 			if (e.direction === 'y') {
-				if (onRefresh && refs.initScrollTop === 0) { // Reveal pull to refresh indicator
+				if (onRefresh && refs.initScrollTop === 0 && e.distance > 0) { // Reveal pull to refresh indicator
 					pull.setValue(Math.min(70, e.distance));
 				} else {
 					scroll.setValue(refs.initScrollTop - e.distance);
@@ -48,10 +48,10 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 						pull.spring(0);
 					}
 				} else if (e.velocity) { // Coast scrolling
-					scroll.spring(scroll.value - (e.velocity * 2000), 2000);
+					scroll.spring(scroll.value - (e.velocity * 1000), 1000);
 				}
 			} else if (e.direction === 'h') {
-				if (e.velocity) scroll.spring(scroll.value - (e.velocity * 2000), 2000); // Coast scrolling
+				if (e.velocity) scroll.spring(scroll.value - (e.velocity * 1000), 1000); // Coast scrolling
 			}
 		},
 	});

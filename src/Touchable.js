@@ -1,9 +1,10 @@
-import React, { forwardRef, useRef, useState } from 'react';
+import { createElement, forwardRef, useRef, useState } from 'react';
 import { c } from './util';
 
 export const Touchable = forwardRef(({href, onClick, className, active, target, children, style, disableMenu}, ref) => {
 	const [touched, setTouched] = useState(false);
 	const moved = useRef(false);
+	const clickable = (href || onClick);
 
 	const clickButton = (e) => {
 		if (moved.current) return e.preventDefault();
@@ -27,15 +28,20 @@ export const Touchable = forwardRef(({href, onClick, className, active, target, 
 		setTouched(false);
 	};
 
-	return React.createElement(href ? 'a' : 'button', {
+	// Determine tag name
+	let tagName = 'span';
+	if (href) tagName = 'a';
+	if (onClick) tagName = 'button';
+
+	return createElement(tagName, {
 		'href': href,
-		'onTouchStart': touch,
-		'onTouchMove': leave,
-		'onTouchEnd': leave,
-		'onMouseDown': touch,
-		'onMouseUp': leave,
-		'onMouseLeave': leave,
-		'onClick': clickButton,
+		'onTouchStart': clickable && touch,
+		'onTouchMove': clickable && leave,
+		'onTouchEnd': clickable && leave,
+		'onMouseDown': clickable && touch,
+		'onMouseUp': clickable && leave,
+		'onMouseLeave': clickable && leave,
+		'onClick': clickable && clickButton,
 		'className': c('touchable', className, touched && 'touched', disableMenu && 'disable-menu', active && 'active'),
 		'target': target,
 		'draggable': false,
