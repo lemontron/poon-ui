@@ -92,7 +92,7 @@ span.touchable {display:inline-block;}
 .tabular-row-right {text-align:right;}
 
 /* BUTTONS */
-.btn {display:flex; position:relative; height:var(--input-height); align-items:center; justify-content:center; padding:0 15px; color:#fff; border:1px solid #fff; transition:opacity .15s; border-radius:var(--input-border-radius); white-space:nowrap; gap:10px; font-size:var(--input-font-size)}
+.btn {display:flex; position:relative; height:var(--input-height); align-items:center; justify-content:center; padding:0 15px; color:#fff; border:1px solid #fff; transition:opacity .15s; border-radius:var(--input-border-radius); white-space:nowrap; gap:10px; font-size:var(--input-font-size);}
 .full-width {width:100%;}
 .btn.disabled {opacity:.5; pointer-events:none;}
 .btn i {color:inherit;}

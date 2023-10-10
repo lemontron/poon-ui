@@ -30,8 +30,8 @@ export const Touchable = forwardRef(({href, onClick, className, active, target, 
 
 	// Determine tag name
 	let tagName = 'span';
-	if (href) tagName = 'a';
 	if (onClick) tagName = 'button';
+	if (href) tagName = 'a';
 
 	return createElement(tagName, {
 		'href': href,
