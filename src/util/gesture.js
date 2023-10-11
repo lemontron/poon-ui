@@ -15,8 +15,8 @@ let responderEl; // The element currently capturing input
 
 const getXY = (e, i = 0) => {
 	return {
-		'x': e.touches ? e.touches[i].clientX : e.clientX,
-		'y': e.touches ? e.touches[i].clientY : e.clientY,
+		'x': e.clientX,
+		'y': e.clientY,
 	};
 };
 
@@ -38,9 +38,10 @@ export const useGesture = (el, opts = {}, deps) => {
 		};
 
 		const down = (e) => {
+			console.log('down:', e.pointerType, e.clientY);
 			if (e.pageX < 10) e.preventDefault();
 
-			if (e.touches.length === 2) { // The first touch already happened
+			if (!e.isPrimary) { // The first touch already happened
 				const t0 = getXY(e, 0), t1 = getXY(e, 1); // Get two touches
 				const dx = (t0.x - t1.x), dy = (t0.y - t1.y); // Distance between touches
 				refs.pinch = {d0: Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))};
@@ -72,6 +73,8 @@ export const useGesture = (el, opts = {}, deps) => {
 		};
 
 		const move = (e) => {
+			console.log('move:', e.clientY);
+			if (!refs.touch) return; // Not capturing
 			if (responderEl && responderEl !== el.current) return;
 
 			if (refs.pinch) { // Pinch mode
@@ -135,7 +138,7 @@ export const useGesture = (el, opts = {}, deps) => {
 		};
 
 		const up = (e) => {
-			if (e.touches.length > 0) return; // Still touching, not actually up
+			if (!e.isPrimary) return; // Still touching, not actually up
 			if (responderEl && responderEl !== el.current) return;
 
 			if (!refs.touch) return;
@@ -169,17 +172,17 @@ export const useGesture = (el, opts = {}, deps) => {
 			});
 		};
 
-		el.current.addEventListener('touchstart', down, LISTENER_OPTIONS);
-		el.current.addEventListener('touchmove', move, LISTENER_OPTIONS);
-		el.current.addEventListener('touchend', up, LISTENER_OPTIONS);
+		el.current.addEventListener('pointerdown', down, LISTENER_OPTIONS);
+		el.current.addEventListener('pointermove', move, LISTENER_OPTIONS);
+		el.current.addEventListener('pointerup', up, LISTENER_OPTIONS);
 		el.current.addEventListener('wheel', wheel, LISTENER_OPTIONS);
 		if (opts.onDoubleTap) el.current.addEventListener('dblclick', opts.onDoubleTap, LISTENER_OPTIONS);
 
 		return () => {
 			if (!el.current) return;
-			el.current.removeEventListener('touchstart', down);
-			el.current.removeEventListener('touchmove', move);
-			el.current.removeEventListener('touchend', up);
+			el.current.removeEventListener('pointerdown', down);
+			el.current.removeEventListener('pointermove', move);
+			el.current.removeEventListener('pointerup', up);
 			el.current.removeEventListener('wheel', wheel);
 			if (opts.onDoubleTap) el.current.removeEventListener('dblclick', opts.onDoubleTap);
 		};

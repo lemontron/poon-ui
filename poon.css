@@ -199,7 +199,7 @@ span.touchable {display:inline-block;}
 .pager.vertical {touch-action:pan-y;}
 .pager.horizontal {touch-action:pan-x;}
 .pager-scroller {flex:1; position:relative; overflow:hidden;}
-.pager-canvas {position:absolute; top:0; left:0; bottom:0; width:100%;}
+.pager-canvas {position:absolute; top:0; left:0; bottom:0; width:100%; touch-action:none;}
 .pager-page {width:100%; height:100%; position:relative; white-space:normal; overflow:hidden;}
 .pager.horizontal .pager-page {display:inline-block;}
 
