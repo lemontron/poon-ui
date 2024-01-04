@@ -1,15 +1,24 @@
-import React, { forwardRef, Fragment, useEffect, useRef } from 'react';
+import React, { Fragment, forwardRef, useEffect, useRef, useImperativeHandle } from 'react';
 import { useAnimatedValue } from './util/animated';
 import { c } from './util';
 import { PullIndicator } from './PullIndicator';
 import { useGesture } from './util/gesture.js';
 
 export const ScrollView = forwardRef(({children, className, onRefresh, horizontal}, ref) => {
-	const el = ref || useRef();
+	const el = useRef();
 	const spinnerEl = useRef();
 	const refs = useRef({}).current;
 	const pull = useAnimatedValue(0);
 	const scroll = useAnimatedValue(0);
+
+	useImperativeHandle(ref, () => ({
+		scrollToTop() {
+			scroll.spring(0);
+		},
+		scrollToBottom() {
+			scroll.spring(el.current.scrollHeight);
+		},
+	}));
 
 	useGesture(el, {
 		onDown() {

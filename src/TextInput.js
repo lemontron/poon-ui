@@ -122,7 +122,6 @@ export const TextInput = forwardRef(({
 			{type === 'phone' && renderCountryButton()}
 			{renderIcon()}
 			{renderInput()}
-			{icon ? <img className="text-input-icon" src={icon}/> : null}
 			{RightComponent}
 			{renderSpinner()}
 			{renderClearButton()}

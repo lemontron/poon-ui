@@ -11,6 +11,7 @@ export const ActionSheet = () => {
 	const sheet = useBus(bus);
 
 	const renderOption = (option, i) => {
+		if (option.hidden) return null;
 		const clickOption = (e) => {
 			if (option.onClick) option.onClick();
 			if (sheet.callback) sheet.callback(option.value);

@@ -8,12 +8,10 @@ export const BreadCrumbs = ({path, onClickPath}) => {
 
 	const renderSlug = (slug, i) => (
 		<Fragment key={slug + '_' + i}>
-			<Touchable onClick={() => onClickPath()} children={slug}/>
+			<Touchable onClick={() => onClickPath('/' + slugs.slice(0, i + 1).join('/'))} children={slug}/>
 			{i < slugs.length - 1 ? <span> / </span> : null}
 		</Fragment>
 	);
-
-	if (slugs.length === 0) return null;
 
 	return (
 		<ScrollView horizontal className="breadcrumbs">

@@ -7,13 +7,12 @@ export const ProgressRing = memo(({
 	ringWidth = 2,
 	size = 20,
 	percent,
-	spinning,
 	children,
 }) => {
 	const r = size / 2;
 	const ri = r - (ringWidth / 2); // inner radius
 	const circumference = ri * 2 * Math.PI; // circumference
-	const strokeDashoffset = circumference - (percent * circumference);
+	const strokeDashoffset = circumference - (percent * circumference) || 0;
 
 	const renderRings = () => {
 		if (percent === 1) return (

@@ -11,6 +11,7 @@ const state = createBus([]);
 const Notification = ({
 	title,
 	body,
+	icon,
 	onDismiss = () => null,
 }) => {
 	const el = useRef();
@@ -44,14 +45,17 @@ const Notification = ({
 	}, []);
 
 	return (
-		<div ref={el}>
-			<div>
+		<div ref={el} className="notification">
+			{icon ? <Icon icon={icon} className="notification-icon"/> : null}
+			<div className="notification-middle">
 				<div className="notification-title">{title}</div>
 				<div className="notification-body">{body}</div>
 			</div>
-			<Touchable onClick={dismiss}>
-				<Icon icon="close"/>
-			</Touchable>
+			<Touchable
+				onClick={dismiss}
+				className="notification-close"
+				children={<Icon icon="close"/>}
+			/>
 		</div>
 	);
 };
