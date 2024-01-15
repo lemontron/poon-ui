@@ -44,6 +44,13 @@ const SingleAlert = ({alert, isLast}) => {
 				className={c('alert', isLast && alert.visible && 'visible')}
 				onClick={e => e.stopPropagation()}
 			>
+				{/*{alert.debug ? (*/}
+				{/*	<Touchable*/}
+				{/*		className="material-icons"*/}
+				{/*		onClick={() => navigator.clipboard.writeText(alert.debug)}*/}
+				{/*		children="copy"*/}
+				{/*	/>*/}
+				{/*) : null}*/}
 				<div className="alert-top">
 					{alert.title ? <div className="alert-title">{alert.title}</div> : null}
 					{alert.message ? <div className="alert-message">{alert.message}</div> : null}

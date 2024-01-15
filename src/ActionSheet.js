@@ -33,9 +33,13 @@ export const ActionSheet = () => {
 	if (!sheet) return null;
 
 	return (
-		<BottomSheet pan={pan} visible={!!sheet} onClose={() => bus.update(null)} showShade>
-			<div className="action-sheet-title">{sheet && sheet.title}</div>
-			<hr/>
+		<BottomSheet
+			pan={pan}
+			visible
+			onClose={() => bus.update(null)}
+			showShade
+		>
+			<div className="action-sheet-title">{sheet.title}</div>
 			{sheet.options.map(renderOption)}
 		</BottomSheet>
 	);

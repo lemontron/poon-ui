@@ -185,5 +185,5 @@ export const useGesture = (el, opts = {}, deps) => {
 		};
 	}, [el, height, width, deps]);
 
-	return {height, width};
+	return {height, width, };
 };

@@ -9,7 +9,7 @@ export const BottomSheet = forwardRef(({
 	children,
 	onClose,
 	onPress,
-	showShade,
+	showShade = true,
 	showHandle,
 }, ref) => {
 	const shadeEl = useRef();

@@ -21,8 +21,6 @@ export const Button = ({
 	fullWidth,
 	target,
 }) => {
-	const cn = c('btn', className, disabled && 'disabled', fullWidth && 'full-width', color && `btn-${color}`);
-
 	const renderInner = () => {
 		if (loading) return <ActivityIndicator/>;
 		return (
@@ -37,7 +35,7 @@ export const Button = ({
 	return (
 		<Touchable
 			type={submit ? 'submit' : 'button'}
-			className={cn}
+			className={c('btn', className, (disabled || loading) && 'disabled', fullWidth && 'full-width', color && `btn-${color}`)}
 			onClick={e => {
 				if (download) e.stopPropagation();
 				if (onClick) onClick(e);
