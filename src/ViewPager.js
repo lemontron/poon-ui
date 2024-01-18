@@ -1,7 +1,8 @@
 import React, { Children, forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { useAnimatedValue } from './util/animated';
-import { useGesture } from './util/gesture';
 import { c, createClamp, toPercent } from './util';
+import { useSize } from './util/size.js';
+import { Pan } from './Pan.js';
 
 const PagerDot = ({pan, i}) => {
 	const el = useRef();
@@ -54,38 +55,7 @@ export const ViewPager = forwardRef(({titles, children, vertical, dots, classNam
 		scrollToPage: (i) => pan.spring(clamp(i)),
 	}));
 
-	const {width, height} = useGesture(scrollerEl, {
-		pointerControls: true,
-		onCapture(e) {
-			if (e.direction === orientation) {
-				if (e.distance < 0) return true; // Don't capture at the left edge
-				return (refs.initPan - (e.distance / e.size)) > 0;
-			}
-		},
-		onDown(e) {
-			pan.end();
-			refs.currentPage = Math.round(pan.value);
-			refs.initPan = pan.value;
-		},
-		onMove(e) {
-			const val = clamp(refs.initPan - (e.distance / e.size));
-			pan.setValue(val);
-		},
-		onPan(components) { // ScrollWheel
-			const e = components[orientation];
-			const pos = pan.value - (e.distance / e.size);
-			pan.setValue(clamp(pos));
-		},
-		onUp(e) {
-			if (e.flick) {
-				const page = clamp(refs.currentPage + e.flick);
-				pan.spring(page, e.flickMs);
-			} else { // Snap back to current page
-				const page = clamp(Math.round(pan.value));
-				pan.spring(page);
-			}
-		},
-	}, [children]);
+	const {width, height} = useSize(scrollerEl);
 
 	useEffect(() => {
 		pan.spring(page);
@@ -125,13 +95,42 @@ export const ViewPager = forwardRef(({titles, children, vertical, dots, classNam
 				</div>
 			) : null}
 			<div className="pager-scroller">
-				<div
+				<Pan
 					className="pager-canvas"
 					ref={scrollerEl}
 					style={{
 						transform: vertical ?
 							`translateY(calc(-${toPercent(page)} - ${page * gap}px))` :
 							`translateX(calc(-${toPercent(page)} - ${page * gap}px))`,
+					}}
+					onCapture={(e) => {
+						if (e.direction === orientation) {
+							if (e.distance < 0) return true; // Don't capture at the left edge
+							return (refs.initPan - (e.distance / e.size)) > 0;
+						}
+					}}
+					onDown={(e) => {
+						pan.end();
+						refs.currentPage = Math.round(pan.value);
+						refs.initPan = pan.value;
+					}}
+					onMove={(e) => {
+						const val = clamp(refs.initPan - (e.distance / e.size));
+						pan.setValue(val);
+					}}
+					onPan={(components) => { // ScrollWheel
+						const e = components[orientation];
+						const pos = pan.value - (e.distance / e.size);
+						pan.setValue(clamp(pos));
+					}}
+					onUp={(e) => {
+						if (e.flick) {
+							const page = clamp(refs.currentPage + e.flick);
+							pan.spring(page, e.flickMs);
+						} else { // Snap back to current page
+							const page = clamp(Math.round(pan.value));
+							pan.spring(page);
+						}
 					}}
 				>
 					{Children.map(children, (child, i) => (
@@ -142,7 +141,7 @@ export const ViewPager = forwardRef(({titles, children, vertical, dots, classNam
 							style={vertical ? {marginBottom: gap} : {marginRight: gap}}
 						/>
 					))}
-				</div>
+				</Pan>
 			</div>
 			{dots ? (
 				<div className="pager-dots">

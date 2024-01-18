@@ -1,9 +1,10 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { navigation } from 'poon-router';
 import { useAnimatedValue } from './util/animated';
+import { c, toPercent } from './util/index.js';
+import { useSize } from './util/size.js';
 import { ScreenHeader } from './ScreenHeader';
-import { c, lerp, toPercent } from './util/index.js';
-import { useGesture } from './util/gesture.js';
+import { Pan } from './Pan.js';
 
 let origin = {};
 
@@ -26,18 +27,7 @@ export const Reveal = forwardRef(({
 		close,
 	}));
 
-	const {width, height} = useGesture(el, {
-		onCapture(e) {
-			return (e.direction === 'x' && e.distance > 0);
-		},
-		onMove(e) {
-			pan.setValue(1 - (e.distance / e.size));
-		},
-		onUp(e) {
-			if (e.flick === -1) return close();
-			pan.spring(1);
-		},
-	});
+	const {width, height} = useSize(el);
 
 	useEffect(() => {
 		if (!animateIn) return;
@@ -66,15 +56,29 @@ export const Reveal = forwardRef(({
 
 	return (
 		<div className="layer reveal" ref={el}>
-			<div className={c('card reveal-content', className)} ref={innerEl}>
+			<Pan
+				className={c('card reveal-content', className)}
+				ref={innerEl}
+				onCapture={(e) => {
+					return (e.direction === 'x' && e.distance > 0);
+				}}
+				onMove={(e) => {
+					pan.setValue(1 - (e.distance / e.size));
+				}}
+				onUp={(e) => {
+					if (e.flick === -1) return close();
+					pan.spring(1);
+				}}
+			>
 				<ScreenHeader
+					backIcon="apps"
 					title={title}
 					onClose={close}
 					headerRight={headerRight}
-					presentation="card"
+					presentation="reveal"
 				/>
 				<div className="card-body" children={children}/>
-			</div>
+			</Pan>
 		</div>
 	);
 });

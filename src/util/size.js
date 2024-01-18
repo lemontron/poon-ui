@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 
+export const getSize = (el) => {
+	if (!el) return {};
+	return {'width': el.clientWidth, 'height': el.clientHeight};
+};
+
 export const useSize = (el) => {
-	const [size, setSize] = useState({
-		'width': el.current?.clientWidth,
-		'height': el.current?.clientHeight,
-	});
+	const [size, setSize] = useState(getSize(el.current));
 	useEffect(() => { // Observe size of element
 		if (!el.current) return;
 		// console.log('el.current', el.current);

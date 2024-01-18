@@ -1,6 +1,7 @@
 import React, { forwardRef, useEffect, useRef } from 'react';
 import { c } from './util';
-import { useGesture } from './util/gesture';
+import { useSize } from './util/size.js';
+import { Pan } from './Pan.js';
 
 export const BottomSheet = forwardRef(({
 	className,
@@ -14,18 +15,7 @@ export const BottomSheet = forwardRef(({
 }, ref) => {
 	const shadeEl = useRef();
 	const sheetEl = useRef();
-	const {height} = useGesture(sheetEl, {
-		onCapture: e => {
-			return (e.direction === 'y');
-		},
-		onMove: (e) => {
-			pan.setValue(e.size - Math.max(e.distance / 100, e.distance));
-		},
-		onUp: e => {
-			if (e.flick === -1) return pan.spring(0, e.flickMs).then(onClose);
-			pan.spring(e.size);
-		},
-	});
+	const {height} = useSize(sheetEl);
 
 	const close = () => pan.spring(0).then(onClose);
 
@@ -49,10 +39,24 @@ export const BottomSheet = forwardRef(({
 	return (
 		<div className="layer">
 			{visible && showShade ? <div className="shade shade-bottom-sheet" ref={shadeEl} onClick={close}/> : null}
-			<div ref={sheetEl} className={c('sheet', className)} onClick={onPress}>
+			<Pan
+				ref={sheetEl}
+				className={c('sheet', className)}
+				onClick={onPress}
+				onCapture={e => {
+					return (e.direction === 'y');
+				}}
+				onMove={(e) => {
+					pan.setValue(e.size - Math.max(e.distance / 100, e.distance));
+				}}
+				onUp={e => {
+					if (e.flick === -1) return pan.spring(0, e.flickMs).then(onClose);
+					pan.spring(e.size);
+				}}
+			>
 				{showHandle ? <div className="handle"/> : null}
 				{children}
-			</div>
+			</Pan>
 		</div>
 	);
 });

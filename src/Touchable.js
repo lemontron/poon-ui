@@ -1,13 +1,15 @@
 import { createElement, forwardRef, useRef, useState } from 'react';
 import { c } from './util';
 
+let ignoreNextClick = false; // Safari glitch fix
+
 export const Touchable = forwardRef(({href, onClick, className, active, target, children, style, disableMenu}, ref) => {
-	const touchedRef = useRef(false);
 	const [touched, setTouched] = useState(false);
 	const isClickable = (href || onClick);
 
 	const clickButton = (e) => {
-		if (e.button !== 0 && !touchedRef.current) return e.preventDefault();
+		if (ignoreNextClick) return e.preventDefault(); // Safari glitch fix
+
 		if (onClick) {
 			if (!href) e.preventDefault();
 			onClick(e);
@@ -15,14 +17,14 @@ export const Touchable = forwardRef(({href, onClick, className, active, target, 
 	};
 
 	const touch = (e) => {
-		if (e.type === 'touchstart') touchedRef.current = true;
+		e.initialType = e.type;
+		if (e.type === 'touchstart') ignoreNextClick = false;
 		if (e.button && e.button !== 0) return; // If mouse, only process left clicks
-		e.stopPropagation();
 		setTouched(true);
 	};
 
 	const leave = (e) => {
-		if (e.type === 'touchmove') touchedRef.current = false;
+		if (e.type === 'touchmove') ignoreNextClick = true;
 		setTouched(false);
 	};
 

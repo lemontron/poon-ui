@@ -2,7 +2,7 @@ import React, { Fragment, forwardRef, useEffect, useRef, useImperativeHandle } f
 import { useAnimatedValue } from './util/animated';
 import { c } from './util';
 import { PullIndicator } from './PullIndicator';
-import { useGesture } from './util/gesture.js';
+import { Pan } from './Pan.js';
 
 export const ScrollView = forwardRef(({children, className, onRefresh, horizontal}, ref) => {
 	const el = useRef();
@@ -19,51 +19,6 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 			scroll.spring(el.current.scrollHeight, duration);
 		},
 	}));
-
-	useGesture(el, {
-		onDown() {
-			refs.canScrollVertical = (el.current.scrollHeight > el.current.clientHeight);
-			refs.canScrollHorizontal = (el.current.scrollWidth > el.current.clientWidth);
-			refs.initScrollTop = el.current.scrollTop;
-			refs.initScrollLeft = el.current.scrollLeft;
-			scroll.end();
-		},
-		onCapture(e) {
-			if (e.direction === 'x') return refs.canScrollHorizontal;
-			if (e.direction === 'y') {
-				if (onRefresh && el.current.scrollTop === 0 && e.distance > 0) return true; // Capture pull to refresh
-				if (!refs.canScrollVertical) return false; // Don't capture if can't scroll
-				if (refs.initScrollTop === 0 && e.distance < 0) return true; // beginning to scroll down
-				return (refs.initScrollTop > 0);
-			}
-		},
-		onMove(e) {
-			if (e.direction === 'y') {
-				if (onRefresh && refs.initScrollTop === 0 && e.distance > 0) { // Reveal pull to refresh indicator
-					pull.setValue(Math.min(70, e.distance));
-				} else {
-					scroll.setValue(refs.initScrollTop - e.distance);
-				}
-			} else if (e.direction === 'x') {
-				scroll.setValue(refs.initScrollLeft - e.distance);
-			}
-		},
-		onUp(e) {
-			if (e.direction === 'y') {
-				if (onRefresh && refs.initScrollTop === 0) { // Pull to refresh
-					if (e.distance > 70) {
-						pull.spring(0).then(onRefresh);
-					} else {
-						pull.spring(0);
-					}
-				} else if (e.velocity) { // Coast scrolling
-					scroll.spring(scroll.value - (e.velocity * 1000), 1000);
-				}
-			} else if (e.direction === 'h') {
-				if (e.velocity) scroll.spring(scroll.value - (e.velocity * 1000), 1000); // Coast scrolling
-			}
-		},
-	});
 
 	useEffect(() => {
 		return scroll.on(val => {
@@ -96,11 +51,64 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 					<PullIndicator pull={pull} ref={spinnerEl}/>
 				</div>
 			) : null}
-			<div
+			<Pan
 				className={c('scroller', className, horizontal ? 'horizontal' : 'vertical')}
 				ref={el}
 				onScroll={handleScroll}
 				children={children}
+				onDown={() => {
+					refs.canScrollVertical = (el.current.scrollHeight > el.current.clientHeight);
+					refs.canScrollHorizontal = (el.current.scrollWidth > el.current.clientWidth);
+					refs.initScrollTop = el.current.scrollTop;
+					refs.initScrollLeft = el.current.scrollLeft;
+					scroll.end();
+				}}
+				onCapture={e => {
+					if (e.direction === 'x') return refs.canScrollHorizontal;
+					if (e.direction === 'y') {
+						if (onRefresh && el.current.scrollTop === 0 && e.distance > 0) {
+							// console.loc('capture pull to refresh');
+							return true;
+						}
+						if (!refs.canScrollVertical) {
+							// console.log('dont capture if cant scroll');
+							return false;
+						}
+						if (refs.initScrollTop === 0 && e.distance < 0) {
+							// console.log('beginning to scroll down');
+							return true;
+						}
+
+						// console.log('capturing');
+						return (refs.initScrollTop > 0);
+					}
+				}}
+				onMove={e => {
+					if (e.direction === 'y') {
+						if (onRefresh && refs.initScrollTop === 0 && e.distance > 0) { // Reveal pull to refresh indicator
+							pull.setValue(Math.min(70, e.distance));
+						} else {
+							scroll.setValue(refs.initScrollTop - e.distance);
+						}
+					} else if (e.direction === 'x') {
+						scroll.setValue(refs.initScrollLeft - e.distance);
+					}
+				}}
+				onUp={e => {
+					if (e.direction === 'y') {
+						if (onRefresh && refs.initScrollTop === 0) { // Pull to refresh
+							if (e.distance > 70) {
+								pull.spring(0).then(onRefresh);
+							} else {
+								pull.spring(0);
+							}
+						} else if (e.velocity) { // Coast scrolling
+							scroll.spring(scroll.value - (e.velocity * 1000), 1000);
+						}
+					} else if (e.direction === 'h') {
+						if (e.velocity) scroll.spring(scroll.value - (e.velocity * 1000), 1000); // Coast scrolling
+					}
+				}}
 			/>
 		</Fragment>
 	);

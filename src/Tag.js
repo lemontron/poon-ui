@@ -1,10 +1,8 @@
 import React, { memo } from 'react';
-import { cyrb53 } from './util/hash.js';
+import { colorHash } from './util/oklab.js';
 
-const f = 360 / Math.pow(2, 53);
-
-export const Tag = memo(({tag, count, colorize}) => {
-	const fg = colorize && `hsl(${180 - (f * cyrb53(tag))}, 100%, 50%)`;
+export const Tag = memo(({tag, count, colorize, color}) => {
+	const fg = color || (colorize && colorHash(tag));
 	return (
 		<div
 			className="tag"

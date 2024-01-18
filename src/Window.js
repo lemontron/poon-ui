@@ -1,9 +1,10 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { navigation } from 'poon-router';
 import { useAnimatedValue } from './util/animated';
-import { useGesture } from './util/gesture';
+import { useSize } from './util/size.js';
 import { ScreenHeader } from './ScreenHeader';
 import { TextInput } from './TextInput';
+import { Pan } from './Pan.js';
 
 export const Window = forwardRef(({
 	children,
@@ -32,18 +33,7 @@ export const Window = forwardRef(({
 		close,
 	}));
 
-	const {height} = useGesture(el, {
-		onCapture: e => {
-			return (e.direction === 'y' && e.distance > 0);
-		},
-		onMove: e => {
-			pan.setValue(height - Math.max(0, e.distance));
-		},
-		onUp: e => {
-			if (e.flick === -1) return close();
-			pan.spring(e.size);
-		},
-	});
+	const {height} = useSize(el);
 
 	useEffect(() => {
 		if (!height) return;
@@ -73,7 +63,20 @@ export const Window = forwardRef(({
 	return (
 		<div className="layer">
 			<div className={`shade shade-${presentation}`} ref={shadeEl}/>
-			<div className={`window window-${presentation}`} ref={el}>
+			<Pan
+				className={`window window-${presentation}`}
+				ref={el}
+				onCapture={e => {
+					return (e.direction === 'y' && e.distance > 0);
+				}}
+				onMove={e => {
+					pan.setValue(height - Math.max(0, e.distance));
+				}}
+				onUp={e => {
+					if (e.flick === -1) return close();
+					pan.spring(e.size);
+				}}
+			>
 				{presentation === 'modal' ? (
 					<ScreenHeader
 						title={title}
@@ -94,7 +97,7 @@ export const Window = forwardRef(({
 					/>
 				) : null}
 				<div className="card-body" children={children}/>
-			</div>
+			</Pan>
 		</div>
 	);
 });

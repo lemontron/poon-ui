@@ -23,3 +23,5 @@ export const createClamp = (min, max) => {
 export const lerp = (val, v0, v1) => {
 	return (1 - val) * v0 + val * v1;
 };
+
+export const isIOS = navigator.userAgent.match(/(iPad|iPhone|iPod)/g);
