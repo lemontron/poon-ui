@@ -1,5 +1,30 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useCallback } from 'react';
 import { easeOutCubic } from './index.js';
+
+export const useSpring = ({getValue, setValue}) => {
+	const id = useRef(0);
+	return useCallback((finalValue, duration = AnimatedValue.defaultAnimationDuration) => {
+		return new Promise(resolve => {
+			const initialValue = getValue();
+			if (finalValue === initialValue) return resolve(); // cancel unnecessary animation
+
+			const t0 = id.current = performance.now(); // a unique id for this animation lifecycle
+			const animate = (t) => {
+				if (t0 !== id.current) return resolve(false);
+				const elapsed = Math.max(0, t - t0); // time hack
+				if (elapsed >= duration) {
+					setValue(finalValue);
+					resolve();
+				} else {
+					const d = (finalValue - initialValue) * easeOutCubic(elapsed / duration);
+					setValue(initialValue + d);
+					requestAnimationFrame(animate);
+				}
+			};
+			animate(t0);
+		});
+	}, []);
+};
 
 export class AnimatedValue {
 	constructor(initialValue, id) {

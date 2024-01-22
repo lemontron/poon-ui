@@ -35,7 +35,7 @@ input:-webkit-autofill::first-line, input:-webkit-autofill {font-family:inherit 
 }
 
 html, body {overscroll-behavior:none; height:100%; overflow:hidden; position:relative;}
-body {margin:0; background:var(--bg); cursor:default; font-family:var(--font);  -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;}
+body {margin:0; background:var(--bg); cursor:default; font-family:var(--font); -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;}
 * {box-sizing:border-box; font-family:inherit; outline:none; font-size:inherit; margin:0; font-synthesis:none;}
 body, input, select, button {font-size:var(--font-size); padding:0; color:#fff;}
 hr {border:none; border-top:var(--separator-height) solid var(--separator-color); margin:0 var(--gutter-width);}
@@ -130,7 +130,7 @@ i.text-input-clear {font-size:18px;}
 .btn-row {margin-bottom:10px; width:100%; display:flex; color:#999; grid-gap:10px;}
 
 /* SCROLLER */
-.scroller {overflow:hidden;}
+.scroller {overflow:auto;}
 .scroller.vertical {height:100%; flex:1;}
 .scroller::-webkit-scrollbar {display:none;}
 
@@ -213,12 +213,21 @@ i.text-input-clear {font-size:18px;}
 .toast {padding:7px 15px; display:inline-block; background:#fff; color:#000; border-radius:var(--input-border-radius);}
 
 /* VIEW PAGER */
-.pager {height:100%; white-space:nowrap; display:flex; flex-direction:column; width:100%; position:relative;}
+.pager {height:100%; width:100%; white-space:nowrap; display:flex; flex-direction:column; position:relative;}
 .pager.vertical {touch-action:pan-y;}
 .pager.horizontal {touch-action:pan-x;}
-.pager-scroller {flex:1; position:relative; overflow:hidden;}
-.pager-canvas {position:absolute; top:0; left:0; bottom:0; width:100%;}
-.pager-page {width:100%; height:100%; position:relative; white-space:normal; overflow:hidden;}
+.pager-scroller {
+    flex:1;
+    position:relative;
+    overflow:auto;
+    /*scroll-behavior:smooth;*/
+    /*scroll-snap-stop:always;*/
+    /*scroll-snap-type:x mandatory;*/
+    display:flex;
+    -webkit-overflow-scrolling:auto;
+}
+.pager-scroller::-webkit-scrollbar {display:none;}
+.pager-page {width:100%; height:100%; position:relative; white-space:normal; overflow:hidden; scroll-snap-align:start; flex:0 0 100%;}
 .pager.horizontal .pager-page {display:inline-block;}
 
 /* VIEW PAGER TABS */

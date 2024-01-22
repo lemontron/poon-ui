@@ -1,16 +1,8 @@
 import React, { useRef, forwardRef } from 'react';
-import { isIOS } from './util/index.js';
 
 const FLICK_SPEED = .25; // Pixels per ms
-const CUTOFF_INTERVAL = 50; // Milliseconds
 
-const getVelocity = (lastV = 0, newV, elapsedTime) => {
-	const w1 = Math.min(elapsedTime, CUTOFF_INTERVAL) / CUTOFF_INTERVAL;
-	const w0 = 1 - w1;
-	return (lastV * w0) + (newV * w1);
-};
-
-let responderEl; // The element currently capturing input
+window.responderEl = null; // The element currently capturing input
 // Will I add support for multiple? Only time will tell!!
 
 const getXY = (e, i = 0) => ({
@@ -22,11 +14,8 @@ export const Pan = forwardRef(({
 	onDown,
 	onMove,
 	onCapture,
-	onDoubleTap,
-	onPan,
 	onPinch,
 	onUp,
-	onScroll,
 	...props
 }, ref) => {
 	const el = ref || useRef();
@@ -38,21 +27,12 @@ export const Pan = forwardRef(({
 		if (elapsed > 0) {
 			const vx = (refs.x - refs.last.x) / elapsed;
 			const vy = (refs.y - refs.last.y) / elapsed;
-			refs.v = {'x': getVelocity(refs.v.x, vx, elapsed), 'y': getVelocity(refs.v.y, vy, elapsed)};
+			refs.v = {'x': vx, 'y': vy};
 			refs.last = {'x': refs.x, 'y': refs.y, 'ts': now};
 		}
 	};
 
 	const down = (e) => {
-		// Prevent iOS gesture on the edges
-		// if (isIOS && e.touches.length === 1) {
-		// 	const touch = e.touches[0];
-		// 	if (
-		// 		touch.clientX < window.innerWidth * 0.1 ||
-		// 		touch.clientX > window.innerWidth * 0.9
-		// 	) e.preventDefault();
-		// }
-
 		// Handle pinch second touch
 		if (e.touches.length === 2) { // The first touch already happened
 			const t0 = getXY(e, 0), t1 = getXY(e, 1); // Get two touches
@@ -62,7 +42,7 @@ export const Pan = forwardRef(({
 		}
 
 		// Clear previous values
-		responderEl = null;
+		window.responderEl = null;
 		for (let key in refs) delete refs[key];
 
 		const {x, y} = getXY(e);
@@ -71,8 +51,6 @@ export const Pan = forwardRef(({
 			'x': x,
 			'y': y,
 			'size': {'x': width, 'y': height}, // Size of the element
-			// 'width': width, // Todo: remove
-			// 'height': height, // Todo: remove
 			'locked': false, // Direction
 			'touch': false, // Whether we've captured the touch
 			'origin': {x, y}, // Initial touch position
@@ -87,8 +65,17 @@ export const Pan = forwardRef(({
 	};
 
 	const move = (e) => {
-		if (responderEl && responderEl !== el.current) return;
+		if (responderEl && responderEl !== el.current) {
+			if (e.cancelable) {
+				console.log('cancelled successfully', el.current);
+				e.preventDefault();
+			} else {
+				console.log('tried to cancel', el.current);
+			}
+			return;
+		}
 
+		// Locking stage
 		if (refs.pinch) { // Pinch mode
 			if (e.touches.length === 2) {
 				refs.locked = 'pinch'; // pinch mode
@@ -116,6 +103,7 @@ export const Pan = forwardRef(({
 			}
 		}
 
+		// Moving stage
 		if (refs.locked) {
 			refs.distance = refs.d[refs.locked]; // Reduce information
 
@@ -130,7 +118,7 @@ export const Pan = forwardRef(({
 
 			if (refs.touch) {
 				e.stopPropagation();
-				responderEl = el.current; // capture event
+				window.responderEl = el.current; // capture event
 
 				if (onMove) onMove({
 					'd': refs.d,
@@ -138,6 +126,7 @@ export const Pan = forwardRef(({
 					'distance': refs.d[refs.locked],
 					'velocity': refs.v[refs.locked],
 					'size': refs.size[refs.locked],
+					'currentTarget': e.currentTarget,
 				});
 			}
 		}
@@ -148,7 +137,7 @@ export const Pan = forwardRef(({
 		if (responderEl && responderEl !== el.current) return;
 
 		if (!refs.touch) return;
-		logVelocity(e);
+		// logVelocity(e);
 
 		const velocity = refs.v[refs.locked];
 		const speed = Math.abs(velocity);
@@ -158,7 +147,7 @@ export const Pan = forwardRef(({
 		if (refs.locked) {
 			// Detect flick by speed or distance
 			const flick = (speed >= FLICK_SPEED && Math.sign(velocity)) ||
-				(Math.abs(distance) > (size / 2) && Math.sign(distance));
+				(Math.abs(distance) > (size / 2) && Math.sign(distance)) || 0;
 
 			if (onUp) onUp({
 				'flick': flick * -1, // Invert direction for use with pagers
@@ -170,15 +159,6 @@ export const Pan = forwardRef(({
 		}
 	};
 
-	const wheel = (e) => {
-		el.current.scrollTop += e.deltaY;
-		const {width, height} = el.current.getBoundingClientRect();
-		if (onPan) onPan({
-			'x': {'distance': e.deltaX, 'size': width},
-			'y': {'distance': e.deltaY, 'size': height},
-		});
-	};
-
 	return (
 		<div
 			ref={el}
@@ -186,8 +166,6 @@ export const Pan = forwardRef(({
 			onTouchStart={down}
 			onTouchMove={move}
 			onTouchEnd={up}
-			onWheel={wheel}
-			onDoubleClick={onDoubleTap}
 		/>
 	);
 });

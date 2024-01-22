@@ -61,7 +61,7 @@ export const GalleryItem = ({children, onClose}) => {
 				if (anim.values.zoom > 3) return anim.spring({'zoom': 3});
 				anim.end();
 			}}
-			onDoubleTap={() => {
+			onDoubleClick={() => {
 				if (anim.values.zoom === 1) {
 					anim.spring({'zoom': 3});
 				} else {

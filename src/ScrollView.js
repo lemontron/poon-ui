@@ -1,5 +1,5 @@
 import React, { Fragment, forwardRef, useEffect, useRef, useImperativeHandle } from 'react';
-import { useAnimatedValue } from './util/animated';
+import { useAnimatedValue, useSpring } from './util/animated';
 import { c } from './util';
 import { PullIndicator } from './PullIndicator';
 import { Pan } from './Pan.js';
@@ -11,24 +11,19 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 	const pull = useAnimatedValue(0);
 	const scroll = useAnimatedValue(0);
 
+	const spring = useSpring({
+		'getValue': () => horizontal ? el.current.scrollLeft : el.current.scrollTop,
+		'setValue': (v) => horizontal ? el.current.scrollLeft = v : el.current.scrollTop = v,
+	});
+
 	useImperativeHandle(ref, () => ({
 		scrollToTop(duration = 0) {
-			scroll.spring(0, duration);
+			spring(0, duration);
 		},
 		scrollToBottom(duration = 0) {
-			scroll.spring(el.current.scrollHeight, duration);
+			spring(el.current.scrollHeight, duration);
 		},
 	}));
-
-	useEffect(() => {
-		return scroll.on(val => {
-			if (horizontal) {
-				el.current.scrollLeft = val;
-			} else {
-				el.current.scrollTop = val;
-			}
-		});
-	}, []);
 
 	useEffect(() => {
 		if (!onRefresh) return;
@@ -61,7 +56,6 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 					refs.canScrollHorizontal = (el.current.scrollWidth > el.current.clientWidth);
 					refs.initScrollTop = el.current.scrollTop;
 					refs.initScrollLeft = el.current.scrollLeft;
-					scroll.end();
 				}}
 				onCapture={e => {
 					if (e.direction === 'x') return refs.canScrollHorizontal;
@@ -87,11 +81,7 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 					if (e.direction === 'y') {
 						if (onRefresh && refs.initScrollTop === 0 && e.distance > 0) { // Reveal pull to refresh indicator
 							pull.setValue(Math.min(70, e.distance));
-						} else {
-							scroll.setValue(refs.initScrollTop - e.distance);
 						}
-					} else if (e.direction === 'x') {
-						scroll.setValue(refs.initScrollLeft - e.distance);
 					}
 				}}
 				onUp={e => {
@@ -102,11 +92,7 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 							} else {
 								pull.spring(0);
 							}
-						} else if (e.velocity) { // Coast scrolling
-							scroll.spring(scroll.value - (e.velocity * 1000), 1000);
 						}
-					} else if (e.direction === 'h') {
-						if (e.velocity) scroll.spring(scroll.value - (e.velocity * 1000), 1000); // Coast scrolling
 					}
 				}}
 			/>
