@@ -64,7 +64,9 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 					scroll.end();
 				}}
 				onCapture={e => {
-					if (e.direction === 'x') return refs.canScrollHorizontal;
+					if (e.direction === 'x') {
+						return refs.canScrollHorizontal;
+					}
 					if (e.direction === 'y') {
 						if (onRefresh && el.current.scrollTop === 0 && e.distance > 0) {
 							// console.loc('capture pull to refresh');
@@ -79,7 +81,6 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 							return true;
 						}
 
-						// console.log('capturing');
 						return (refs.initScrollTop > 0);
 					}
 				}}

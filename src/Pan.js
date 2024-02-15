@@ -71,8 +71,6 @@ export const Pan = forwardRef(({
 			'x': x,
 			'y': y,
 			'size': {'x': width, 'y': height}, // Size of the element
-			// 'width': width, // Todo: remove
-			// 'height': height, // Todo: remove
 			'locked': false, // Direction
 			'touch': false, // Whether we've captured the touch
 			'origin': {x, y}, // Initial touch position
@@ -126,6 +124,7 @@ export const Pan = forwardRef(({
 					'size': refs.size[refs.locked],
 					'pinch': refs.pinch,
 				});
+				// console.log('Touch', refs.touch);
 			}
 
 			if (refs.touch) {
@@ -161,6 +160,7 @@ export const Pan = forwardRef(({
 				(Math.abs(distance) > (size / 2) && Math.sign(distance));
 
 			if (onUp) onUp({
+				'distance': distance,
 				'flick': flick * -1, // Invert direction for use with pagers
 				'flickMs': Math.min((size - Math.abs(distance)) / speed, 300),
 				'direction': refs.locked,
