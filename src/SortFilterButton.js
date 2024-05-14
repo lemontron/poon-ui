@@ -13,6 +13,6 @@ export const SortFilterButton = ({
 			<span className="sort-filter-label">{label} </span>
 			<span className="sort-filter-value">{title}</span>
 		</div>
-		<Icon icon="swap_vertical_circle" size={18}/>
+		<Icon icon="swap_vert" size={18}/>
 	</Touchable>
 );

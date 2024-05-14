@@ -5,7 +5,9 @@ export const Shade = forwardRef(({}, ref) => {
 
 	useImperativeHandle(ref, () => ({
 		progress: (value, width) => {
-			if (el.current) el.current.style.opacity = 1 - (value / width);
+			if (el.current) {
+				el.current.style.opacity = 1 - (value / width);
+			}
 		},
 	}));
 

@@ -1,9 +1,10 @@
 import React from 'react';
 import { createBus, useBus } from 'poon-router/util.js';
+import { Layer } from './Layer.js';
 
 export const modalState = createBus([]);
 
-const renderModal = (modal) => <div key={modal.id} className="layer" children={modal.children}/>;
+const renderModal = (modal) => <Layer key={modal.id} children={modal.children}/>;
 
 export const Modal = () => useBus(modalState).map(renderModal);
 

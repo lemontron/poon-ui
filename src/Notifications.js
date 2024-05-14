@@ -5,6 +5,7 @@ import { toPercent } from './util/index.js';
 import { Touchable } from './Touchable.js';
 import { Icon } from './Icon.js';
 import { Pan } from './Pan.js';
+import { Layer } from './Layer.js';
 
 const state = createBus([]);
 
@@ -65,9 +66,11 @@ export const Notifications = () => {
 
 	if (notifications.length === 0) return null;
 	return (
-		<div className="layer poon-notifications">
-			{notifications.map(data => <Notification {...data}/>)}
-		</div>
+		<Layer
+			isActive={notifications.length > 0}
+			className="poon-notifications"
+			children={notifications.map(data => <Notification {...data}/>)}
+		/>
 	);
 };
 

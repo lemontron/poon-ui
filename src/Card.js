@@ -7,6 +7,7 @@ import { ScreenHeader } from './ScreenHeader';
 import { Placeholder } from './Placeholder';
 import { Shade } from './Shade';
 import { Pan } from './Pan.js';
+import { Layer } from './Layer.js';
 
 export const Card = forwardRef(({
 	title,
@@ -33,6 +34,13 @@ export const Card = forwardRef(({
 	const close = () => pan.spring(width).then(() => {
 		if (allowBack) navigation.goBack();
 	});
+
+	useEffect(() => {
+		if (typeof title === 'string') {
+			document.title = title;
+			return () => delete document.title;
+		}
+	}, [title]);
 
 	// Trigger animation on visibility change
 	useEffect(() => {
@@ -80,7 +88,7 @@ export const Card = forwardRef(({
 	};
 
 	return (
-		<div className="layer">
+		<Layer isActive={isVisible}>
 			{ShadeComponent ? <ShadeComponent ref={shadeEl}/> : null}
 			<Pan
 				className={c('card', animateIn && 'animate', className)}
@@ -109,6 +117,6 @@ export const Card = forwardRef(({
 					<Placeholder className="drop-zone" icon="upload" title="Upload"/>
 				) : null}
 			</Pan>
-		</div>
+		</Layer>
 	);
 });

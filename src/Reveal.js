@@ -5,6 +5,7 @@ import { c, toPercent } from './util/index.js';
 import { useSize } from './util/size.js';
 import { ScreenHeader } from './ScreenHeader';
 import { Pan } from './Pan.js';
+import { Layer } from './Layer.js';
 
 let origin = {};
 
@@ -55,7 +56,7 @@ export const Reveal = forwardRef(({
 	}, [width, height]);
 
 	return (
-		<div className="layer reveal" ref={el}>
+		<Layer isActive={isVisible} className="reveal" ref={el}>
 			<Pan
 				className={c('card reveal-content', className)}
 				ref={innerEl}
@@ -79,7 +80,7 @@ export const Reveal = forwardRef(({
 				/>
 				<div className="card-body" children={children}/>
 			</Pan>
-		</div>
+		</Layer>
 	);
 });
 

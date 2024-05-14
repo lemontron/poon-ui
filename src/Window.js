@@ -5,6 +5,8 @@ import { useSize } from './util/size.js';
 import { ScreenHeader } from './ScreenHeader';
 import { TextInput } from './TextInput';
 import { Pan } from './Pan.js';
+import { c } from './util/index.js';
+import { Layer } from './Layer.js';
 
 export const Window = forwardRef(({
 	children,
@@ -16,6 +18,7 @@ export const Window = forwardRef(({
 	onClose,
 	isVisible,
 	presentation = 'modal',
+	className,
 }, ref) => {
 	const shadeEl = useRef();
 	const el = useRef();
@@ -61,10 +64,10 @@ export const Window = forwardRef(({
 	}, [height]);
 
 	return (
-		<div className="layer">
+		<Layer isActive={isVisible}>
 			<div className={`shade shade-${presentation}`} ref={shadeEl}/>
 			<Pan
-				className={`window window-${presentation}`}
+				className={c(`window window-${presentation}`, className)}
 				ref={el}
 				onCapture={e => {
 					return (e.direction === 'y' && e.distance > 0);
@@ -98,6 +101,6 @@ export const Window = forwardRef(({
 				) : null}
 				<div className="card-body" children={children}/>
 			</Pan>
-		</div>
+		</Layer>
 	);
 });
