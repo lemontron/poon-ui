@@ -187,9 +187,9 @@ i.text-input-clear {font-size:18px;}
 .drop-zone {position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255, 255, 255, .2); pointer-events:none;}
 
 /* HEADER */
-.header {display:flex; align-items:center; justify-content:space-around; height:var(--header-height); background:var(--header-bg);}
+.header {display:flex; align-items:center; justify-content:space-around; min-height:var(--header-height); background:var(--header-bg);}
 .header-close {padding:0 var(--gutter-width); color:#fff;}
-.header-middle {flex:1; min-width:0;}
+.header-middle {flex:1; min-width:0; padding:10px 0;}
 .header-title {font-size:var(--header-font-size); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;}
 .header-subtitle {margin-top:3px;}
 .header-spacer {min-width:44px; display:flex; justify-content:center; align-items:center;}
