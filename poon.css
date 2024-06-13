@@ -138,6 +138,7 @@ i.text-input-clear {font-size:18px;}
 .scroller {overflow:hidden;}
 .scroller.vertical {height:100%; flex:1;}
 .scroller::-webkit-scrollbar {display:none;}
+.scroller-container {position:relative; display:flex; flex:1; overflow:hidden; height:100%;}
 
 /* Pull Indicator */
 .list-pull {position:absolute; height:70px; top:0; left:0; right:0; pointer-events:none; z-index:1; overflow:hidden;}
@@ -170,7 +171,7 @@ i.text-input-clear {font-size:18px;}
 .handle {position:absolute; top:5px; left:50%; margin-left:-20px; width:40px; height:4px; border-radius:5px; background:#999;}
 
 /* DIFFERENT STACK TYPES */
-.layer {position:absolute; top:0; left:0; right:0; bottom:0;  overflow:hidden;}
+.layer {position:absolute; top:0; left:0; right:0; bottom:0; overflow:hidden;}
 .layer-inactive {pointer-events:none;}
 
 .card {position:absolute; top:0; left:0; bottom:0; right:0; height:var(--viewport-height); width:var(--viewport-width); background:var(--bg); display:flex; flex-direction:column; pointer-events:auto; will-change:transform;}
@@ -319,10 +320,10 @@ i.filter-button-caret {margin:0 -4px; font-size:18px;}
 .fab.touched {opacity:1; background:#666;}
 
 /* TAG */
-.tag-container {display:inline-flex; align-items:center; border-radius:11px; overflow:hidden; background:rgba(255, 255, 255, .1);}
+.tag-container {display:inline-flex; align-items:center; border-radius:11px; overflow:hidden; background:rgba(255, 255, 255, .1); flex-shrink:0;}
 .tag i {font-size:16px;}
-.tag, .ribbon-container {padding:0 10px; display:inline-flex; align-items:center; height:22px; justify-content:center; font-size:14px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; gap:5px;}
-.tag {border-radius:20px; background:rgba(255, 255, 255, .1); border:1px solid rgba(255, 255, 255, .1);}
+.tag, .ribbon-container {padding:0 10px; display:inline-flex; align-items:center; height:24px; justify-content:center; font-size:14px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; gap:5px;}
+.tag {border-radius:20px; background:rgba(255, 255, 255, .1);}
 .tag-count {height:16px; min-width:16px; border-radius:10px; background:#fff; color:#000; text-align:center; font-size:10px; line-height:16px; font-weight:bold; padding:0 4px;}
 .tag-meta {padding:0 10px; margin-left:-5px; font-size:10px;}
 

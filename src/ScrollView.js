@@ -45,7 +45,7 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 	};
 
 	return (
-		<Fragment>
+		<div className="scroller-container">
 			{onRefresh ? (
 				<div className="list-pull">
 					<PullIndicator pull={pull} ref={spinnerEl}/>
@@ -111,6 +111,6 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 					}
 				}}
 			/>
-		</Fragment>
+		</div>
 	);
 });
