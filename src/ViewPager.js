@@ -1,8 +1,9 @@
-import React, { Children, forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import React, { Children, forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { useAnimatedValue } from './util/animated';
 import { c, createClamp, toPercent } from './util';
 import { useSize } from './util/size.js';
 import { Pan } from './Pan.js';
+import { Touchable } from './Touchable.js';
 
 const PagerDot = ({pan, i}) => {
 	const el = useRef();
@@ -24,21 +25,35 @@ const PagerDot = ({pan, i}) => {
 };
 
 const PagerTabTitle = ({title, i, pan, onPress}) => {
-	const el = useRef();
+	const indicatorEl = useRef();
+	const titleEl = useRef();
+
+	const getOpacity = (value) => Math.max(0.5, 1 - Math.abs(i - value));
+	const getLeft = (value) => toPercent(value - i);
+
 	useEffect(() => {
 		return pan.on(value => {
-			const dist = Math.abs(i - value);
-			el.current.style.opacity = Math.max(0.5, 1 - dist);
+			titleEl.current.style.opacity = getOpacity(value);
+			indicatorEl.current.style.left = getLeft(value);
 		});
 	}, []);
+
 	return (
-		<div
-			children={title}
-			className="pager-tabs-title"
-			onClick={() => onPress(i)}
-			ref={el}
-			style={{opacity: (pan.value === i) ? 1 : .5}}
-		/>
+		<div className="pager-tab" onClick={() => onPress(i)}>
+			<div
+				className="pager-tab-title"
+				ref={titleEl}
+				children={title}
+				style={{opacity: getOpacity(pan.value)}}
+			/>
+			<div className="pager-tab-indicator-track">
+				<div
+					className="pager-tab-indicator"
+					ref={indicatorEl}
+					style={{left: getLeft(pan.value)}}
+				/>
+			</div>
+		</div>
 	);
 };
 
@@ -46,39 +61,51 @@ export const ViewPager = forwardRef(({
 	titles,
 	children,
 	vertical,
-	dots,
 	className,
 	page = 0,
 	gap = 0,
+	onChangePage,
 	enableScrolling = true,
+	showDots = false,
+	showButtons = false,
 }, ref) => {
+	// use internal state or external state!
+	const [internalPage, setInternalPage] = useState(page);
+
 	const pan = useAnimatedValue(page);
-	const indicatorEl = useRef();
 	const scrollerEl = useRef();
 	const refs = useRef({}).current;
 	const lastIndex = Children.count(children) - 1;
 	const orientation = vertical ? 'y' : 'x';
 	const clamp = createClamp(0, lastIndex);
 
+	const userInteractionChangePage = (page, flickMs) => {
+		page = clamp(page);
+		if (onChangePage) onChangePage(page);
+		setInternalPage(page);
+		pan.spring(page, flickMs);
+		return page;
+	};
+
 	useImperativeHandle(ref, () => ({
-		scrollToPage: (i) => pan.spring(clamp(i)),
-	}));
+		scrollToPage: userInteractionChangePage,
+	}), [onChangePage]);
 
 	const {width, height} = useSize(scrollerEl);
 
 	useEffect(() => {
+		setInternalPage(page);
 		pan.spring(page);
 	}, [page]);
 
 	useEffect(() => {
 		return pan.on(value => {
 			if (vertical) {
-				console.log('PAN VERT:', value, height);
+				// console.log('PAN VERT:', value, height);
 				scrollerEl.current.scrollTop = (value * height) + (gap * value);
 			} else {
 				scrollerEl.current.scrollLeft = (value * width) + (gap * value);
 			}
-			if (indicatorEl.current) indicatorEl.current.style.transform = `translateX(${toPercent(value)})`;
 		});
 	}, [vertical, height, width]);
 
@@ -95,13 +122,6 @@ export const ViewPager = forwardRef(({
 							onPress={pan.spring}
 						/>
 					))}
-					{width ? (
-						<div
-							className="pager-tabs-indicator"
-							ref={indicatorEl}
-							style={{width: toPercent(1 / titles.length)}}
-						/>
-					) : null}
 				</div>
 			) : null}
 			<Pan
@@ -129,11 +149,9 @@ export const ViewPager = forwardRef(({
 				})}
 				onUp={(e) => {
 					if (e.flick) {
-						const page = clamp(refs.currentPage + e.flick);
-						pan.spring(page, e.flickMs);
+						userInteractionChangePage(refs.currentPage + e.flick, e.flickMs);
 					} else { // Snap back to current page
-						const page = clamp(Math.round(pan.value));
-						pan.spring(page);
+						userInteractionChangePage(Math.round(pan.value));
 					}
 				}}
 			>
@@ -146,11 +164,27 @@ export const ViewPager = forwardRef(({
 					/>
 				))}
 			</Pan>
-			{dots ? (
+			{showDots ? (
 				<div className="pager-dots">
 					{Children.map(children, (child, i) => (
 						<PagerDot key={i} pan={pan} i={i}/>
 					))}
+				</div>
+			) : null}
+			{showButtons ? (
+				<div className="pager-buttons">
+					<Touchable
+						className="material-icons pager-button"
+						onClick={() => userInteractionChangePage(pan.value - 1)}
+						children="arrow_circle_left"
+						disabled={internalPage === 0}
+					/>
+					<Touchable
+						className="material-icons pager-button"
+						onClick={() => userInteractionChangePage(pan.value + 1)}
+						children="arrow_circle_right"
+						disabled={internalPage === lastIndex}
+					/>
 				</div>
 			) : null}
 		</div>

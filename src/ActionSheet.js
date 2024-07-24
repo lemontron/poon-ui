@@ -7,15 +7,21 @@ import { BottomSheet } from './BottomSheet';
 const bus = createBus(null);
 const pan = new AnimatedValue(0);
 
+export const showActionSheet = (title, options, callback) => bus.update({title, options, callback});
+export const hideActionSheet = () => bus.update(null);
+
 export const ActionSheet = () => {
 	const sheet = useBus(bus);
 
 	const renderOption = (option, i) => {
 		if (option.hidden) return null;
-		const clickOption = (e) => {
-			if (option.onClick) option.onClick();
-			if (sheet.callback) sheet.callback(option.value);
-			pan.spring(0).then(() => bus.update(0));
+		const clickOption = async (e) => {
+			await pan.spring(0);
+			hideActionSheet();
+			setTimeout(() => {
+				if (option.onClick) option.onClick();
+				if (sheet.callback) sheet.callback(option.value);
+			}, 0);
 		};
 		return (
 			<TouchableRow
@@ -36,7 +42,7 @@ export const ActionSheet = () => {
 		<BottomSheet
 			pan={pan}
 			visible
-			onClose={() => bus.update(null)}
+			onClose={hideActionSheet}
 			showShade
 		>
 			<div className="action-sheet-title">{sheet.title}</div>
@@ -44,5 +50,3 @@ export const ActionSheet = () => {
 		</BottomSheet>
 	);
 };
-
-export const showActionSheet = (title, options, callback) => bus.update({title, options, callback});

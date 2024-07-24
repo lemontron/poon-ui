@@ -14,6 +14,8 @@ export const bounce = (num, min, max) => {
 	return num;
 };
 
+export const noop = () => null;
+
 export const easeOutCubic = (t) => (--t) * t * t + 1;
 
 export const createClamp = (min, max) => {

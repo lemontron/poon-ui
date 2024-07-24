@@ -3,7 +3,17 @@ import { c } from './util';
 
 let ignoreNextClick = false; // Safari glitch fix
 
-export const Touchable = forwardRef(({href, onClick, className, active, target, children, style, disableMenu}, ref) => {
+export const Touchable = forwardRef(({
+	href,
+	onClick,
+	className,
+	active,
+	target,
+	children,
+	style,
+	disabled,
+	disableMenu,
+}, ref) => {
 	const [touched, setTouched] = useState(false);
 	const isClickable = (href || onClick);
 
@@ -34,6 +44,7 @@ export const Touchable = forwardRef(({href, onClick, className, active, target, 
 	if (href) tagName = 'a';
 
 	return createElement(tagName, {
+		'className': c('touchable', className, touched && 'touched', disableMenu && 'disable-menu', active && 'active', disabled && 'disabled'),
 		'href': href,
 		'onTouchStart': isClickable && touch,
 		'onTouchMove': isClickable && leave,
@@ -42,7 +53,6 @@ export const Touchable = forwardRef(({href, onClick, className, active, target, 
 		'onMouseUp': isClickable && leave,
 		'onMouseLeave': isClickable && leave,
 		'onClick': isClickable && clickButton,
-		'className': c('touchable', className, touched && 'touched', disableMenu && 'disable-menu', active && 'active'),
 		'target': target,
 		'draggable': false,
 		'onContextMenu': disableMenu ? e => {

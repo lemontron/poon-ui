@@ -7,11 +7,14 @@ export const Dropdown = ({position, button, content}) => {
 	useEffect(() => {
 		if (!visible) return;
 		const dismiss = (e) => {
-			const insideDropdown = e.composedPath().some(el => {
+			const isInsideContent = e.composedPath().some(el => {
 				return el.classList && el.classList.contains('dropdown-content');
 			});
-			// if (debug) console.log('Debug', insideDropdown ? 'Inside' : 'Outside');
-			if (!insideDropdown) setVisible(false);
+			const isInsideChildButton = e.composedPath().some(el => {
+				return el.classList && el.classList.contains('dropdown-item');
+			});
+			// Hide box if click is either: outside the dropdown box or inside a child (<DropdownItem/>)
+			if (!isInsideContent || isInsideChildButton) setVisible(false);
 		};
 		setTimeout(() => {
 			window.addEventListener('click', dismiss, {passive: false});

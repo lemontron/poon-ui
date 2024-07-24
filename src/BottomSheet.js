@@ -35,7 +35,7 @@ export const BottomSheet = forwardRef(({
 		} else { // hide
 			pan.spring(0).then(onClose);
 		}
-	}, [visible, height, onClose]);
+	}, [visible, !!height, onClose]);
 
 	return (
 		<Layer isActive={false}>
