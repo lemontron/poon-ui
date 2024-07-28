@@ -1,6 +1,6 @@
 import React, { Children, forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { useAnimatedValue } from './util/animated';
-import { c, createClamp, toPercent } from './util';
+import { c, createClamp, lerp, toPercent } from './util';
 import { useSize } from './util/size.js';
 import { Pan } from './Pan.js';
 import { Touchable } from './Touchable.js';
@@ -74,8 +74,10 @@ export const ViewPager = forwardRef(({
 
 	const pan = useAnimatedValue(page);
 	const scrollerEl = useRef();
+	const tabsEl = useRef();
 	const refs = useRef({}).current;
-	const lastIndex = Children.count(children) - 1;
+	const numPages = Children.count(children);
+	const lastIndex = numPages - 1;
 	const orientation = vertical ? 'y' : 'x';
 	const clamp = createClamp(0, lastIndex);
 
@@ -105,6 +107,10 @@ export const ViewPager = forwardRef(({
 				scrollerEl.current.scrollTop = (value * height) + (gap * value);
 			} else {
 				scrollerEl.current.scrollLeft = (value * width) + (gap * value);
+				if (tabsEl.current) { // scroll the tabs smoothly as we scroll the pager
+					const overflowWidth = (tabsEl.current.scrollWidth - tabsEl.current.clientWidth);
+					tabsEl.current.scrollLeft = lerp(value / lastIndex, 0, overflowWidth);
+				}
 			}
 		});
 	}, [vertical, height, width]);
@@ -112,7 +118,7 @@ export const ViewPager = forwardRef(({
 	return (
 		<div className={c('pager', vertical ? 'vertical' : 'horizontal', className)}>
 			{titles ? (
-				<div className="pager-tabs">
+				<div className="pager-tabs" ref={tabsEl}>
 					{titles.map((title, i) => (
 						<PagerTabTitle
 							key={i}
