@@ -4,7 +4,7 @@ import { c } from './util';
 import { PullIndicator } from './PullIndicator';
 import { Pan } from './Pan.js';
 
-export const ScrollView = forwardRef(({children, className, onRefresh, horizontal}, ref) => {
+export const ScrollView = forwardRef(({children, className, onRefresh, horizontal, safePadding}, ref) => {
 	const el = useRef();
 	const spinnerEl = useRef();
 	const refs = useRef({}).current;
@@ -52,7 +52,7 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 				</div>
 			) : null}
 			<Pan
-				className={c('scroller', className, horizontal ? 'horizontal' : 'vertical')}
+				className={c('scroller', className, horizontal ? 'horizontal' : 'vertical', safePadding && 'safe-padding')}
 				ref={el}
 				onScroll={handleScroll}
 				children={children}
