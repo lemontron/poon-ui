@@ -24,7 +24,7 @@ const PagerDot = ({pan, i}) => {
 	);
 };
 
-const PagerTabTitle = ({title, i, pan, onPress}) => {
+const PagerTabTitle = ({title, i, pan, onClick}) => {
 	const indicatorEl = useRef();
 	const titleEl = useRef();
 
@@ -39,7 +39,7 @@ const PagerTabTitle = ({title, i, pan, onPress}) => {
 	}, []);
 
 	return (
-		<div className="pager-tab" onClick={() => onPress(i)}>
+		<div className="pager-tab" onClick={() => onClick(i)}>
 			<div
 				className="pager-tab-title"
 				ref={titleEl}
@@ -125,7 +125,7 @@ export const ViewPager = forwardRef(({
 							title={title}
 							pan={pan}
 							i={i}
-							onPress={pan.spring}
+							onClick={pan.spring}
 						/>
 					))}
 				</div>

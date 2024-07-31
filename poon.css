@@ -385,3 +385,8 @@ i.filter-button-caret {margin:0 -4px; font-size:18px;}
 .springboard-icon {height:100px; flex:1; display:flex; flex-direction:column; gap:5px; color:#eee; align-items:center; justify-content:center; min-width:80px;}
 .springboard-icon i {color:#fff; font-size:28px;}
 .springboard-icon .icon-frame {padding:10px; background:#322; border-radius:6px;}
+
+/* BANNER */
+.banner {background:#900; color:#fff; font-size:12px; height:24px; padding:0 10px; display:flex; align-items:center; justify-content:space-between; gap:10px;}
+.banner-body {display:flex; gap:5px; align-items:center;}
+.banner-body > i {font-size:16px;}
