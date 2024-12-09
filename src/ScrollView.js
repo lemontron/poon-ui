@@ -45,14 +45,14 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 	};
 
 	return (
-		<div className="scroller-container">
+		<div className={c('scroller-container', className)}>
 			{onRefresh ? (
 				<div className="list-pull">
 					<PullIndicator pull={pull} ref={spinnerEl}/>
 				</div>
 			) : null}
 			<Pan
-				className={c('scroller', className, horizontal ? 'horizontal' : 'vertical', safePadding && 'safe-padding')}
+				className={c('scroller', horizontal ? 'horizontal' : 'vertical', safePadding && 'safe-padding')}
 				ref={el}
 				onScroll={handleScroll}
 				children={children}

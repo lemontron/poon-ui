@@ -158,7 +158,7 @@ i.text-input-clear {font-size:18px;}
 .progress-ring-content {position:absolute; left:0; top:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center;}
 
 /* ACTIVITY INDICATOR */
-.activity-indicator {display:block; position:relative;}
+.activity-indicator {display:block; position:relative; min-width:16px; min-height:16px;}
 .activity-indicator div {animation:spin 1.2s linear infinite; display:block; position:absolute; top:0;}
 @keyframes spin {
     0% {opacity:1;}
@@ -189,9 +189,17 @@ i.text-input-clear {font-size:18px;}
 .drop-zone {position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255, 255, 255, .2); pointer-events:none;}
 
 /* HEADER */
-.header {display:flex; align-items:center; justify-content:space-around; min-height:var(--header-height); background:var(--header-bg);}
+.header {
+    display:flex;
+    align-items:center;
+    justify-content:space-around;
+    min-height:var(--header-height);
+    background:var(--header-bg);
+    padding-left:env(titlebar-area-x, 0);
+    padding-right:calc(100% - env(titlebar-area-width, 100%) - env(titlebar-area-x, 0));
+}
 .header-close {padding:0 var(--gutter-width); color:#fff;}
-.header-middle {flex:1; min-width:0; padding:10px 0;}
+.header-middle {flex:1; min-width:0; padding:10px 0; -webkit-app-region:drag; app-region:drag;}
 .header-title {font-size:var(--header-font-size); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;}
 .header-subtitle {margin-top:3px;}
 .header-spacer {min-width:44px; display:flex; justify-content:center; align-items:center;}

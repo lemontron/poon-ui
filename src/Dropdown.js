@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { c } from './util';
 
-export const Dropdown = ({position, button, content}) => {
+export const Dropdown = ({position, button, children}) => {
 	const [visible, setVisible] = useState(false);
 
 	useEffect(() => {
@@ -31,7 +31,7 @@ export const Dropdown = ({position, button, content}) => {
 			/>
 			<div
 				className={c('dropdown-content', position || 'top-right', visible ? 'visible' : 'hidden')}
-				children={content}
+				children={children}
 			/>
 		</span>
 	);
