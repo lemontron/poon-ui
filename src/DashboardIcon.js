@@ -11,9 +11,18 @@ const setOrigin = (e) => {
 	);
 };
 
-export const DashboardIcon = ({title, icon, href}) => (
+const generateBgGradient = (color) => {
+	if (!color) return;
+	return `linear-gradient(rgba(255,255,255,10%), transparent), ${color}`;
+};
+
+export const DashboardIcon = ({title, icon, href, color}) => (
 	<Touchable href={href} className="springboard-icon" onClick={setOrigin}>
-		<div className="icon-frame"><Icon icon={icon}/></div>
+		<div
+			className="icon-frame"
+			style={{background: generateBgGradient(color)}}
+			children={<Icon icon={icon}/>}
+		/>
 		<div className="springboard-icon-name">{title}</div>
 	</Touchable>
 );

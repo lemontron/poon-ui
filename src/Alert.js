@@ -38,6 +38,25 @@ const SingleAlert = ({alert, isLast}) => {
 		);
 	};
 
+	const renderButtons = () => {
+		if (!alert.options) return (
+			<div className="alert-buttons alert-bottom">
+				<Button color="white" fullWidth title="Close" onClick={() => dismissAlert(alert)}/>
+			</div>
+		);
+		if (alert.options.length <= 2) return (
+			<div className="alert-buttons horizontal">
+				{alert.options.map(renderButton)}
+			</div>
+		);
+		return (
+			<ScrollView
+				className="alert-buttons"
+				children={alert.options.map(renderButton)}
+			/>
+		);
+	};
+
 	return (
 		<div className={c('alert-container', isLast && alert.visible && alert.className)}>
 			<div
@@ -55,16 +74,7 @@ const SingleAlert = ({alert, isLast}) => {
 					{alert.title ? <div className="alert-title">{alert.title}</div> : null}
 					{alert.message ? <div className="alert-message">{alert.message}</div> : null}
 				</div>
-				{alert.options ? (
-					<ScrollView
-						className={c('alert-buttons', alert.options.length <= 2 && 'alert-buttons-horizontal')}
-						children={alert.options.map(renderButton)}
-					/>
-				) : (
-					<div className="alert-bottom">
-						<Button color="white" fullWidth title="Close" onClick={() => dismissAlert(alert)}/>
-					</div>
-				)}
+				{renderButtons()}
 			</div>
 		</div>
 	);
