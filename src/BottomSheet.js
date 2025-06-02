@@ -1,10 +1,10 @@
-import React, { forwardRef, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { c } from './util';
 import { useSize } from './util/size.js';
 import { Pan } from './Pan.js';
 import { Layer } from './Layer.js';
 
-export const BottomSheet = forwardRef(({
+export const BottomSheet = ({
 	className,
 	visible,
 	pan,
@@ -13,7 +13,7 @@ export const BottomSheet = forwardRef(({
 	onPress,
 	showShade = true,
 	showHandle,
-}, ref) => {
+}) => {
 	const shadeEl = useRef();
 	const sheetEl = useRef();
 	const {height} = useSize(sheetEl);
@@ -62,4 +62,4 @@ export const BottomSheet = forwardRef(({
 			</div>
 		</Layer>
 	);
-});
+};

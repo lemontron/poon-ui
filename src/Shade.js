@@ -1,6 +1,6 @@
-import React, { useRef, useImperativeHandle, forwardRef } from 'react';
+import React, { useRef, useImperativeHandle } from 'react';
 
-export const Shade = forwardRef(({}, ref) => {
+export const Shade = ({ref}) => {
 	const el = useRef();
 
 	useImperativeHandle(ref, () => ({
@@ -12,4 +12,4 @@ export const Shade = forwardRef(({}, ref) => {
 	}));
 
 	return <div className="shade shade-card" ref={el}/>;
-});
+};

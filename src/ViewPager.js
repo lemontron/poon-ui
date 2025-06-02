@@ -1,4 +1,4 @@
-import React, { Children, forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, { Children, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { useAnimatedValue } from './util/animated';
 import { c, createClamp, lerp, toPercent } from './util';
 import { useSize } from './util/size.js';
@@ -57,7 +57,7 @@ const PagerTabTitle = ({title, i, pan, onClick}) => {
 	);
 };
 
-export const ViewPager = forwardRef(({
+export const ViewPager = ({
 	titles,
 	children,
 	vertical,
@@ -68,7 +68,8 @@ export const ViewPager = forwardRef(({
 	enableScrolling = true,
 	showDots = false,
 	showButtons = false,
-}, ref) => {
+	ref,
+}) => {
 	// use internal state or external state!
 	const [internalPage, setInternalPage] = useState(page);
 
@@ -139,7 +140,7 @@ export const ViewPager = forwardRef(({
 						return (refs.initPan - (e.distance / e.size)) > 0;
 					}
 				}}
-				onDown={(e) => {
+				onDown={() => {
 					pan.end();
 					refs.currentPage = Math.round(pan.value);
 					refs.initPan = pan.value;
@@ -195,4 +196,4 @@ export const ViewPager = forwardRef(({
 			) : null}
 		</div>
 	);
-});
+};

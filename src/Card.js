@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { navigation } from 'poon-router';
 import { useAnimatedValue } from './util/animated';
 import { useSize } from './util/size.js';
@@ -9,7 +9,7 @@ import { Shade } from './Shade';
 import { Pan } from './Pan.js';
 import { Layer } from './Layer.js';
 
-export const Card = forwardRef(({
+export const Card = ({
 	title,
 	subtitle,
 	children,
@@ -23,7 +23,8 @@ export const Card = forwardRef(({
 	ShadeComponent = Shade,
 	HeaderComponent,
 	className,
-}, el) => {
+	ref: el,
+}) => {
 	el = el || useRef();
 	const allowBack = useRef(history.length > 1).current;
 	const [dropping, setDropping] = useState(false);
@@ -59,11 +60,11 @@ export const Card = forwardRef(({
 		e.preventDefault();
 	};
 
-	const startDrag = (e) => {
+	const startDrag = () => {
 		setDropping(true);
 	};
 
-	const cancelDrag = (e) => {
+	const cancelDrag = () => {
 		setDropping(false);
 	};
 
@@ -119,4 +120,4 @@ export const Card = forwardRef(({
 			</Pan>
 		</Layer>
 	);
-});
+};

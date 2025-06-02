@@ -1,4 +1,4 @@
-import React, { createElement, forwardRef, useState } from 'react';
+import React, { createElement, useState } from 'react';
 import { Icon } from './Icon';
 import { Touchable } from './Touchable';
 import { ActivityIndicator } from './ActivityIndicator';
@@ -7,7 +7,7 @@ import { c } from './util/index.js';
 const autoCompleteMap = {'code': 'one-time-code'};
 const typeMap = {'phone': 'tel', 'code': 'tel'};
 
-export const TextInput = forwardRef(({
+export const TextInput = ({
 	placeholder,
 	value = '',
 	icon,
@@ -17,7 +17,6 @@ export const TextInput = forwardRef(({
 	rows = 0,
 	className,
 	onFocus,
-	autoComplete,
 	onClick,
 	maxLength,
 	id,
@@ -26,13 +25,13 @@ export const TextInput = forwardRef(({
 	loading,
 	RightComponent,
 	countryCode,
-	onChangePhone,
 	lowerCase,
 	min,
 	max,
 	onPressCountry,
 	countries,
-}, ref) => {
+	ref,
+}) => {
 	const [_value, _setValue] = useState(value); // internal value
 
 	const renderInput = () => {
@@ -127,4 +126,4 @@ export const TextInput = forwardRef(({
 			{renderClearButton()}
 		</div>
 	);
-});
+};

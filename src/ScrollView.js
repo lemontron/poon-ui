@@ -1,10 +1,10 @@
-import React, { Fragment, forwardRef, useEffect, useRef, useImperativeHandle } from 'react';
+import React, { useEffect, useRef, useImperativeHandle } from 'react';
 import { useAnimatedValue } from './util/animated';
 import { c } from './util';
 import { PullIndicator } from './PullIndicator';
 import { Pan } from './Pan.js';
 
-export const ScrollView = forwardRef(({children, className, onRefresh, horizontal, safePadding}, ref) => {
+export const ScrollView = ({children, className, onRefresh, horizontal, safePadding, ref}) => {
 	const el = useRef();
 	const spinnerEl = useRef();
 	const refs = useRef({}).current;
@@ -113,4 +113,4 @@ export const ScrollView = forwardRef(({children, className, onRefresh, horizonta
 			/>
 		</div>
 	);
-});
+};

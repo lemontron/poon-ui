@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useRef } from 'react';
 import { navigation } from 'poon-router';
 import { useAnimatedValue } from './util/animated';
 import { c, toPercent } from './util/index.js';
@@ -9,15 +9,15 @@ import { Layer } from './Layer.js';
 
 let origin = {};
 
-export const Reveal = forwardRef(({
+export const Reveal = ({
 	children,
 	title,
 	headerRight,
-	onClose,
 	isVisible,
 	animateIn,
 	className,
-}, ref) => {
+	ref,
+}) => {
 	const el = useRef();
 	const innerEl = useRef();
 	const pan = useAnimatedValue(animateIn ? 0 : 1);
@@ -82,6 +82,6 @@ export const Reveal = forwardRef(({
 			</Pan>
 		</Layer>
 	);
-});
+};
 
 export const setRevealOrigin = (x, y) => Object.assign(origin, {x, y});

@@ -1,5 +1,5 @@
-import React, { useRef, forwardRef } from 'react';
-import { isIOS } from './util/index.js';
+import React, { useRef } from 'react';
+// import { isIOS } from './util/index.js';
 
 const FLICK_SPEED = .25; // Pixels per ms
 const CUTOFF_INTERVAL = 50; // Milliseconds
@@ -18,7 +18,7 @@ const getXY = (e, i = 0) => ({
 	'y': e.touches ? e.touches[i].clientY : e.clientY,
 });
 
-export const Pan = forwardRef(({
+export const Pan = ({
 	onDown,
 	onMove,
 	onCapture,
@@ -27,8 +27,9 @@ export const Pan = forwardRef(({
 	onPinch,
 	onUp,
 	onScroll,
+	ref,
 	...props
-}, ref) => {
+}) => {
 	const el = ref || useRef();
 	const refs = useRef({}).current; // Internal key values
 
@@ -174,7 +175,8 @@ export const Pan = forwardRef(({
 		el.current.scrollTop += e.deltaY;
 		const {width, height} = el.current.getBoundingClientRect();
 		if (onPan) onPan({
-			'x': {'distance': e.deltaX, 'size': width},
+			// 'x': {'distance': e.deltaX, 'size': width},
+			'x': {'distance': 0, 'size': width}, // Disable horizontal scrolling for now
 			'y': {'distance': e.deltaY, 'size': height},
 		});
 	};
@@ -190,4 +192,4 @@ export const Pan = forwardRef(({
 			onDoubleClick={onDoubleTap}
 		/>
 	);
-});
+};

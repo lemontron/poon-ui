@@ -1,8 +1,8 @@
-import React, { forwardRef } from 'react';
+import React from 'react';
 import { Icon } from './Icon';
 
-export const PullIndicator = forwardRef(({pull}, ref) => (
+export const PullIndicator = ({ref}) => (
 	<div className="pull-indicator" ref={ref}>
 		<Icon icon="refresh" color="#000"/>
 	</div>
-));
+);

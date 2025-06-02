@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useRef } from 'react';
 import { navigation } from 'poon-router';
 import { useAnimatedValue } from './util/animated';
 import { useSize } from './util/size.js';
@@ -8,7 +8,7 @@ import { Pan } from './Pan.js';
 import { c } from './util/index.js';
 import { Layer } from './Layer.js';
 
-export const Window = forwardRef(({
+export const Window = ({
 	children,
 	title,
 	search,
@@ -19,7 +19,8 @@ export const Window = forwardRef(({
 	isVisible,
 	presentation = 'modal',
 	className,
-}, ref) => {
+	ref,
+}) => {
 	const shadeEl = useRef();
 	const el = useRef();
 	const pan = useAnimatedValue(0);
@@ -103,4 +104,4 @@ export const Window = forwardRef(({
 			</Pan>
 		</Layer>
 	);
-});
+};

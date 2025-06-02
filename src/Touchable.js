@@ -1,9 +1,9 @@
-import { createElement, forwardRef, useRef, useState } from 'react';
+import { createElement, useState } from 'react';
 import { c } from './util';
 
 let ignoreNextClick = false; // Safari glitch fix
 
-export const Touchable = forwardRef(({
+export const Touchable = ({
 	href,
 	onClick,
 	className,
@@ -13,7 +13,8 @@ export const Touchable = forwardRef(({
 	style,
 	disabled,
 	disableMenu,
-}, ref) => {
+	ref,
+}) => {
 	const [touched, setTouched] = useState(false);
 	const isClickable = (href || onClick);
 
@@ -63,4 +64,4 @@ export const Touchable = forwardRef(({
 		'type': 'button',
 		'ref': ref,
 	}, children);
-});
+};

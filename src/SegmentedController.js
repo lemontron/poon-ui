@@ -1,18 +1,19 @@
-import React, { forwardRef, Fragment, useEffect, useRef } from 'react';
+import React, { Fragment, useEffect, useRef } from 'react';
 import { Touchable } from './Touchable.js';
 import { useAnimatedValue } from './util/animated.js';
 
-const SegmentedItem = forwardRef(({item, isLast, active, onChange, index}, ref) => (
+const SegmentedItem = ({item, isLast, active, onChange, index, ref}) => (
 	<Fragment>
 		<Touchable
 			children={item.name}
 			onClick={() => onChange(item.value)}
 			active={active}
+			index={index}
 			ref={ref}
 		/>
 		{isLast ? null : <div className="separator"/>}
 	</Fragment>
-));
+);
 
 export const SegmentedController = ({options, value, onChange}) => {
 	const refs = useRef([]);
