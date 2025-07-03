@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { toast } from '../Toast.js';
 
 // Sync Viewport Size
 const syncSize = ({width, height}) => {

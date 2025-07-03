@@ -1,6 +1,6 @@
 import React from 'react';
 import { createBus, useBus } from 'poon-router/util.js';
-import { Layer } from './Layer.js';
+import { Layer } from '../Layer.js';
 
 export const modalState = createBus([]);
 

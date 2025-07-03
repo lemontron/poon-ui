@@ -1,8 +1,8 @@
 import React from 'react';
 import { createBus, useBus } from 'poon-router/util.js';
-import { AnimatedValue } from './util/animated';
-import { TouchableRow } from './TouchableRow';
-import { BottomSheet } from './BottomSheet';
+import { AnimatedValue } from '../util/animated.js';
+import { TouchableRow } from '../TouchableRow.js';
+import { BottomSheet } from '../BottomSheet.js';
 
 const bus = createBus(null);
 const pan = new AnimatedValue(0);

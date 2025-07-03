@@ -1,11 +1,11 @@
 import React, { useRef, useEffect } from 'react';
 import { createBus, useBus, randomId } from 'poon-router/util.js';
-import { useAnimatedValue } from './util/animated.js';
-import { toPercent } from './util/index.js';
-import { Touchable } from './Touchable.js';
-import { Icon } from './Icon.js';
-import { Pan } from './Pan.js';
-import { Layer } from './Layer.js';
+import { useAnimatedValue } from '../util/animated.js';
+import { toPercent } from '../util/index.js';
+import { Touchable } from '../Touchable.js';
+import { Icon } from '../Icon.js';
+import { Pan } from '../Pan.js';
+import { Layer } from '../Layer.js';
 
 const state = createBus([]);
 

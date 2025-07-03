@@ -69,6 +69,7 @@ export const Card = ({
 	};
 
 	const drop = (e) => {
+		e.preventDefault();
 		setDropping(false);
 		onDrop(e);
 	};

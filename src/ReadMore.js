@@ -1,6 +1,6 @@
 import React from 'react';
 import { Touchable } from './Touchable.js';
-import { showAlert } from './Alert.js';
+import { showAlert } from './overlays/Alert.js';
 
 export const ReadMore = ({content}) => {
 	if (!content) return null;

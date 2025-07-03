@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { createBus, randomId, useBus } from 'poon-router/util.js';
-import { c } from './util';
-import { Touchable } from './Touchable';
-import { ScrollView } from './ScrollView';
-import { Button } from './Button.js';
+import { c } from '../util/index.js';
+import { Touchable } from '../Touchable.js';
+import { ScrollView } from '../ScrollView.js';
+import { Button } from '../Button.js';
+import { TextInput } from '../TextInput.js';
 
 const alertsStore = createBus([]);
 
@@ -22,6 +23,8 @@ const dismissAlert = (alert, val) => {
 };
 
 const SingleAlert = ({alert, isLast}) => {
+	const [input, setInput] = useState('');
+
 	const renderButton = (option, i) => {
 		const pressButton = () => {
 			if (option.onPress) option.onPress();
@@ -41,7 +44,12 @@ const SingleAlert = ({alert, isLast}) => {
 	const renderButtons = () => {
 		if (!alert.options) return (
 			<div className="alert-buttons alert-bottom">
-				<Button color="white" fullWidth title="Close" onClick={() => dismissAlert(alert)}/>
+				<Button
+					color="white"
+					fullWidth
+					title="Close"
+					onClick={() => dismissAlert(alert, input)}
+				/>
 			</div>
 		);
 		if (alert.options.length <= 2) return (
@@ -73,6 +81,13 @@ const SingleAlert = ({alert, isLast}) => {
 				<div className="alert-top">
 					{alert.title ? <div className="alert-title">{alert.title}</div> : null}
 					{alert.message ? <div className="alert-message">{alert.message}</div> : null}
+					{alert.input ? (
+						<TextInput
+							className="alert-input"
+							value={input}
+							onChangeText={setInput}
+						/>
+					) : null}
 				</div>
 				{renderButtons()}
 			</div>

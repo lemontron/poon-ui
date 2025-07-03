@@ -48,6 +48,24 @@ p {margin:0;}
 .material-icons {vertical-align:middle; cursor:default;}
 .stack-c {display:flex; align-items:center; justify-content:center; flex:1;}
 
+.global-loading {
+    height:100vh;
+    width:100vw;
+    position:absolute;
+    top:0;
+    bottom:0;
+    left:0;
+    right:0;
+    z-index:100;
+    background:var(--shade-color);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    gap:5px;
+    text-transform:capitalize;
+}
+
 /* TEXT INPUT */
 .text-input {display:flex; align-items:center; flex:1; background:#333; border-radius:var(--input-border-radius); padding:0 5px; overflow:hidden; background:var(--input-background);}
 .text-input-icon {color:#666;}
@@ -134,6 +152,7 @@ i.text-input-clear {font-size:18px;}
 .btn-frosted {backdrop-filter:blur(2px); background:rgba(255, 255, 255, .1); border:none;}
 
 .btn-row {margin-bottom:10px; width:100%; display:flex; color:#999; grid-gap:10px;}
+.btn-column {display:flex; flex-direction:column; gap:10px;}
 
 /* SCROLLER */
 .scroller {overflow:hidden;}
@@ -255,6 +274,12 @@ i.text-input-clear {font-size:18px;}
 .list {width:100%; display:flex; flex-direction:column;}
 .list > .touchable-row {border-bottom:2px solid var(--separator-color); height:44px;}
 .list-title {padding:10px 0; margin:0 10px; text-transform:uppercase;}
+
+.list-inset {padding:10px;}
+.list-inset .list-body {background:#333; border-radius:4px; overflow:hidden;}
+.list-inset .list-inset .avatar {height:24px; width:24px;} /* is this needed? */
+
+
 .placeholder {padding:10px; text-align:center; display:flex; align-items:center; justify-content:center; flex-direction:column; flex:1; width:100%; height:100%; gap:10px;}
 .placeholder .title {font-size:16px;}
 .placeholder-message {opacity:.5;}
@@ -333,6 +358,7 @@ i.filter-button-caret {margin:0 -4px; font-size:18px;}
 .fab-container > * {pointer-events:auto;}
 .fab.inactive {background:#666;}
 .fab {height:40px; padding:0 15px; color:#000; background:#fff; display:flex; align-items:center; justify-content:center; border-radius:20px; transition:background-color .2s; white-space:nowrap; gap:10px;}
+.fab.active {color:#33f; background:#ccf;}
 .fab.round {width:40px; padding:0;}
 .fab.touched {opacity:1; background:#666;}
 
@@ -343,6 +369,7 @@ i.filter-button-caret {margin:0 -4px; font-size:18px;}
 .tag {border-radius:20px; background:rgba(255, 255, 255, .1);}
 .tag-count {height:16px; min-width:16px; border-radius:10px; background:#fff; color:#000; text-align:center; font-size:10px; line-height:16px; font-weight:bold; padding:0 4px;}
 .tag-meta {padding:0 10px; margin-left:-5px; font-size:10px;}
+.tag-container .activity-indicator {margin:0 5px;}
 
 .ribbon-container {transform:skewX(-10deg);}
 .ribbon {transform:skewX(10deg); font-size:12px;}

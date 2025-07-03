@@ -4,7 +4,7 @@ import { c } from './util/index.js';
 import { Icon } from './Icon.js';
 import { ActivityIndicator } from './ActivityIndicator.js';
 
-export const Fab = ({icon, title, loading, disabled, active = true, href, onPress}) => (
+export const Fab = ({icon, title, loading, disabled, active, href, onPress}) => (
 	<Touchable
 		className={c('fab', !title && 'round')}
 		loading={loading}

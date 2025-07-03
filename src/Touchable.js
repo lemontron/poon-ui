@@ -13,6 +13,7 @@ export const Touchable = ({
 	style,
 	disabled,
 	disableMenu,
+	type = 'button',
 	ref,
 }) => {
 	const [touched, setTouched] = useState(false);
@@ -61,7 +62,7 @@ export const Touchable = ({
 			return false;
 		} : undefined,
 		'style': style,
-		'type': 'button',
+		'type': type,
 		'ref': ref,
 	}, children);
 };

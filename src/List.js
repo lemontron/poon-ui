@@ -13,6 +13,7 @@ export const List = ({
 	children,
 	showSeparators = true,
 	safePadding = false,
+	inset = false,
 }) => {
 	const renderList = () => {
 		if (loading || !items) return null;
@@ -33,7 +34,7 @@ export const List = ({
 	);
 
 	return (
-		<div className={c('list', className, safePadding && 'safe-padding')}>
+		<div className={c('list', className, safePadding && 'safe-padding', inset && 'list-inset')}>
 			{title ? (
 				<Fragment>
 					<div className="list-title">{title}</div>
