@@ -1,11 +1,11 @@
 import React from 'react';
 
-export const PercentBar = ({percent, children}) => (
+export const PercentBar = ({percent, color, children}) => (
 	<div className="percent-bar">
 		{percent ? (
 			<div
 				className="percent-bar-inner"
-				style={{width: `${percent * 100}%`}}
+				style={{width: `${percent * 100}%`, backgroundColor: color}}
 			/>
 		) : null}
 		{children}

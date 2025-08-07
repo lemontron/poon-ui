@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { navigation } from 'poon-router';
 import { useAnimatedValue } from './util/animated';
 import { useSize } from './util/size.js';
-import { c } from './util/index.js';
+import { c } from './util';
 import { ScreenHeader } from './ScreenHeader';
 import { Placeholder } from './Placeholder';
 import { Shade } from './Shade';

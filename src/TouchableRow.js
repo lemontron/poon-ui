@@ -17,31 +17,38 @@ export const TouchableRow = ({
 	RightComponent,
 	className,
 	active,
-}) => (
-	<Touchable
-		className={c('touchable-highlight touchable-row', disabled && 'disabled', className)}
-		onClick={onClick}
-		href={href}
-		target={target}
-		active={active}
-	>
-		<div className="touchable-row-left">
-			{typeof leftIcon === 'string' ? (
-				<div className="touchable-row-icon"><Icon icon={leftIcon}/></div>
-			) : null}
-			{typeof leftIcon === 'object' ? (
-				<div className="touchable-row-icon">{leftIcon}</div>
-			) : null}
+}) => {
+	const renderLeftIcon = () => {
+		if (typeof leftIcon === 'string') return (
+			<Icon icon={leftIcon}/>
+		);
+		if (typeof leftIcon === 'object') return (
+			<div className="touchable-row-left">{leftIcon}</div>
+		);
+
+		return null;
+	};
+	return (
+		<Touchable
+			className={c('touchable-highlight touchable-row', disabled && 'disabled', className)}
+			onClick={onClick}
+			href={href}
+			target={target}
+			active={active}
+		>
+			{renderLeftIcon()}
 			<div className="touchable-row-content">
-				{title ? <div className="touchable-row-title" children={title}/> : null}
-				{meta ? <div className="meta" children={meta}/> : null}
+				<div className="touchable-row-header">
+					{title ? <div className="touchable-row-title" children={title}/> : null}
+					{meta ? <div className="meta" children={meta}/> : null}
+				</div>
 				{children}
 			</div>
-		</div>
-		{RightComponent}
-		{onPressMore ? (
-			<Touchable onClick={onPressMore}><Icon icon="more_vert"/></Touchable>
-		) : null}
-		{caret ? <Icon icon="chevron_right"/> : null}
-	</Touchable>
-);
+			{RightComponent}
+			{onPressMore ? (
+				<Touchable onClick={onPressMore}><Icon icon="more_vert"/></Touchable>
+			) : null}
+			{caret ? <Icon icon="chevron_right"/> : null}
+		</Touchable>
+	);
+};

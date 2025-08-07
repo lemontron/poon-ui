@@ -1,8 +1,8 @@
 import React, { Fragment } from 'react';
-import { Touchable } from './Touchable.js';
-import { c } from './util/index.js';
-import { Icon } from './Icon.js';
-import { ActivityIndicator } from './ActivityIndicator.js';
+import { Touchable } from './Touchable';
+import { c } from './util';
+import { Icon } from './Icon';
+import { ActivityIndicator } from './ActivityIndicator';
 
 export const Fab = ({icon, title, loading, disabled, active, href, onPress}) => (
 	<Touchable

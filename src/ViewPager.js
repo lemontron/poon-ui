@@ -1,4 +1,4 @@
-import React, { Children, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, { Children, Fragment, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { useAnimatedValue } from './util/animated';
 import { c, createClamp, lerp, toPercent } from './util';
 import { useSize } from './util/size.js';
@@ -38,12 +38,24 @@ const PagerTabTitle = ({title, i, pan, onClick}) => {
 		});
 	}, []);
 
+	const renderTitle = () => {
+		if (typeof title === 'string') return title;
+		return (
+			<Fragment>
+				<label>{title.title}</label>
+				{title.badge ? (
+					<div className="pager-tab-badge">{title.badge}</div>
+				) : null}
+			</Fragment>
+		);
+	};
+
 	return (
 		<div className="pager-tab" onClick={() => onClick(i)}>
 			<div
 				className="pager-tab-title"
 				ref={titleEl}
-				children={title}
+				children={renderTitle()}
 				style={{opacity: getOpacity(pan.value)}}
 			/>
 			<div className="pager-tab-indicator-track">
@@ -134,6 +146,7 @@ export const ViewPager = ({
 			<Pan
 				className="pager-scroller"
 				ref={scrollerEl}
+				enabled={enableScrolling}
 				onCapture={(e) => {
 					if (e.direction === orientation) {
 						if (e.distance < 0) return true; // Don't capture at the left edge
@@ -145,10 +158,10 @@ export const ViewPager = ({
 					refs.currentPage = Math.round(pan.value);
 					refs.initPan = pan.value;
 				}}
-				onMove={(e) => {
+				onMove={enableScrolling && ((e) => {
 					const val = clamp(refs.initPan - (e.distance / e.size));
 					pan.setValue(val);
-				}}
+				})}
 				onPan={enableScrolling && ((components) => { // ScrollWheel
 					const e = components[orientation];
 					const pos = pan.value - (e.distance / e.size);

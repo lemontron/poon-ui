@@ -5,7 +5,7 @@ import { useSize } from './util/size.js';
 import { ScreenHeader } from './ScreenHeader';
 import { TextInput } from './TextInput';
 import { Pan } from './Pan.js';
-import { c } from './util/index.js';
+import { c } from './util';
 import { Layer } from './Layer.js';
 
 export const Window = ({

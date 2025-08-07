@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { createBus, randomId, useBus } from 'poon-router/util.js';
-import { c } from '../util/index.js';
+import { createBus, randomId, useBus } from 'poon-router';
+import { c } from '../util';
 import { Touchable } from '../Touchable.js';
 import { ScrollView } from '../ScrollView.js';
 import { Button } from '../Button.js';

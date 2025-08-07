@@ -2,10 +2,15 @@ import React, { createElement, useState } from 'react';
 import { Icon } from './Icon';
 import { Touchable } from './Touchable';
 import { ActivityIndicator } from './ActivityIndicator';
-import { c } from './util/index.js';
+import { c } from './util';
 
 const autoCompleteMap = {'code': 'one-time-code'};
 const typeMap = {'phone': 'tel', 'code': 'tel'};
+
+const applyTitleCase = (value) => {
+	if (!value) return '';
+	return value.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
 
 export const TextInput = ({
 	placeholder,
@@ -30,6 +35,7 @@ export const TextInput = ({
 	max,
 	onPressCountry,
 	countries,
+	titleCase,
 	ref,
 }) => {
 	const [_value, _setValue] = useState(value); // internal value
@@ -44,6 +50,7 @@ export const TextInput = ({
 			if (type === 'phone') {
 				value = value.replace(/[^0-9]/g, '');
 			} else {
+				if (titleCase) value = applyTitleCase(value);
 				if (lowerCase) value = value.toLowerCase();
 				if (maxLength) value = value.slice(0, maxLength);
 				if (type === 'username') value = value.replace(/\s/g, '');

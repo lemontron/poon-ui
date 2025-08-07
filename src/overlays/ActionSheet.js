@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBus, useBus } from 'poon-router/util.js';
+import { createBus, useBus } from 'poon-router';
 import { AnimatedValue } from '../util/animated.js';
 import { TouchableRow } from '../TouchableRow.js';
 import { BottomSheet } from '../BottomSheet.js';
@@ -18,10 +18,10 @@ export const ActionSheet = () => {
 		const clickOption = async (e) => {
 			await pan.spring(0);
 			hideActionSheet();
-			setTimeout(() => {
-				if (option.onClick) option.onClick();
+			setTimeout(async () => {
+				if (option.onClick) await option.onClick();
 				if (sheet.callback) sheet.callback(option.value);
-			}, 0);
+			}, 10);
 		};
 		return (
 			<TouchableRow

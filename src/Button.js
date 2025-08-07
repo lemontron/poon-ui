@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react';
-import { c } from './util/index.js';
+import { c } from './util';
 import { Icon } from './Icon';
 import { Touchable } from './Touchable';
 import { ActivityIndicator } from './ActivityIndicator.js';

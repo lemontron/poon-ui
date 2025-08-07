@@ -1,11 +1,11 @@
 import React, { useEffect, useImperativeHandle, useRef } from 'react';
 import { navigation } from 'poon-router';
 import { useAnimatedValue } from './util/animated';
-import { c, toPercent } from './util/index.js';
+import { c, toPercent } from './util';
 import { useSize } from './util/size.js';
 import { ScreenHeader } from './ScreenHeader';
-import { Pan } from './Pan.js';
-import { Layer } from './Layer.js';
+import { Pan } from './Pan';
+import { Layer } from './Layer';
 
 let origin = {};
 

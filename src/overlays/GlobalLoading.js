@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBus, useBus } from 'poon-router/util.js';
+import { createBus, useBus } from 'poon-router';
 import { ActivityIndicator } from '../ActivityIndicator.js';
 
 const taskBus = createBus([]);

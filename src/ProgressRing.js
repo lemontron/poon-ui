@@ -1,5 +1,5 @@
 import React, { memo, Fragment } from 'react';
-import { c } from './util/index.js';
+import { c } from './util';
 
 export const ProgressRing = memo(({
 	color = '#fff',

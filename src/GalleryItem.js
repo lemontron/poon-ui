@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useAnimation } from './util/animation.js';
-import { clamp } from './util/index.js';
+import { clamp } from './util';
 import { Pan } from './Pan.js';
 
 export const GalleryItem = ({children, onClose}) => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { c } from './util/index.js';
+import { c } from './util';
 
 export const Avatar = ({
 	imageId,
@@ -7,14 +7,20 @@ export const Avatar = ({
 	variant = 'normal',
 	getUrl = val => val,
 	name,
+	statusColor,
 }) => {
-	if (!imageId) return <div draggable={false} className={c('avatar', className)} title={name}/>;
 	return (
-		<img
-			draggable={false}
-			className={c('avatar', className)}
-			src={imageId && getUrl(imageId, variant)}
-			title={name}
-		/>
+		<div className={c('avatar', className)} title={name}>
+			{imageId ? (
+				<img
+					draggable={false}
+					src={imageId && getUrl(imageId, variant)}
+					alt={name}
+				/>
+			) : null}
+			{statusColor ? (
+				<div className="avatar-status-icon" style={{backgroundColor: statusColor}}/>
+			) : null}
+		</div>
 	);
 };

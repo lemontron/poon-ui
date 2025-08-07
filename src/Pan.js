@@ -27,6 +27,7 @@ export const Pan = ({
 	onPinch,
 	onUp,
 	onScroll,
+	enabled = true,
 	ref,
 	...props
 }) => {
@@ -185,10 +186,10 @@ export const Pan = ({
 		<div
 			ref={el}
 			{...props}
-			onTouchStart={down}
-			onTouchMove={move}
-			onTouchEnd={up}
-			onWheel={wheel}
+			onTouchStart={enabled ? down : undefined}
+			onTouchMove={enabled ? move : undefined}
+			onTouchEnd={enabled ? up : undefined}
+			onWheel={enabled ? wheel : undefined}
 			onDoubleClick={onDoubleTap}
 		/>
 	);

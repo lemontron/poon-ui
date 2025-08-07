@@ -1,5 +1,5 @@
 import React from 'react';
-import { c } from './util/index.js';
+import { c } from './util';
 
 export const Select = ({title, options, value, disabled, autoComplete, onChangeValue}) => {
 	const renderOptions = () => {

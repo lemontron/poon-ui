@@ -1,5 +1,5 @@
 import React from 'react';
-import { c } from './util/index.js';
+import { c } from './util';
 
 export const Layer = ({isActive = true, className, children, ref}) => (
 	<div

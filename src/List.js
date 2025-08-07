@@ -1,10 +1,15 @@
 import React, { Children, Fragment } from 'react';
 import { c } from './util';
 
+const defaultKeyExtractor = (item) => {
+	if (typeof item === 'string') return item;
+	if (typeof item === 'object') return item._id;
+};
+
 export const List = ({
 	title,
 	items = [],
-	keyExtractor = r => r._id,
+	keyExtractor = defaultKeyExtractor,
 	renderItem,
 	loading,
 	className,
@@ -14,6 +19,7 @@ export const List = ({
 	showSeparators = true,
 	safePadding = false,
 	inset = false,
+	showCountFooter = false,
 }) => {
 	const renderList = () => {
 		if (loading || !items) return null;
@@ -46,6 +52,9 @@ export const List = ({
 				<div className="list-body">
 					{renderList()}
 					{Children.map(children, renderChild)}
+					{showCountFooter ? (
+						<div className="list-footer">{items.length} items</div>
+					) : null}
 				</div>
 			) : ListEmptyComponent}
 		</div>

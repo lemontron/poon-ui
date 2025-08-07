@@ -20,5 +20,5 @@ export default {
 		}),
 		multiEntry(),
 	],
-	external: ['poon-router', 'poon-router/util.js', 'react'],
+	external: ['poon-router', 'react'],
 };
