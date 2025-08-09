@@ -1,15 +1,24 @@
-import React, { useEffect, useRef, useImperativeHandle } from 'react';
+import { useEffect, useRef, useImperativeHandle } from 'react';
 import { useAnimatedValue } from './util/animated';
 import { c } from './util';
 import { PullIndicator } from './PullIndicator';
 import { Pan } from './Pan.js';
 
-export const ScrollView = ({children, className, onRefresh, horizontal, safePadding, ref}) => {
+export const ScrollView = ({
+	className,
+	onRefresh,
+	horizontal,
+	safePadding,
+	bounce = true,
+	children,
+	ref,
+}) => {
 	const el = useRef();
 	const spinnerEl = useRef();
 	const refs = useRef({}).current;
 	const pull = useAnimatedValue(0);
 	const scroll = useAnimatedValue(0);
+	const overscroll = useAnimatedValue(0);
 
 	useImperativeHandle(ref, () => ({
 		scrollToTop(duration = 0) {
@@ -21,12 +30,14 @@ export const ScrollView = ({children, className, onRefresh, horizontal, safePadd
 	}));
 
 	useEffect(() => {
+		return overscroll.on(val => {
+			el.current.style.transform = `${horizontal ? 'translateX' : 'translateY'}(${val / 4}px)`;
+		});
+	}, []);
+
+	useEffect(() => {
 		return scroll.on(val => {
-			if (horizontal) {
-				el.current.scrollLeft = val;
-			} else {
-				el.current.scrollTop = val;
-			}
+			el.current[horizontal ? 'scrollLeft' : 'scrollTop'] = val;
 		});
 	}, []);
 
@@ -37,7 +48,7 @@ export const ScrollView = ({children, className, onRefresh, horizontal, safePadd
 			spinnerEl.current.style.transform = `translateY(${val}px) rotate(${percent * 360}deg)`;
 			spinnerEl.current.style.opacity = percent;
 		});
-	}, []);
+	}, [onRefresh]);
 
 	const handleScroll = () => {
 		navigator.virtualKeyboard?.hide();
@@ -45,14 +56,15 @@ export const ScrollView = ({children, className, onRefresh, horizontal, safePadd
 	};
 
 	return (
-		<div className={c('scroller-container', className)}>
+		<div className={c('scroller-container', className, horizontal ? 'horizontal' : 'vertical')}>
 			{onRefresh ? (
-				<div className="list-pull">
+				<div className="scroller-pull">
 					<PullIndicator pull={pull} ref={spinnerEl}/>
 				</div>
 			) : null}
 			<Pan
-				className={c('scroller', horizontal ? 'horizontal' : 'vertical', safePadding && 'safe-padding')}
+				direction={horizontal ? 'x' : 'y'}
+				className={c('scroller', safePadding && 'safe-padding')}
 				ref={el}
 				onScroll={handleScroll}
 				children={children}
@@ -65,23 +77,10 @@ export const ScrollView = ({children, className, onRefresh, horizontal, safePadd
 				}}
 				onCapture={e => {
 					if (e.direction === 'x') {
-						return refs.canScrollHorizontal;
-					}
-					if (e.direction === 'y') {
-						if (onRefresh && el.current.scrollTop === 0 && e.distance > 0) {
-							// console.loc('capture pull to refresh');
-							return true;
-						}
-						if (!refs.canScrollVertical) {
-							// console.log('dont capture if cant scroll');
-							return false;
-						}
-						if (refs.initScrollTop === 0 && e.distance < 0) {
-							// console.log('beginning to scroll down');
-							return true;
-						}
-
-						return (refs.initScrollTop > 0);
+						return (!e.overscrolling && refs.canScrollHorizontal);
+					} else if (e.direction === 'y') {
+						if (onRefresh && e.overscrolling && e.distance > 0) return true; // Pull to refresh
+						return (!e.overscrolling && refs.canScrollVertical);
 					}
 				}}
 				onMove={e => {
@@ -97,7 +96,8 @@ export const ScrollView = ({children, className, onRefresh, horizontal, safePadd
 				}}
 				onUp={e => {
 					if (e.direction === 'y') {
-						if (onRefresh && refs.initScrollTop === 0) { // Pull to refresh
+						// Pull to refresh
+						if (onRefresh && refs.initScrollTop === 0) {
 							if (e.distance > 70) {
 								pull.spring(0).then(onRefresh);
 							} else {
@@ -108,6 +108,13 @@ export const ScrollView = ({children, className, onRefresh, horizontal, safePadd
 						}
 					} else if (e.direction === 'h') {
 						if (e.velocity) scroll.spring(scroll.value - (e.velocity * 1000), 1000); // Coast scrolling
+					}
+				}}
+				onOverscroll={val => {
+					if (val === null) {
+						overscroll.spring(0);
+					} else {
+						overscroll.setValue(val);
 					}
 				}}
 			/>

@@ -1,7 +1,6 @@
-import React from 'react';
 import { Icon } from './Icon';
 import { c } from './util';
-import { ActivityIndicator } from './ActivityIndicator.js';
+import { ActivityIndicator } from './ActivityIndicator';
 
 export const ValidIcon = ({checked = true, active, loading, hiddenWhenInactive}) => {
 	if (loading) return <ActivityIndicator/>;

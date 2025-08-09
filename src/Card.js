@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { navigation } from 'poon-router';
 import { useAnimatedValue } from './util/animated';
 import { useSize } from './util/size.js';
@@ -93,6 +93,7 @@ export const Card = ({
 		<Layer isActive={isVisible}>
 			{ShadeComponent ? <ShadeComponent ref={shadeEl}/> : null}
 			<Pan
+				direction="x"
 				className={c('card', animateIn && 'animate', className)}
 				ref={el}
 				onDragOver={onDrop && dragOver}

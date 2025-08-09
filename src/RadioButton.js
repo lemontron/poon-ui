@@ -1,6 +1,5 @@
-import React from 'react';
-import { Icon } from './Icon.js';
-import { TouchableRow } from './TouchableRow.js';
+import { Icon } from './Icon';
+import { TouchableRow } from './TouchableRow';
 
 export const RadioButton = ({active, icon, title, elaboration, subtitle, value, disabled, onClick, children}) => (
 	<TouchableRow

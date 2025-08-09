@@ -1,4 +1,3 @@
-import React from 'react';
 import { c } from './util';
 
 export const Select = ({title, options, value, disabled, autoComplete, onChangeValue}) => {

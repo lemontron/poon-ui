@@ -1,4 +1,3 @@
-import React from 'react';
 import { c } from './util';
 
 export const FormGroup = ({title, subtitle, children, inset, RightComponent}) => (

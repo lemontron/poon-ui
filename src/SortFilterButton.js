@@ -1,6 +1,5 @@
-import React from 'react';
-import { Touchable } from './Touchable.js';
-import { Icon } from './Icon.js';
+import { Touchable } from './Touchable';
+import { Icon } from './Icon';
 
 export const SortFilterButton = ({
 	title,

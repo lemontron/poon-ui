@@ -1,5 +1,3 @@
-import React from 'react';
-
 export const VStack = ({className, ...props}) => (
 	<div className={`stack-v ${className}`} {...props}/>
 );

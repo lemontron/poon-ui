@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import { Fragment } from 'react';
 import { Touchable } from './Touchable';
 import { Icon } from './Icon';
 

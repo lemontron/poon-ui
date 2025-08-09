@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { createBus, useBus, randomId } from 'poon-router';
 import { useAnimatedValue } from '../util/animated.js';
 import { toPercent } from '../util';
@@ -31,6 +31,7 @@ const Notification = ({
 
 	return (
 		<Pan
+			direction="x"
 			ref={el}
 			className="notification"
 			onCapture={(e) => {

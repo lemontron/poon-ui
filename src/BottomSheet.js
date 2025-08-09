@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { c } from './util';
 import { useSize } from './util/size.js';
 import { Pan } from './Pan.js';
@@ -42,6 +42,7 @@ export const BottomSheet = ({
 			{visible && showShade ? <div className="shade shade-bottom-sheet" ref={shadeEl} onClick={close}/> : null}
 			<div className="sheet-container">
 				<Pan
+					direction="y"
 					ref={sheetEl}
 					className={c('sheet', className)}
 					onClick={onPress}

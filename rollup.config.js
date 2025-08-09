@@ -5,20 +5,24 @@ import babel from '@rollup/plugin-babel';
 export default {
 	input: 'src/**/*.js',
 	output: {
-		name: 'poon-ui',
 		file: 'dist/index.js',
 		format: 'esm',
+		sourcemap: true,
 		generatedCode: {constBindings: true},
 	},
 	plugins: [
-		resolve(),
+		resolve({
+			browser: true,
+			preferBuiltins: false,
+		}),
 		babel({
 			babelHelpers: 'bundled',
+			exclude: /node_modules/,
 			presets: [
-				['@babel/preset-react', {'useBuiltIns': true}],
+				['@babel/preset-react', {runtime: 'automatic'}],
 			],
 		}),
 		multiEntry(),
 	],
-	external: ['poon-router', 'react'],
+	external: ['react', 'react/jsx-runtime', 'poon-router'],
 };

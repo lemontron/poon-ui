@@ -1,5 +1,4 @@
-import React from 'react';
-import { ActivityIndicator } from './ActivityIndicator.js';
+import { ActivityIndicator } from './ActivityIndicator';
 
 export const ConnectionIndicator = ({status}) => {
 	if (status === 'connected') return null;

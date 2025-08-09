@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import { Fragment } from 'react';
 import { useVirtualKeyboard } from './util/viewport.js';
 import { Modal } from './overlays/Modal.js';
 import { ActionSheet } from './overlays/ActionSheet.js';

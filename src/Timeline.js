@@ -1,7 +1,6 @@
-import React from 'react';
-import { Icon } from './Icon.js';
+import { Icon } from './Icon';
 import { c } from './util';
-import { Touchable } from './Touchable.js';
+import { Touchable } from './Touchable';
 
 const TimelineItem = ({title, isComplete, onSkip, renderDetails, isActive}) => {
 	const getIcon = () => {

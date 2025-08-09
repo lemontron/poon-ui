@@ -1,4 +1,4 @@
-import React, { Children, Fragment, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { Children, Fragment, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { useAnimatedValue } from './util/animated';
 import { c, createClamp, lerp, toPercent } from './util';
 import { useSize } from './util/size.js';
@@ -85,10 +85,13 @@ export const ViewPager = ({
 	// use internal state or external state!
 	const [internalPage, setInternalPage] = useState(page);
 
-	const pan = useAnimatedValue(page);
+	const pan = useAnimatedValue(page); // The page index
+	const overscroll = useAnimatedValue(0);
 	const scrollerEl = useRef();
 	const tabsEl = useRef();
 	const refs = useRef({}).current;
+	const {width, height} = useSize(scrollerEl);
+
 	const numPages = Children.count(children);
 	const lastIndex = numPages - 1;
 	const orientation = vertical ? 'y' : 'x';
@@ -106,27 +109,36 @@ export const ViewPager = ({
 		scrollToPage: userInteractionChangePage,
 	}), [onChangePage]);
 
-	const {width, height} = useSize(scrollerEl);
-
+	// Springs when the page changes
 	useEffect(() => {
 		setInternalPage(page);
 		pan.spring(page);
 	}, [page]);
 
+	// Scroll to correct page when first loading or when the size changes
 	useEffect(() => {
+		if (width && height) requestAnimationFrame(pan.forceRender);
+	}, [width, height]);
+
+	useEffect(() => { // Renderer
 		return pan.on(value => {
 			if (vertical) {
-				// console.log('PAN VERT:', value, height);
 				scrollerEl.current.scrollTop = (value * height) + (gap * value);
 			} else {
 				scrollerEl.current.scrollLeft = (value * width) + (gap * value);
-				if (tabsEl.current) { // scroll the tabs smoothly as we scroll the pager
+				if (tabsEl.current) { // scroll the tabs as we scroll the pager
 					const overflowWidth = (tabsEl.current.scrollWidth - tabsEl.current.clientWidth);
 					tabsEl.current.scrollLeft = lerp(value / lastIndex, 0, overflowWidth);
 				}
 			}
 		});
 	}, [vertical, height, width]);
+
+	useEffect(() => {
+		return overscroll.on(val => {
+			scrollerEl.current.style.transform = `${vertical ? 'translateY' : 'translateX'}(${val / 4}px)`;
+		});
+	}, [vertical]);
 
 	return (
 		<div className={c('pager', vertical ? 'vertical' : 'horizontal', className)}>
@@ -144,10 +156,12 @@ export const ViewPager = ({
 				</div>
 			) : null}
 			<Pan
+				direction={vertical ? 'y' : 'x'}
 				className="pager-scroller"
 				ref={scrollerEl}
 				enabled={enableScrolling}
 				onCapture={(e) => {
+					if (e.overscrolling) return false;
 					if (e.direction === orientation) {
 						if (e.distance < 0) return true; // Don't capture at the left edge
 						return (refs.initPan - (e.distance / e.size)) > 0;
@@ -158,15 +172,15 @@ export const ViewPager = ({
 					refs.currentPage = Math.round(pan.value);
 					refs.initPan = pan.value;
 				}}
-				onMove={enableScrolling && ((e) => {
+				onMove={e => {
 					const val = clamp(refs.initPan - (e.distance / e.size));
 					pan.setValue(val);
-				})}
-				onPan={enableScrolling && ((components) => { // ScrollWheel
+				}}
+				onPan={components => { // ScrollWheel
 					const e = components[orientation];
-					const pos = pan.value - (e.distance / e.size);
+					const pos = pan.value + (e.distance / e.size);
 					pan.setValue(clamp(pos));
-				})}
+				}}
 				onUp={(e) => {
 					if (e.flick) {
 						userInteractionChangePage(refs.currentPage + e.flick, e.flickMs);
@@ -174,8 +188,14 @@ export const ViewPager = ({
 						userInteractionChangePage(Math.round(pan.value));
 					}
 				}}
-			>
-				{Children.map(children, (child, i) => (
+				onOverscroll={val => {
+					if (val === null) {
+						overscroll.spring(0);
+					} else {
+						overscroll.setValue(val);
+					}
+				}}
+				children={Children.map(children, (child, i) => (
 					<div
 						key={i}
 						className="pager-page"
@@ -183,13 +203,14 @@ export const ViewPager = ({
 						style={gap ? (vertical ? {marginBottom: gap} : {marginRight: gap}) : undefined}
 					/>
 				))}
-			</Pan>
+			/>
 			{showDots ? (
-				<div className="pager-dots">
-					{Children.map(children, (child, i) => (
+				<div
+					className="pager-dots"
+					children={Children.map(children, (child, i) => (
 						<PagerDot key={i} pan={pan} i={i}/>
 					))}
-				</div>
+				/>
 			) : null}
 			{showButtons ? (
 				<div className="pager-buttons">

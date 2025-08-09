@@ -19,6 +19,10 @@ export class AnimatedValue {
 		this.listeners.forEach(fn => fn(value));
 	};
 
+	forceRender = () => {
+		this.listeners.forEach(fn => fn(this.value));
+	};
+
 	spring = (finalValue, duration = AnimatedValue.defaultAnimationDuration) => new Promise(resolve => {
 		if (finalValue === this.value) return resolve(); // cancel unnecessary animation
 

@@ -1,5 +1,3 @@
-import React from 'react';
-
 const array = new Array(12).fill(0);
 
 export const ActivityIndicator = ({size = 16, color = '#fff'}) => {

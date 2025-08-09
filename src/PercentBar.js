@@ -1,5 +1,3 @@
-import React from 'react';
-
 export const PercentBar = ({percent, color, children}) => (
 	<div className="percent-bar">
 		{percent ? (

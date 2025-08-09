@@ -1,4 +1,3 @@
-import React from 'react';
 import { Touchable } from './Touchable';
 import { Icon } from './Icon';
 import { c } from './util';
@@ -38,10 +37,12 @@ export const TouchableRow = ({
 		>
 			{renderLeftIcon()}
 			<div className="touchable-row-content">
-				<div className="touchable-row-header">
-					{title ? <div className="touchable-row-title" children={title}/> : null}
-					{meta ? <div className="meta" children={meta}/> : null}
-				</div>
+				{title ? (
+					<div className="touchable-row-header">
+						{title ? <div className="touchable-row-title" children={title}/> : null}
+						{meta ? <div className="meta" children={meta}/> : null}
+					</div>
+				) : null}
 				{children}
 			</div>
 			{RightComponent}

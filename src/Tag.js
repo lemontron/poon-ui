@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { colorHash } from './util/oklab.js';
 import { Icon } from './Icon.js';
 import { ActivityIndicator } from './ActivityIndicator.js';

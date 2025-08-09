@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { createBus, randomId, useBus } from 'poon-router';
 import { c } from '../util';
 import { Touchable } from '../Touchable.js';
@@ -52,17 +52,18 @@ const SingleAlert = ({alert, isLast}) => {
 				/>
 			</div>
 		);
-		if (alert.options.length <= 2) return (
+		if (alert.options.length > 0 && alert.options.length <= 2) return (
 			<div className="alert-buttons horizontal">
 				{alert.options.map(renderButton)}
 			</div>
 		);
-		return (
+		if (alert.options.length > 0) return (
 			<ScrollView
 				className="alert-buttons"
 				children={alert.options.map(renderButton)}
 			/>
 		);
+		return null;
 	};
 
 	return (

@@ -1,4 +1,3 @@
-import React from 'react';
 import { c } from './util';
 import { Touchable } from './Touchable';
 import { Icon } from './Icon';

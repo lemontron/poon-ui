@@ -1,4 +1,4 @@
-import React, { memo, Fragment } from 'react';
+import { memo, Fragment } from 'react';
 import { c } from './util';
 
 export const ProgressRing = memo(({

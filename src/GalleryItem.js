@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAnimation } from './util/animation.js';
 import { clamp } from './util';
 import { Pan } from './Pan.js';

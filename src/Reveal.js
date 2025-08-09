@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, useRef } from 'react';
+import { useEffect, useImperativeHandle, useRef } from 'react';
 import { navigation } from 'poon-router';
 import { useAnimatedValue } from './util/animated';
 import { c, toPercent } from './util';
@@ -58,6 +58,7 @@ export const Reveal = ({
 	return (
 		<Layer isActive={isVisible} className="reveal" ref={el}>
 			<Pan
+				direction="x"
 				className={c('card reveal-content', className)}
 				ref={innerEl}
 				onCapture={(e) => {

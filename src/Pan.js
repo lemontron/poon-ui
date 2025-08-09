@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-// import { isIOS } from './util/index.js';
+import { useRef } from 'react';
+// import { isIOS } from './util';
 
 const FLICK_SPEED = .25; // Pixels per ms
 const CUTOFF_INTERVAL = 50; // Milliseconds
@@ -11,7 +11,7 @@ const getVelocity = (lastV = 0, newV, elapsedTime) => {
 };
 
 let responderEl; // The element currently capturing input
-// Will I add support for multiple? Only time will tell!!
+let overscrollEl; // The element currently overscrolling
 
 const getXY = (e, i = 0) => ({
 	'x': e.touches ? e.touches[i].clientX : e.clientX,
@@ -19,6 +19,7 @@ const getXY = (e, i = 0) => ({
 });
 
 export const Pan = ({
+	direction,
 	onDown,
 	onMove,
 	onCapture,
@@ -27,6 +28,7 @@ export const Pan = ({
 	onPinch,
 	onUp,
 	onScroll,
+	onOverscroll,
 	enabled = true,
 	ref,
 	...props
@@ -59,7 +61,7 @@ export const Pan = ({
 		if (e.touches.length === 2) { // The first touch already happened
 			const t0 = getXY(e, 0), t1 = getXY(e, 1); // Get two touches
 			const dx = (t0.x - t1.x), dy = (t0.y - t1.y); // Distance between touches
-			refs.pinch = {d0: Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))};
+			refs.pinch = {'d0': Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))};
 			return;
 		}
 
@@ -116,17 +118,51 @@ export const Pan = ({
 			}
 		}
 
+		const checkOverscroll = () => {
+			if (refs.locked === direction) {
+				if (refs.locked === 'y') {
+					const max = (el.current.scrollHeight - el.current.clientHeight);
+
+					// console.log('VERTICAL SCROLLER:', el.current, 'scrollTop:', el.current.scrollTop, 'max:', max, 'dist:', refs.d.x);
+
+					if (el.current.scrollTop <= 0 && refs.d.y > 0) return true;
+					if (el.current.scrollTop >= max && refs.d.y < 0) return true;
+				} else if (refs.locked === 'x') {
+					const max = (el.current.scrollWidth - el.current.clientWidth);
+
+					// console.log('HORIZONTAL SCROLLER:', el.current, 'scrollLeft:', el.current.scrollLeft, 'max:', max, 'dist:', refs.d.x);
+
+					if (el.current.scrollLeft <= 0 && refs.d.x > 0) return true;
+					if (el.current.scrollLeft >= max && refs.d.x < 0) return true;
+				}
+			}
+			return false;
+		};
+
 		if (refs.locked) {
 			refs.distance = refs.d[refs.locked]; // Reduce information
 
 			if (!refs.touch) { // Check if we should start capturing
-				refs.touch = onCapture({
+				refs.overscrolling = checkOverscroll();
+				if (refs.overscrolling && !overscrollEl) { // Focus overscroll on the current element
+					overscrollEl = el.current;
+					// console.log('overscrollEl:', overscrollEl, refs.locked);
+				}
+
+				// give it a chance to capture if locked in correct direction
+				if (refs.locked === direction) refs.touch = onCapture({
 					'direction': refs.locked,
 					'distance': refs.d[refs.locked],
 					'size': refs.size[refs.locked],
 					'pinch': refs.pinch,
+					'overscrolling': refs.overscrolling,
 				});
-				// console.log('Touch', refs.touch);
+				// console.log('Responder Active:', el.current);
+			}
+
+			// overscroll if not capturing
+			if (onOverscroll && !refs.touch && refs.overscrolling) {
+				if (overscrollEl === el.current) onOverscroll(refs.distance);
 			}
 
 			if (refs.touch) {
@@ -134,6 +170,7 @@ export const Pan = ({
 				responderEl = el.current; // capture event
 
 				if (onMove) onMove({
+					'captured': responderEl = el.current,
 					'd': refs.d,
 					'direction': refs.locked,
 					'distance': refs.d[refs.locked],
@@ -146,6 +183,10 @@ export const Pan = ({
 
 	const up = (e) => {
 		if (e.touches.length > 0) return; // Still touching, not actually up
+
+		overscrollEl = null; // Reset overscroll element
+		if (onOverscroll) onOverscroll(null);
+
 		if (responderEl && responderEl !== el.current) return;
 
 		if (!refs.touch) return;

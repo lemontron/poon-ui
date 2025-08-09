@@ -1,6 +1,5 @@
-import React from 'react';
-import { Touchable } from './Touchable.js';
-import { showAlert } from './overlays/Alert.js';
+import { Touchable } from './Touchable';
+import { showAlert } from './overlays/Alert';
 
 export const ReadMore = ({content}) => {
 	if (!content) return null;

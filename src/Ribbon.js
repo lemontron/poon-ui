@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { colorHash } from './util/oklab.js';
 
 export const Ribbon = memo(({tag, count, colorize, color}) => {

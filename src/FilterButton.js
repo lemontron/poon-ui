@@ -1,7 +1,6 @@
-import React from 'react';
-import { Touchable } from './Touchable.js';
-import { Icon } from './Icon.js';
-import { CheckBox } from './CheckBox.js';
+import { Touchable } from './Touchable';
+import { Icon } from './Icon';
+import { CheckBox } from './CheckBox';
 
 export const FilterButton = ({
 	title,

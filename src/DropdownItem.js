@@ -1,4 +1,3 @@
-import React from 'react';
 import { TouchableRow } from './TouchableRow';
 
 export const DropdownItem = ({title, icon, onClick, href, disabled, children, active}) => (

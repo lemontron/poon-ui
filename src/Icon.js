@@ -1,4 +1,3 @@
-import React from 'react';
 import { c } from './util';
 
 const iOS = /iPad|iPhone|iPod/.test(navigator.platform);

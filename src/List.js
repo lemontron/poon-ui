@@ -1,4 +1,4 @@
-import React, { Children, Fragment } from 'react';
+import { Children, Fragment } from 'react';
 import { c } from './util';
 
 const defaultKeyExtractor = (item) => {

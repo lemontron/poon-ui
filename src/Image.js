@@ -1,4 +1,3 @@
-import React from 'react';
 import { c } from './util';
 
 export const Image = ({ar = 1, imageId, getUrl, url, alt, className, children, base64Png, onError}) => {

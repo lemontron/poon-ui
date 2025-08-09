@@ -1,4 +1,3 @@
-import React from 'react';
 import { Touchable } from './Touchable';
 import { c } from './util';
 

@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useRef } from 'react';
+import { Fragment, useEffect, useRef } from 'react';
 import { Touchable } from './Touchable.js';
 import { useAnimatedValue } from './util/animated.js';
 

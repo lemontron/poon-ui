@@ -1,4 +1,4 @@
-import React, { createElement, useState } from 'react';
+import { createElement, useState } from 'react';
 import { Icon } from './Icon';
 import { Touchable } from './Touchable';
 import { ActivityIndicator } from './ActivityIndicator';

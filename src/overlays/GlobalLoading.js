@@ -1,4 +1,3 @@
-import React from 'react';
 import { createBus, useBus } from 'poon-router';
 import { ActivityIndicator } from '../ActivityIndicator.js';
 

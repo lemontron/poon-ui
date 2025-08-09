@@ -1,7 +1,6 @@
-import React from 'react';
 import { Icon } from './Icon';
 import { Touchable } from './Touchable';
-import { setRevealOrigin } from './Reveal.js';
+import { setRevealOrigin } from './Reveal';
 
 const setOrigin = (e) => {
 	const rect = e.currentTarget.getBoundingClientRect();

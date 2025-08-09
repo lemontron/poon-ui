@@ -1,4 +1,4 @@
-import React, { useRef, useImperativeHandle } from 'react';
+import { useRef, useImperativeHandle } from 'react';
 
 export const Shade = ({ref}) => {
 	const el = useRef();

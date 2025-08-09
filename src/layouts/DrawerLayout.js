@@ -1,5 +1,5 @@
-import React, { useRef, useEffect } from 'react';
-import { useAnimatedValue } from '../util/animated.js';
+import { useRef, useEffect } from 'react';
+import { useAnimatedValue } from '../util/animated';
 import { Pan } from '../Pan';
 import { createClamp } from '../util';
 
@@ -27,6 +27,7 @@ export const DrawerLayout = ({
 	return (
 		<div className="drawer-container">
 			<Pan
+				direction="x"
 				className="drawer-menu"
 				ref={drawerRef}
 				children={DrawerComponent}

@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, useRef } from 'react';
+import { useEffect, useImperativeHandle, useRef } from 'react';
 import { navigation } from 'poon-router';
 import { useAnimatedValue } from './util/animated';
 import { useSize } from './util/size.js';
@@ -68,6 +68,7 @@ export const Window = ({
 		<Layer isActive={isVisible}>
 			<div className={`shade shade-${presentation}`} ref={shadeEl}/>
 			<Pan
+				direction="y"
 				className={c(`window window-${presentation}`, className)}
 				ref={el}
 				onCapture={e => {
