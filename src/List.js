@@ -27,7 +27,7 @@ export const List = ({
 		return items.map((item, i) => (
 			<Fragment key={keyExtractor(item)}>
 				{renderItem(item, i)}
-				{(showSeparators && i < items.length - 1) && <hr/>}
+				{showSeparators && (i < items.length - 1 ? <hr/> : null)}
 			</Fragment>
 		));
 	};
@@ -35,7 +35,7 @@ export const List = ({
 	const renderChild = (child, i) => (
 		<Fragment key={i}>
 			{child}
-			{i < children.length - 1 && <hr/>}
+			{showSeparators && (i < children.length - 1 ? <hr/> : null)}
 		</Fragment>
 	);
 

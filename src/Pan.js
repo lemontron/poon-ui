@@ -121,48 +121,50 @@ export const Pan = ({
 		const checkOverscroll = () => {
 			if (refs.locked === direction) {
 				if (refs.locked === 'y') {
+					const scrollTop = Math.round(el.current.scrollTop);
 					const max = (el.current.scrollHeight - el.current.clientHeight);
 
-					// console.log('VERTICAL SCROLLER:', el.current, 'scrollTop:', el.current.scrollTop, 'max:', max, 'dist:', refs.d.x);
+					// console.log('VERTICAL SCROLLER:', el.current, 'scrollTop:', scrollTop, 'max:', max, 'dist:', refs.d.x);
 
-					if (el.current.scrollTop <= 0 && refs.d.y > 0) return true;
-					if (el.current.scrollTop >= max && refs.d.y < 0) return true;
+					if (scrollTop <= 0 && refs.d.y > 0) return true;
+					if (scrollTop >= max && refs.d.y < 0) return true;
 				} else if (refs.locked === 'x') {
+					const scrollLeft = Math.round(el.current.scrollLeft);
 					const max = (el.current.scrollWidth - el.current.clientWidth);
 
-					// console.log('HORIZONTAL SCROLLER:', el.current, 'scrollLeft:', el.current.scrollLeft, 'max:', max, 'dist:', refs.d.x);
+					// console.log('HORIZONTAL SCROLLER:', el.current, 'scrollLeft:', scrollLeft, 'max:', max, 'dist:', refs.d.x);
 
-					if (el.current.scrollLeft <= 0 && refs.d.x > 0) return true;
-					if (el.current.scrollLeft >= max && refs.d.x < 0) return true;
+					if (scrollLeft <= 0 && refs.d.x > 0) return true;
+					if (scrollLeft >= max && refs.d.x < 0) return true;
 				}
 			}
 			return false;
 		};
 
-		if (refs.locked) {
+		if (refs.locked === direction) {
 			refs.distance = refs.d[refs.locked]; // Reduce information
+			refs.overscrolling = checkOverscroll();
 
-			if (!refs.touch) { // Check if we should start capturing
-				refs.overscrolling = checkOverscroll();
-				if (refs.overscrolling && !overscrollEl) { // Focus overscroll on the current element
-					overscrollEl = el.current;
-					// console.log('overscrollEl:', overscrollEl, refs.locked);
-				}
+			if (refs.overscrolling && !overscrollEl) { // Focus overscroll element
+				// console.log('activated overscroll:', el.current, 'distance:', refs.distance);
+				overscrollEl = el.current;
+				overscrollEl.overscrollStart = refs.distance; // Store initial overscroll position
+			}
 
-				// give it a chance to capture if locked in correct direction
-				if (refs.locked === direction) refs.touch = onCapture({
+			if (!refs.touch) {
+				refs.touch = onCapture({
 					'direction': refs.locked,
 					'distance': refs.d[refs.locked],
 					'size': refs.size[refs.locked],
 					'pinch': refs.pinch,
 					'overscrolling': refs.overscrolling,
 				});
-				// console.log('Responder Active:', el.current);
+				// if (refs.touch) console.log('Responder Activated:', el.current);
 			}
 
-			// overscroll if not capturing
-			if (onOverscroll && !refs.touch && refs.overscrolling) {
-				if (overscrollEl === el.current) onOverscroll(refs.distance);
+			if (refs.overscrolling && onOverscroll && overscrollEl === el.current) { // Callback overscroll handler!
+				// console.log('overscrolling');
+				onOverscroll(refs.distance - overscrollEl.overscrollStart);
 			}
 
 			if (refs.touch) {
@@ -188,8 +190,8 @@ export const Pan = ({
 		if (onOverscroll) onOverscroll(null);
 
 		if (responderEl && responderEl !== el.current) return;
-
 		if (!refs.touch) return;
+
 		logVelocity(e);
 
 		const velocity = refs.v[refs.locked];

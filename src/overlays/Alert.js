@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { createBus, randomId, useBus } from 'poon-router';
 import { c } from '../util';
-import { Touchable } from '../Touchable.js';
-import { ScrollView } from '../ScrollView.js';
-import { Button } from '../Button.js';
-import { TextInput } from '../TextInput.js';
+import { Touchable } from '../Touchable';
+import { ScrollView } from '../ScrollView';
+import { Button } from '../Button';
+import { TextInput } from '../TextInput';
 
 const alertsStore = createBus([]);
 

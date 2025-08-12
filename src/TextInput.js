@@ -6,6 +6,7 @@ import { c } from './util';
 
 const autoCompleteMap = {'code': 'one-time-code'};
 const typeMap = {'phone': 'tel', 'code': 'tel'};
+const placeholderMap = {'search': 'Search'};
 
 const applyTitleCase = (value) => {
 	if (!value) return '';
@@ -78,7 +79,7 @@ export const TextInput = ({
 			'onChange': changeText,
 			'value': renderValue(value),
 			'autoCapitalize': lowerCase && 'none',
-			placeholder,
+			'placeholder': placeholderMap[type] || placeholder,
 			rows,
 			onFocus,
 			onClick,

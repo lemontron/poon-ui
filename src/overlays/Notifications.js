@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { createBus, useBus, randomId } from 'poon-router';
-import { useAnimatedValue } from '../util/animated.js';
+import { useAnimatedValue } from '../util/animated';
 import { toPercent } from '../util';
 import { Touchable } from '../Touchable';
 import { Icon } from '../Icon';

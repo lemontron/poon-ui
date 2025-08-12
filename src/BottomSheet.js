@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { c } from './util';
-import { useSize } from './util/size.js';
-import { Pan } from './Pan.js';
-import { Layer } from './Layer.js';
+import { useSize } from './util/size';
+import { Pan } from './Pan';
+import { Layer } from './Layer';
 
 export const BottomSheet = ({
 	className,

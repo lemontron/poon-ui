@@ -1,9 +1,9 @@
 import { Children, Fragment, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { useAnimatedValue } from './util/animated';
 import { c, createClamp, lerp, toPercent } from './util';
-import { useSize } from './util/size.js';
-import { Pan } from './Pan.js';
-import { Touchable } from './Touchable.js';
+import { useSize } from './util/size';
+import { Pan } from './Pan';
+import { Touchable } from './Touchable';
 
 const PagerDot = ({pan, i}) => {
 	const el = useRef();
@@ -80,6 +80,7 @@ export const ViewPager = ({
 	enableScrolling = true,
 	showDots = false,
 	showButtons = false,
+	frame = false,
 	ref,
 }) => {
 	// use internal state or external state!
@@ -141,7 +142,7 @@ export const ViewPager = ({
 	}, [vertical]);
 
 	return (
-		<div className={c('pager', vertical ? 'vertical' : 'horizontal', className)}>
+		<div className={c('pager', vertical ? 'vertical' : 'horizontal', frame && 'frame', className)}>
 			{titles ? (
 				<div className="pager-tabs" ref={tabsEl}>
 					{titles.map((title, i) => (

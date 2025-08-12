@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { useAnimation } from './util/animation.js';
+import { useAnimation } from './util/animation';
 import { clamp } from './util';
-import { Pan } from './Pan.js';
+import { Pan } from './Pan';
 
 export const GalleryItem = ({children, onClose}) => {
 	const el = useRef(null);

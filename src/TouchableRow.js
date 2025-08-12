@@ -29,7 +29,7 @@ export const TouchableRow = ({
 	};
 	return (
 		<Touchable
-			className={c('touchable-highlight touchable-row', disabled && 'disabled', className)}
+			className={c('touchable-highlight touchable-row', disabled && 'disabled', (caret || onPressMore) && 'caret', className)}
 			onClick={onClick}
 			href={href}
 			target={target}

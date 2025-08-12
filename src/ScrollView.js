@@ -2,15 +2,16 @@ import { useEffect, useRef, useImperativeHandle } from 'react';
 import { useAnimatedValue } from './util/animated';
 import { c } from './util';
 import { PullIndicator } from './PullIndicator';
-import { Pan } from './Pan.js';
+import { Pan } from './Pan';
 
 export const ScrollView = ({
 	className,
 	onRefresh,
 	horizontal,
 	safePadding,
-	bounce = true,
 	children,
+	pad,
+	pills,
 	ref,
 }) => {
 	const el = useRef();
@@ -31,12 +32,13 @@ export const ScrollView = ({
 
 	useEffect(() => {
 		return overscroll.on(val => {
+			if (onRefresh && val > 0) return; // disable overscroll when pulling to refresh
 			el.current.style.transform = `${horizontal ? 'translateX' : 'translateY'}(${val / 4}px)`;
 		});
-	}, []);
+	}, [!onRefresh]);
 
 	useEffect(() => {
-		return scroll.on(val => {
+		return scroll.on((val, remainingTime) => {
 			el.current[horizontal ? 'scrollLeft' : 'scrollTop'] = val;
 		});
 	}, []);
@@ -56,7 +58,7 @@ export const ScrollView = ({
 	};
 
 	return (
-		<div className={c('scroller-container', className, horizontal ? 'horizontal' : 'vertical')}>
+		<div className={c('scroller-container', className, horizontal ? 'horizontal' : 'vertical', pills && 'pills')}>
 			{onRefresh ? (
 				<div className="scroller-pull">
 					<PullIndicator pull={pull} ref={spinnerEl}/>
@@ -64,7 +66,7 @@ export const ScrollView = ({
 			) : null}
 			<Pan
 				direction={horizontal ? 'x' : 'y'}
-				className={c('scroller', safePadding && 'safe-padding')}
+				className={c('scroller', safePadding && 'safe-padding', pad && 'pad')}
 				ref={el}
 				onScroll={handleScroll}
 				children={children}

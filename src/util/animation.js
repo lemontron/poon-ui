@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { clone, easeOutCubic, sameObject } from './index.js';
+import { clone, easeOutCubic, sameObject } from './';
 
 export class Animation {
 	constructor(initialValue) {

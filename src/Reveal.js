@@ -1,8 +1,7 @@
 import { useEffect, useImperativeHandle, useRef } from 'react';
 import { navigation } from 'poon-router';
 import { useAnimatedValue } from './util/animated';
-import { c, toPercent } from './util';
-import { useSize } from './util/size.js';
+import { c, lerp, toPercent } from './util';
 import { ScreenHeader } from './ScreenHeader';
 import { Pan } from './Pan';
 import { Layer } from './Layer';
@@ -16,9 +15,10 @@ export const Reveal = ({
 	isVisible,
 	animateIn,
 	className,
+	SearchComponent,
 	ref,
 }) => {
-	const el = useRef();
+	const layerEl = useRef();
 	const innerEl = useRef();
 	const pan = useAnimatedValue(animateIn ? 0 : 1);
 
@@ -27,8 +27,6 @@ export const Reveal = ({
 	useImperativeHandle(ref, () => ({
 		close,
 	}));
-
-	const {width, height} = useSize(el);
 
 	useEffect(() => {
 		if (!animateIn) return;
@@ -40,23 +38,34 @@ export const Reveal = ({
 	}, [animateIn, isVisible]);
 
 	useEffect(() => {
+		const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+		const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+
 		return pan.on(val => {
+			if (val > 1) val = 1;
+			if (val < 0) val = 0;
+
+			const h = lerp(val, 48, vh);
+			const w = lerp(val, 48, vw);
+
 			const inverse = (1 - val);
-			const revealX = (origin.x * inverse);
-			const revealY = (origin.y * inverse);
+			const revealX = (origin.left * inverse);
+			const revealY = (origin.top * inverse);
 
-			el.current.style.transform = `translate(${revealX}px, ${revealY}px)`;
-			el.current.style.width = toPercent(val);
-			el.current.style.height = toPercent(val);
-			innerEl.current.style.transform = `translate(${-1 * revealX}px, ${-1 * revealY}px)`;
+			layerEl.current.style.transform = `translate(${revealX}px, ${revealY}px)`;
+			layerEl.current.style.width = w + 'px';
+			layerEl.current.style.height = h + 'px';
+			layerEl.current.style.borderRadius = lerp(val, 48, 0) + 'px';
+			// layerEl.current.style.opacity = val;
+			layerEl.current.style.display = val ? 'flex' : 'none';
+
+			innerEl.current.style.transform = `translate(${-1 * revealX}px, ${-1 * revealY}px) scale(${lerp(val, 0.95, 1)})`;
 			innerEl.current.style.opacity = val;
-
-			// el.current.style.borderRadius = lerp(val, 50, 0) + 'px';
 		});
-	}, [width, height]);
+	}, []);
 
 	return (
-		<Layer isActive={isVisible} className="reveal" ref={el}>
+		<Layer isActive={isVisible} className="reveal" ref={layerEl}>
 			<Pan
 				direction="x"
 				className={c('card reveal-content', className)}
@@ -78,6 +87,7 @@ export const Reveal = ({
 					onClose={close}
 					headerRight={headerRight}
 					presentation="reveal"
+					SearchComponent={SearchComponent}
 				/>
 				<div className="card-body" children={children}/>
 			</Pan>
@@ -85,4 +95,4 @@ export const Reveal = ({
 	);
 };
 
-export const setRevealOrigin = (x, y) => Object.assign(origin, {x, y});
+export const setRevealOrigin = (rect) => origin = rect;

@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { navigation } from 'poon-router';
 import { useAnimatedValue } from './util/animated';
-import { useSize } from './util/size.js';
+import { useSize } from './util/size';
 import { c } from './util';
 import { ScreenHeader } from './ScreenHeader';
 import { Placeholder } from './Placeholder';
 import { Shade } from './Shade';
-import { Pan } from './Pan.js';
-import { Layer } from './Layer.js';
+import { Pan } from './Pan';
+import { Layer } from './Layer';
 
 export const Card = ({
 	title,

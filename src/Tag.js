@@ -1,7 +1,7 @@
 import { memo } from 'react';
-import { colorHash } from './util/oklab.js';
-import { Icon } from './Icon.js';
-import { ActivityIndicator } from './ActivityIndicator.js';
+import { colorHash } from './util/oklab';
+import { Icon } from './Icon';
+import { ActivityIndicator } from './ActivityIndicator';
 
 export const Tag = memo(({icon, tag, count, colorize = true, meta, color, loading}) => {
 	const fg = color || (colorize && colorHash(tag));

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { easeOutCubic } from './index.js';
+import { easeOutCubic } from './';
 
 export class AnimatedValue {
 	constructor(initialValue, id) {
@@ -9,14 +9,14 @@ export class AnimatedValue {
 		this.oldValue = initialValue;
 	}
 
-	setValue = (value, end = true) => {
+	setValue = (value, remainingTime = 0) => {
 		if (isNaN(value)) return console.warn('Cant animate NaN');
-		if (end) { // Stop animations and set the checkpoint
+		if (remainingTime === 0) { // Stop animations and set the checkpoint
 			delete this.id;
 			this.oldValue = value;
 		}
 		this.value = value;
-		this.listeners.forEach(fn => fn(value));
+		this.listeners.forEach(fn => fn(value, remainingTime));
 	};
 
 	forceRender = () => {
@@ -31,13 +31,14 @@ export class AnimatedValue {
 		const animate = (t) => {
 			if (t0 !== this.id) return;
 
-			const elapsed = Math.max(0, t - t0); // time hack
+			const elapsed = Math.max(0, t - t0);
+			const remainingTime = Math.max(0, duration - elapsed);
 			if (elapsed >= duration) {
-				this.setValue(finalValue, true);
+				this.setValue(finalValue, remainingTime);
 				resolve();
 			} else {
 				const d = (finalValue - oldValue) * easeOutCubic(elapsed / duration);
-				this.setValue(oldValue + d, false);
+				this.setValue(oldValue + d, remainingTime);
 				requestAnimationFrame(animate);
 			}
 		};

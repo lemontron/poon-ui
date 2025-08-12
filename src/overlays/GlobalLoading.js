@@ -1,5 +1,5 @@
 import { createBus, useBus } from 'poon-router';
-import { ActivityIndicator } from '../ActivityIndicator.js';
+import { ActivityIndicator } from '../ActivityIndicator';
 
 const taskBus = createBus([]);
 

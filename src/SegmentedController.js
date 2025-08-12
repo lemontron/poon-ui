@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef } from 'react';
-import { Touchable } from './Touchable.js';
-import { useAnimatedValue } from './util/animated.js';
+import { Touchable } from './Touchable';
+import { useAnimatedValue } from './util/animated';
 
 const SegmentedItem = ({item, isLast, active, onChange, index, ref}) => (
 	<Fragment>

@@ -2,7 +2,7 @@ import { Fragment } from 'react';
 import { c } from './util';
 import { Icon } from './Icon';
 import { Touchable } from './Touchable';
-import { ActivityIndicator } from './ActivityIndicator.js';
+import { ActivityIndicator } from './ActivityIndicator';
 
 export const Button = ({
 	className,

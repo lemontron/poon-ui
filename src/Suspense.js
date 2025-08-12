@@ -1,8 +1,8 @@
-import { CStack } from './Stack.js';
-import { ActivityIndicator } from './ActivityIndicator.js';
+import { VStack } from './Stack';
+import { ActivityIndicator } from './ActivityIndicator';
 
 export const Loading = () => (
-	<CStack>
+	<VStack align="center" justify="center">
 		<ActivityIndicator/>
-	</CStack>
+	</VStack>
 );

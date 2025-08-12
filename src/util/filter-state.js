@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { showActionSheet } from '../overlays/ActionSheet.js';
+import { showActionSheet } from '../overlays/ActionSheet';
 
 export const useFilterState = (initialKeys, allKeys) => {
 	const [keys, setKeys] = useState(initialKeys.length ? initialKeys : null);

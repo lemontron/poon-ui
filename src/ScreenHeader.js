@@ -42,7 +42,9 @@ export const ScreenHeader = ({
 				</div>
 				<div className="header-spacer">{headerRight}</div>
 			</div>
-			{SearchComponent}
+			{SearchComponent ? (
+				<div className="header-search" children={SearchComponent}/>
+			) : null}
 		</Fragment>
 	);
 };

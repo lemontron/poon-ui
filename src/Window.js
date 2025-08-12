@@ -1,24 +1,22 @@
 import { useEffect, useImperativeHandle, useRef } from 'react';
 import { navigation } from 'poon-router';
 import { useAnimatedValue } from './util/animated';
-import { useSize } from './util/size.js';
+import { useSize } from './util/size';
 import { ScreenHeader } from './ScreenHeader';
 import { TextInput } from './TextInput';
-import { Pan } from './Pan.js';
+import { Pan } from './Pan';
 import { c } from './util';
-import { Layer } from './Layer.js';
+import { Layer } from './Layer';
 
 export const Window = ({
 	children,
 	title,
-	search,
-	onChangeSearch,
-	searchLoading,
 	headerRight,
 	onClose,
 	isVisible,
 	presentation = 'modal',
 	className,
+	SearchComponent,
 	ref,
 }) => {
 	const shadeEl = useRef();
@@ -87,18 +85,8 @@ export const Window = ({
 						title={title}
 						presentation="modal"
 						onClose={close}
-						SearchComponent={onChangeSearch ? (
-							<div className="header-search">
-								<TextInput
-									placeholder="Search"
-									type="search"
-									value={search}
-									onChangeText={onChangeSearch}
-									loading={searchLoading}
-								/>
-							</div>
-						) : null}
 						headerRight={headerRight}
+						SearchComponent={SearchComponent}
 					/>
 				) : null}
 				<div className="card-body" children={children}/>
