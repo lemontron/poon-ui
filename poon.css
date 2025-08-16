@@ -164,7 +164,7 @@ i.text-input-clear {font-size:18px;}
 .scroller-container.pills .scroller {display:flex; align-items:center; gap:10px;}
 
 /* FLEX STACK LAYOUT */
-.frame {height:100%; width:100%;}
+.frame {height:100%; width:100%; overflow:hidden;}
 .spacer {display:flex; flex:1;}
 .stack {display:flex; pointer-events:none !important;}
 .stack > * {pointer-events:auto;}
@@ -409,6 +409,7 @@ i.filter-button-caret {margin:0 -4px; font-size:18px;}
 .fab.touched {opacity:1; background:#666;}
 
 /* TAG */
+.tags-scroller .scroller {display:flex; gap:10px; align-items:center; white-space:nowrap;}
 .tag-container {display:inline-flex; align-items:center; border-radius:11px; overflow:hidden; background:rgba(255, 255, 255, .1); flex-shrink:0;}
 .tag-container:empty {display:none;}
 .tag i {font-size:16px;}

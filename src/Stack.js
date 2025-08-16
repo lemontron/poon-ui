@@ -44,9 +44,9 @@ export const FabStack = ({children}) => (
 
 export const Spacer = () => (<div className="spacer"/>);
 
-export const Row = ({title, subtitle, className, LeftComponent, onPressMore, children}) => {
+export const Row = ({title, subtitle, className, LeftComponent, onPressMore, padding, children}) => {
 	return (
-		<HStack align="center" spacing className={c('row', className)}>
+		<HStack align="center" spacing className={c('row', className)} padding={padding}>
 			{LeftComponent}
 			<div className="row-right">
 				{title ? <div className="row-title">{title}</div> : null}
