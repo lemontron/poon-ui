@@ -9,7 +9,7 @@ export const DropdownItem = ({title, icon, target, onClick, href, disabled, chil
 		target={target}
 		children={children}
 		href={href}
-		leftIcon={icon}
+		icon={icon}
 		title={title}
 	/>
 );

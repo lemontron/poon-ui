@@ -29,7 +29,7 @@ export const ActionSheet = () => {
 			<TouchableRow
 				key={i}
 				title={option.name}
-				leftIcon={option.icon}
+				icon={option.icon}
 				onClick={clickOption}
 				disabled={option.disabled}
 				target={option.target}

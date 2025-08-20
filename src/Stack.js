@@ -1,4 +1,3 @@
-import { Children } from 'react';
 import { c } from './util';
 import { Touchable } from './Touchable';
 import { Icon } from './Icon';
@@ -44,19 +43,53 @@ export const FabStack = ({children}) => (
 
 export const Spacer = () => (<div className="spacer"/>);
 
-export const Row = ({title, subtitle, className, LeftComponent, onPressMore, padding, children}) => {
+export const Row = ({
+	title,
+	detail,
+	subtitle,
+	inactive,
+	className,
+	icon,
+	LeftComponent,
+	RightComponent,
+	onPressMore,
+	padding,
+	children,
+}) => {
+	const renderLeftIcon = () => {
+		if (typeof icon === 'string') return (
+			<Icon icon={icon}/>
+		);
+		if (typeof icon === 'object') return (
+			<div className="row-left">{icon}</div>
+		);
+		return null;
+	};
+
 	return (
-		<HStack align="center" spacing className={c('row', className)} padding={padding}>
+		<div className={c('row', padding && 'padding', inactive && 'inactive', className)}>
+			{renderLeftIcon()}
 			{LeftComponent}
-			<div className="row-right">
-				{title ? <div className="row-title">{title}</div> : null}
-				{subtitle ? <div className="row-subtitle">{subtitle}</div> : null}
+			<div className="row-body">
+				{title ? (
+					<div className="row-header">
+						<div className="row-title">
+							<span>{title}</span>
+							{detail ? <span className="meta">{detail}</span> : null}
+						</div>
+						{subtitle ? <div className="row-subtitle">{subtitle}</div> : null}
+					</div>
+				) : null}
 				{children}
 			</div>
+			{RightComponent}
 			{onPressMore ? (
-				<Touchable onClick={onPressMore}><Icon icon="more_vert"/></Touchable>
+				<Touchable
+					onClick={onPressMore}
+					children={<Icon icon="more_vert"/>}
+				/>
 			) : null}
-		</HStack>
+		</div>
 	);
 };
 

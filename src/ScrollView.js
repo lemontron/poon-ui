@@ -10,7 +10,7 @@ export const ScrollView = ({
 	horizontal,
 	safePadding,
 	children,
-	pad,
+	padding,
 	pills,
 	ref,
 }) => {
@@ -66,7 +66,7 @@ export const ScrollView = ({
 			) : null}
 			<Pan
 				direction={horizontal ? 'x' : 'y'}
-				className={c('scroller', safePadding && 'safe-padding', pad && 'pad')}
+				className={c('scroller', safePadding && 'safe-padding', padding && 'padding')}
 				ref={el}
 				onScroll={handleScroll}
 				children={children}

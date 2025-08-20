@@ -1,5 +1,17 @@
+import { useEffect, useState } from 'react';
 import { c } from './util';
-import { decodeBuffer, simpleHash } from './util/decode';
+import { decodeBuffer } from './util/decode';
+
+const useBuffer = (buffer) => {
+	const [blob, setBlob] = useState(null);
+	useEffect(() => {
+		const url = decodeBuffer(buffer);
+		setBlob(url);
+		return () => URL.revokeObjectURL(url);
+	}, [buffer]);
+	if (!buffer) return null;
+	return blob;
+};
 
 export const Image = ({
 	imageId,
@@ -14,13 +26,20 @@ export const Image = ({
 	fit = 'cover',
 	children,
 }) => {
-	if (imageId) url = getUrl(imageId);
-	if (buffer) url = decodeBuffer(buffer);
+	const blobUrl = useBuffer(buffer);
+
+	const getSrc = () => {
+		if (imageId) return getUrl(imageId);
+		if (blobUrl) return blobUrl;
+		if (url) return url;
+		if (base64Png) return `data:image/png;base64,${base64Png}`;
+	};
 
 	const renderImg = () => {
-		if (url) return (
+		const url = getSrc();
+		if (!url) return <div className="img-real" draggable={false}/>;
+		return (
 			<img
-				key={simpleHash(url)}
 				src={url}
 				className="img-real"
 				alt={alt}
@@ -28,8 +47,6 @@ export const Image = ({
 				onError={() => onError(imageId)}
 			/>
 		);
-		if (base64Png) return <img src={`data:image/png;base64,${base64Png}`}/>;
-		return <div className="img-real" draggable={false}/>;
 	};
 
 	return (

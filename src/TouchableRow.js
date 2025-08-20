@@ -1,55 +1,17 @@
 import { Touchable } from './Touchable';
 import { Icon } from './Icon';
 import { c } from './util';
+import { Row } from './Stack';
 
-export const TouchableRow = ({
-	title,
-	meta,
-	leftIcon,
-	href,
-	onClick,
-	onPressMore,
-	target,
-	children,
-	caret,
-	disabled,
-	RightComponent,
-	className,
-	active,
-}) => {
-	const renderLeftIcon = () => {
-		if (typeof leftIcon === 'string') return (
-			<Icon icon={leftIcon}/>
-		);
-		if (typeof leftIcon === 'object') return (
-			<div className="touchable-row-left">{leftIcon}</div>
-		);
-
-		return null;
-	};
-	return (
-		<Touchable
-			className={c('touchable-highlight touchable-row', disabled && 'disabled', (caret || onPressMore) && 'caret', className)}
-			onClick={onClick}
-			href={href}
-			target={target}
-			active={active}
-		>
-			{renderLeftIcon()}
-			<div className="touchable-row-content">
-				{title ? (
-					<div className="touchable-row-header">
-						{title ? <div className="touchable-row-title" children={title}/> : null}
-						{meta ? <div className="meta" children={meta}/> : null}
-					</div>
-				) : null}
-				{children}
-			</div>
-			{RightComponent}
-			{onPressMore ? (
-				<Touchable onClick={onPressMore}><Icon icon="more_vert"/></Touchable>
-			) : null}
-			{caret ? <Icon icon="chevron_right"/> : null}
-		</Touchable>
-	);
-};
+export const TouchableRow = ({href, onClick, target, disabled, caret, active, ...props}) => (
+	<Touchable
+		className={c('touchable-highlight touchable-row', disabled && 'disabled', caret && 'caret')}
+		onClick={onClick}
+		href={href}
+		target={target}
+		active={active}
+	>
+		<Row {...props}/>
+		{caret ? <Icon icon="chevron_right"/> : null}
+	</Touchable>
+);
