@@ -1,5 +1,6 @@
 import { Children, Fragment } from 'react';
 import { c } from './util';
+import { Loading } from './Suspense.js';
 
 const defaultKeyExtractor = (item) => {
 	if (typeof item === 'string') return item;
@@ -18,12 +19,15 @@ export const List = ({
 	children,
 	showSeparators = true,
 	safePadding = false,
-	inset = false,
+	well = false,
 	showCountFooter = false,
 }) => {
+	if (loading) return <Loading/>;
+
+	const hasContent = items.length > 0 || Children.count(children) > 0;
+	if (ListEmptyComponent && !hasContent) return ListEmptyComponent;
+
 	const renderList = () => {
-		if (loading || !items) return null;
-		if (ListEmptyComponent && items.length === 0) return ListEmptyComponent;
 		return items.map((item, i) => (
 			<Fragment key={keyExtractor(item)}>
 				{renderItem(item, i)}
@@ -40,7 +44,7 @@ export const List = ({
 	);
 
 	return (
-		<div className={c('list', className, safePadding && 'safe-padding', inset && 'list-inset')}>
+		<div className={c('list', className, safePadding && 'safe-padding', well && 'well')}>
 			{title ? (
 				<Fragment>
 					<div className="list-title">{title}</div>
@@ -48,15 +52,13 @@ export const List = ({
 				</Fragment>
 			) : null}
 			{HeaderComponent}
-			{(items.length || children) ? (
-				<div className="list-body">
-					{renderList()}
-					{Children.map(children, renderChild)}
-					{showCountFooter ? (
-						<div className="list-footer">{items.length} items</div>
-					) : null}
-				</div>
-			) : ListEmptyComponent}
+			<div className="list-body">
+				{renderList()}
+				{Children.map(children, renderChild)}
+				{showCountFooter ? (
+					<div className="list-footer">{items.length} items</div>
+				) : null}
+			</div>
 		</div>
 	);
 };

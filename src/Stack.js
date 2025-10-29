@@ -57,19 +57,17 @@ export const Row = ({
 	children,
 }) => {
 	const renderLeftIcon = () => {
-		if (typeof icon === 'string') return (
-			<Icon icon={icon}/>
-		);
-		if (typeof icon === 'object') return (
-			<div className="row-left">{icon}</div>
-		);
+		if (typeof icon === 'string') return <Icon icon={icon}/>;
+		if (typeof icon === 'object') return icon;
 		return null;
 	};
 
 	return (
 		<div className={c('row', padding && 'padding', inactive && 'inactive', className)}>
-			{renderLeftIcon()}
 			{LeftComponent}
+			<div className="row-left">
+				{renderLeftIcon()}
+			</div>
 			<div className="row-body">
 				{title ? (
 					<div className="row-header">

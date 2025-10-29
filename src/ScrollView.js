@@ -12,6 +12,7 @@ export const ScrollView = ({
 	children,
 	padding,
 	pills,
+	fade,
 	ref,
 }) => {
 	const el = useRef();
