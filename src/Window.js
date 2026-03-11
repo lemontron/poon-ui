@@ -3,7 +3,6 @@ import { navigation } from 'poon-router';
 import { useAnimatedValue } from './util/animated';
 import { useSize } from './util/size';
 import { ScreenHeader } from './ScreenHeader';
-import { TextInput } from './TextInput';
 import { Pan } from './Pan';
 import { c } from './util';
 import { Layer } from './Layer';

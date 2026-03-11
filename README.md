@@ -4,8 +4,7 @@ Poon UI is so native, it feels indecent! Why settle for a vanilla web app? Poon 
 attempts a native look and feel in the history of the web. It's immeasurable poon is due to the reuse of code internally
 across components.
 
-<img src="https://img.shields.io/badge/bundle_size-57.6%20kB-blue">
-<img src="https://img.shields.io/badge/minified_size-30.4%20kB-blue">
+**DEMO:** https://poon.app
 
 ## Quick Start Guide
 
@@ -14,14 +13,11 @@ npm install poon-ui
 npm install poon-router
 ```
 
-#### `Head Tag` Adopt this template:
+#### `Head Tag` Add these lines
 
 ```html
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0, viewport-fit=cover"/>
 <link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
-<meta name="description" content="Streaming service with a more sexual name"/>
-<meta name="theme-color" content="THEME_COLOR">
-<link rel="manifest" href="/manifest.json">
 ```
 
 #### `JavaScript` Import the CSS:

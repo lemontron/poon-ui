@@ -2,9 +2,6 @@ import { createBus, useBus } from 'poon-router';
 import { AnimatedValue } from '../util/animated';
 import { TouchableRow } from '../TouchableRow';
 import { BottomSheet } from '../BottomSheet';
-import { c } from '../util/index.js';
-import { Pill } from '../Pill.js';
-import { Tag } from '../Tag.js';
 
 const bus = createBus(null);
 const pan = new AnimatedValue(0);

@@ -26,11 +26,12 @@
     "@babel/preset-react": "^7.28.5",
     "@rollup/plugin-babel": "^6.1.0",
     "@rollup/plugin-multi-entry": "^7.1.0",
-    "@rollup/plugin-node-resolve": "^16.0.3"
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "poon-router": "^1.1.3"
   },
-  "workspaces": [
-    "../poon-router"
-  ],
+  "peerDependencies": {
+    "poon-router": "^1.1.3"
+  },
   "bugs": {
     "url": "https://github.com/jamesloper/poon-ui/issues"
   },

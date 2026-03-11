@@ -1,7 +1,7 @@
 import { useEffect, useImperativeHandle, useRef } from 'react';
 import { navigation } from 'poon-router';
 import { useAnimatedValue } from './util/animated';
-import { c, lerp, toPercent } from './util';
+import { c, lerp } from './util';
 import { ScreenHeader } from './ScreenHeader';
 import { Pan } from './Pan';
 import { Layer } from './Layer';
