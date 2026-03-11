@@ -20,16 +20,22 @@ jobs:
           node-version: 20
           cache: npm
           registry-url: 'https://registry.npmjs.org'
+      - name: Build 🔧
+        run: npm ci && npm run build
       - name: Bump version
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          npm version minor -m "chore: release %s [skip ci]"
-      - name: Build 🔧
-        run: npm ci && npm run build
+          npm version minor --no-git-tag-version
+          npm install --package-lock-only
       - name: Publish to NPM 📦
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
       - name: Push version commit and tag
-        run: git push --follow-tags
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          git add package.json package-lock.json
+          git commit -m "chore: release v$VERSION [skip ci]"
+          git tag "v$VERSION"
+          git push --follow-tags
