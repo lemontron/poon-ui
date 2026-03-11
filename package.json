@@ -17,7 +17,7 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jamesloper/poon-ui.git"
+    "url": "git+https://github.com/lemontron/poon-ui.git"
   },
   "devDependencies": {
     "@babel/cli": "^7.28.3",
@@ -37,7 +37,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "bugs": {
-    "url": "https://github.com/jamesloper/poon-ui/issues"
+    "url": "https://github.com/lemontron/poon-ui/issues"
   },
   "homepage": "https://poon.app"
 }
