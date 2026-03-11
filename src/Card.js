@@ -45,7 +45,9 @@ export const Card = ({
 
 	// Trigger animation on visibility change
 	useEffect(() => {
-		if (!width || !animateIn) return;
+		if (!width) return;
+		if (isVisible && !animateIn) return;
+
 		pan.spring(isVisible ? 0 : width);
 	}, [animateIn, isVisible, width]);
 

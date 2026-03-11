@@ -1,4 +1,3 @@
-import { Icon } from './Icon';
 import { CheckBox } from './CheckBox';
 import { Touchable } from './Touchable';
 

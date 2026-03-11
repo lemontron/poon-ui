@@ -29,7 +29,6 @@ export const Touchable = ({
 	};
 
 	const touch = (e) => {
-		e.initialType = e.type;
 		if (e.type === 'touchstart') ignoreNextClick = false;
 		if (e.button && e.button !== 0) return; // If mouse, only process left clicks
 		setTouched(true);

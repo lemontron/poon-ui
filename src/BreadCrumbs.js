@@ -3,21 +3,34 @@ import { Touchable } from './Touchable';
 import { Icon } from './Icon';
 import { ScrollView } from './ScrollView';
 
-export const BreadCrumbs = ({path, onClickPath}) => {
-	const slugs = path.split('/').filter(Boolean);
+const generateCrumbsFromPath = (root, path) => {
+	const parts = path.split('/').filter(Boolean);
+	return parts.map((str, i) => {
+		return {
+			'name': str,
+			'href': [root, ...parts.slice(0, i + 1)].join('/'),
+		};
+	});
 
-	const renderSlug = (slug, i) => (
-		<Fragment key={slug + '_' + i}>
-			<Touchable onClick={() => onClickPath('/' + slugs.slice(0, i + 1).join('/'))} children={slug}/>
-			{i < slugs.length - 1 ? <span> / </span> : null}
+};
+
+export const BreadCrumbs = ({root = '/', path, crumbs}) => {
+	crumbs = crumbs || generateCrumbsFromPath(root, path);
+	const renderCrumb = (crumb, i) => (
+		<Fragment key={crumb.name + '_' + i}>
+			<Touchable href={crumb.href} children={crumb.name}/>
+			{i < crumbs.length - 1 ? <span> / </span> : null}
 		</Fragment>
 	);
 
 	return (
 		<ScrollView horizontal className="breadcrumbs">
-			<Icon icon="home" onClick={() => onClickPath('/')}/>
+			<Touchable
+				href={root}
+				children={<Icon icon="home"/>}
+			/>
 			<span> / </span>
-			{slugs.map(renderSlug)}
+			{crumbs.map(renderCrumb)}
 		</ScrollView>
 	);
 };

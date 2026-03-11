@@ -29,8 +29,8 @@ export const Reveal = ({
 	}));
 
 	useEffect(() => {
-		if (!animateIn) return;
 		if (isVisible) {
+			if (!animateIn) return;
 			pan.spring(1);
 		} else {
 			pan.spring(0);
@@ -59,7 +59,7 @@ export const Reveal = ({
 			// layerEl.current.style.opacity = val;
 			layerEl.current.style.display = val ? 'flex' : 'none';
 
-			innerEl.current.style.transform = `translate(${-1 * revealX}px, ${-1 * revealY}px) scale(${lerp(val, 0.95, 1)})`;
+			innerEl.current.style.transform = `translate(${-1 * revealX}px, ${-1 * revealY}px)`;
 			innerEl.current.style.opacity = val;
 		});
 	}, []);
