@@ -4,6 +4,26 @@ import { Icon } from './Icon';
 import { Touchable } from './Touchable';
 import { ActivityIndicator } from './ActivityIndicator';
 
+/**
+ * @typedef {object} ButtonProps
+ * @property {string} [className]
+ * @property {import('react').ReactNode} [title]
+ * @property {(event: any) => void} [onClick]
+ * @property {(event: any) => void} [onDown]
+ * @property {string} [icon]
+ * @property {string} [href]
+ * @property {number} [tabIndex]
+ * @property {string} [color]
+ * @property {boolean} [disabled]
+ * @property {boolean} [download]
+ * @property {string} [iconImageUrl]
+ * @property {boolean} [loading]
+ * @property {boolean} [submit]
+ * @property {boolean} [fullWidth]
+ * @property {string} [target]
+ */
+
+/** @param {ButtonProps} props */
 export const Button = ({
 	className,
 	title,

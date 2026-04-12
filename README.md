@@ -42,7 +42,7 @@ PoonOverlays currently includes a Modal, Toast, and Alert
 
 ## Integration with Poon Router
 
-Poon Router passes some very important props (isVisible and animateIn) to the component being routed to. You must prop-drill both to the `<Card/>`, `<Window/>` and `<Reveal/>` components wherever you use them.
+Poon Router passes some very important props (`isVisible` and `animateIn`) to the component being routed to. You must prop-drill both to the `<Card/>`, `<Window/>`, and `<Reveal/>` components wherever you use them. `isVisible` is required.
 
 ## Custom Gestures
 

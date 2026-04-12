@@ -18,7 +18,7 @@ export const Card = ({
 	SearchComponent,
 	disableGestures,
 	onDrop,
-	isVisible = true,
+	isVisible,
 	animateIn = true,
 	ShadeComponent = Shade,
 	HeaderComponent,

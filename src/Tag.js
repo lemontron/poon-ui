@@ -2,8 +2,9 @@ import { memo } from 'react';
 import { colorHash } from './util/oklab';
 import { Icon } from './Icon';
 import { ActivityIndicator } from './ActivityIndicator';
+import { Touchable } from './Touchable.js';
 
-export const Tag = memo(({icon, tag, count, colorize = true, meta, color, loading}) => {
+export const Tag = memo(({icon, tag, count, colorize = true, meta, color, loading, onDelete}) => {
 	const fg = color || (colorize && colorHash(tag));
 	const renderCount = () => {
 		if (count === 0) return <Icon icon="add"/>;
@@ -21,6 +22,13 @@ export const Tag = memo(({icon, tag, count, colorize = true, meta, color, loadin
 				{renderCount()}
 			</div>
 			{renderRight()}
+			{onDelete ? (
+				<Touchable
+					className="material-icons"
+					children="close"
+					onClick={() => onDelete(tag)}
+				/>
+			) : null}
 		</div>
 	);
 });

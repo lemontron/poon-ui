@@ -1,6 +1,6 @@
 const array = new Array(12).fill(0);
 
-export const ActivityIndicator = ({size = 16, color = '#fff'}) => {
+export const ActivityIndicator = ({size = 16, color}) => {
 	const renderSegment = (x, i) => {
 		const style = {
 			'width': 1.7,

@@ -37,12 +37,14 @@ export const TextInput = ({
 	onPressCountry,
 	countries,
 	titleCase,
+	frame,
 	ref,
 }) => {
 	const [_value, _setValue] = useState(value); // internal value
+	const isTextarea = (type === 'textarea' || rows);
 
 	const renderInput = () => {
-		let tagName = (type === 'textarea' || rows) ? 'textarea' : 'input';
+		let tagName = isTextarea ? 'textarea' : 'input';
 
 		const changeText = (e) => {
 			let value = e.target.value;
@@ -74,7 +76,7 @@ export const TextInput = ({
 			'type': typeMap[type] || type,
 			'autoComplete': autoCompleteMap[type],
 			'maxLength': maxLength,
-			'className': c('text', disabled && 'disabled', dnt && 'fs-hide', className),
+			'className': c('text', disabled && 'disabled', dnt && 'fs-hide', className, frame && 'frame'),
 			'readOnly': disabled,
 			'onChange': changeText,
 			'value': renderValue(value),
@@ -88,6 +90,11 @@ export const TextInput = ({
 			ref,
 			min,
 			max,
+			'onTouchStart': isTextarea ? (e) => e.stopPropagation() : undefined,
+			'onTouchMove': isTextarea ? (e) => e.stopPropagation() : undefined,
+			'onTouchEnd': isTextarea ? (e) => e.stopPropagation() : undefined,
+			'onPointerDown': isTextarea ? (e) => e.stopPropagation() : undefined,
+			'onPointerMove': isTextarea ? (e) => e.stopPropagation() : undefined,
 		});
 	};
 
@@ -125,7 +132,7 @@ export const TextInput = ({
 	};
 
 	return (
-		<div className="text-input">
+		<div className={c('text-input', isTextarea && 'textarea-input')}>
 			{type === 'phone' && renderCountryButton()}
 			{renderIcon()}
 			{renderInput()}

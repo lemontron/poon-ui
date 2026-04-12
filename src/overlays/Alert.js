@@ -6,6 +6,9 @@ import { ScrollView } from '../ScrollView';
 import { Button } from '../Button';
 import { TextInput } from '../TextInput';
 
+export const ALERT = 'alert';
+export const PROMPT = 'prompt';
+
 const alertsStore = createBus([]);
 
 const dismissAlert = (alert, val) => {
@@ -23,7 +26,7 @@ const dismissAlert = (alert, val) => {
 };
 
 const SingleAlert = ({alert, isLast}) => {
-	const [input, setInput] = useState('');
+	const [input, setInput] = useState(alert.value || '');
 
 	const renderButton = (option, i) => {
 		const pressButton = () => {
@@ -42,6 +45,7 @@ const SingleAlert = ({alert, isLast}) => {
 	};
 
 	const renderButtons = () => {
+		// Handler for no options & also promps because they also have no options
 		if (!alert.options) return (
 			<div className="alert-buttons alert-bottom">
 				<Button
@@ -72,22 +76,11 @@ const SingleAlert = ({alert, isLast}) => {
 				className={c('alert', isLast && alert.visible && 'visible')}
 				onClick={e => e.stopPropagation()}
 			>
-				{/*{alert.debug ? (*/}
-				{/*	<Touchable*/}
-				{/*		className="material-icons"*/}
-				{/*		onClick={() => navigator.clipboard.writeText(alert.debug)}*/}
-				{/*		children="copy"*/}
-				{/*	/>*/}
-				{/*) : null}*/}
 				<div className="alert-top">
 					{alert.title ? <div className="alert-title">{alert.title}</div> : null}
 					{alert.message ? <div className="alert-message">{alert.message}</div> : null}
-					{alert.input ? (
-						<TextInput
-							className="alert-input"
-							value={input}
-							onChangeText={setInput}
-						/>
+					{alert.type === PROMPT ? (
+						<TextInput className="alert-input" value={input} onChangeText={setInput}/>
 					) : null}
 				</div>
 				{renderButtons()}
@@ -118,6 +111,18 @@ export const showAlert = (alert, options) => new Promise(resolve => {
 		'callback': resolve,
 		'visible': true,
 		'options': options,
+		'type': ALERT,
+		...alert,
+	}]);
+});
+
+export const showPrompt = (alert, options) => new Promise(resolve => {
+	alertsStore.update([...alertsStore.state, {
+		'key': randomId(),
+		'callback': resolve,
+		'visible': true,
+		'options': options,
+		'type': PROMPT,
 		...alert,
 	}]);
 });

@@ -23,11 +23,7 @@ export const Window = ({
 	const pan = useAnimatedValue(0);
 
 	const close = () => {
-		if (onClose) {
-			pan.spring(0).then(onClose);
-		} else {
-			navigation.goBack(1);
-		}
+		pan.spring(0).then(() => navigation.goBack());
 	};
 
 	useImperativeHandle(ref, () => ({

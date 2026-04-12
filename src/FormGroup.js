@@ -1,7 +1,7 @@
 import { c } from './util';
 
-export const FormGroup = ({title, subtitle, children, well, padding, RightComponent}) => (
-	<div className={c('form-group', well && 'well', padding && 'padding')}>
+export const FormGroup = ({title, subtitle, children, well, padding, frame, RightComponent}) => (
+	<div className={c('form-group', well && 'well', padding && 'padding', frame && 'frame')}>
 		{title ? (
 			<div className="form-group-top">
 				<div className="form-group-header">

@@ -46,10 +46,7 @@ export const List = ({
 	return (
 		<div className={c('list', className, safePadding && 'safe-padding', well && 'well')}>
 			{title ? (
-				<Fragment>
-					<div className="list-title">{title}</div>
-					<hr/>
-				</Fragment>
+				<div className="list-title">{title}</div>
 			) : null}
 			{HeaderComponent}
 			<div className="list-body">
