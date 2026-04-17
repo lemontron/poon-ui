@@ -22,9 +22,19 @@ export class Options {
 	}
 
 	useOptions = (defaultId) => {
+		console.log('Use Options:', this.title, this.options);
 		const [id, setId] = useState(defaultId || this.options[0]._id);
 		const selected = this.options.find(r => r._id === id);
 		const change = () => showActionSheet(this.title, this.options, setId);
 		return [selected, change];
 	};
 }
+
+export const normalizeOptions = (options, title = 'Pick One') => {
+	if (options instanceof Options) return options;
+	if (Array.isArray(options)) return new Options(title, options);
+	if (typeof options === 'object') { // Compact form
+		return new Options(title, Object.keys(options).map(key => ({'_id': key, 'name': options[key]})));
+	}
+	throw new TypeError('options must be an array, Options instance, or object');
+};

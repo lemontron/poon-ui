@@ -1,4 +1,5 @@
 import { createElement, useState } from 'react';
+import { navigation } from 'poon-router';
 import { c } from './util';
 
 let ignoreNextClick = false; // Safari glitch fix
@@ -25,6 +26,14 @@ export const Touchable = ({
 		if (onClick) {
 			if (!href) e.preventDefault();
 			onClick(e);
+		}
+
+		if (target === '_blank' || target === '_self' || e.metaKey || e.ctrlKey || e.defaultPrevented || !href) return;
+
+		const url = new URL(href, location.href);
+		if (url.hostname === location.hostname) {
+			e.preventDefault();
+			navigation.go(`${url.pathname}${url.search}${url.hash}`);
 		}
 	};
 

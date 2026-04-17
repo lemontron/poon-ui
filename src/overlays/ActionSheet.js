@@ -7,7 +7,7 @@ const bus = createBus(null);
 const pan = new AnimatedValue(0);
 
 export const showActionSheet = (title, options, callback) => {
-	bus.update({options, callback});
+	bus.update({title, options, callback});
 };
 
 export const hideActionSheet = () => {
@@ -49,7 +49,7 @@ export const ActionSheet = () => {
 			onClose={hideActionSheet}
 			showShade
 		>
-			<div className="action-sheet-title">{sheet.options.title}</div>
+			<div className="action-sheet-title">{sheet.title}</div>
 			{sheet.options.map(renderOption)}
 		</BottomSheet>
 	);

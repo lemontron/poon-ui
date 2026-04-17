@@ -1,12 +1,13 @@
 import { Fragment, useEffect, useRef } from 'react';
 import { Touchable } from './Touchable';
 import { useAnimatedValue } from './util/animated';
+import { normalizeOptions } from './util/options.js';
 
 const SegmentedItem = ({item, isLast, active, onChange, index, ref}) => (
 	<Fragment>
 		<Touchable
 			children={item.name}
-			onClick={() => onChange(item.value)}
+			onClick={() => onChange(item._id)}
 			active={active}
 			index={index}
 			ref={ref}
@@ -43,7 +44,7 @@ export const SegmentedController = ({options, value, onChange}) => {
 			<div className="segmented-indicator" ref={indicator}/>
 			{options.map((item, i) => (
 				<SegmentedItem
-					key={item.value}
+					key={item._id}
 					item={item}
 					index={i}
 					isLast={i === options.length - 1}

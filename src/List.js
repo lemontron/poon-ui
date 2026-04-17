@@ -4,7 +4,7 @@ import { Loading } from './Suspense.js';
 
 const defaultKeyExtractor = (item) => {
 	if (typeof item === 'string') return item;
-	if (typeof item === 'object') return item._id;
+	return item._id;
 };
 
 export const List = ({
@@ -24,17 +24,8 @@ export const List = ({
 }) => {
 	if (loading) return <Loading/>;
 
-	const hasContent = items.length > 0 || Children.count(children) > 0;
+	const hasContent = (items.length > 0 || Children.count(children) > 0);
 	if (ListEmptyComponent && !hasContent) return ListEmptyComponent;
-
-	const renderList = () => {
-		return items.map((item, i) => (
-			<Fragment key={keyExtractor(item)}>
-				{renderItem(item, i)}
-				{showSeparators && (i < items.length - 1 ? <hr/> : null)}
-			</Fragment>
-		));
-	};
 
 	const renderChild = (child, i) => (
 		<Fragment key={i}>
@@ -50,7 +41,12 @@ export const List = ({
 			) : null}
 			{HeaderComponent}
 			<div className="list-body">
-				{renderList()}
+				{items.map((item, i) => (
+					<Fragment key={keyExtractor(item)}>
+						{renderItem(item, i)}
+						{showSeparators && (i < items.length - 1 ? <hr/> : null)}
+					</Fragment>
+				))}
 				{Children.map(children, renderChild)}
 				{showCountFooter ? (
 					<div className="list-footer">{items.length} items</div>

@@ -90,10 +90,9 @@ i.text-input-clear {font-size:18px;}
 .date-input-top {display:flex; align-items:center; justify-content:space-between; gap:10px;}
 .date-input-title {font-weight:bold; color:var(--input-text-color);}
 .date-input-grid {display:grid; grid-template-columns:repeat(7, 1fr); gap:6px;}
-.date-input-weekday {text-align:center; font-size:11px; color:var(--subtitle-color); padding:4px 0;}
+.date-input-weekday {text-align:center; font-size:11px;}
 
 .date-input-day {padding:10px 0 !important;}
-.date-input-day.muted {opacity:.4;}
 
 /* CHIPS */
 .chips-input {display:flex; align-items:center; flex-wrap:wrap; gap:6px; flex:1; background:var(--input-background); border-radius:var(--input-border-radius); padding:5px; width:100%;}
@@ -166,6 +165,7 @@ i.text-input-clear {font-size:18px;}
 .btn {display:flex; position:relative; height:var(--input-height); align-items:center; justify-content:center; padding:0 15px; color:var(--button-text-color); border:1px solid var(--button-border-color); transition:opacity .15s; border-radius:var(--input-border-radius); white-space:nowrap; gap:10px; font-size:var(--input-font-size);}
 .full-width {width:100%;}
 .btn.disabled {opacity:.5; pointer-events:none;}
+.btn.muted {opacity:.5;}
 .btn i {color:inherit;}
 .btn.active {background:var(--primary); color:#fff;}
 
@@ -372,11 +372,11 @@ i.text-input-clear {font-size:18px;}
 .sheet-container {max-width:380px; margin:0 auto; position:absolute; top:100%; left:0; right:0;}
 
 /* SEGMENTED CONTROLLER */
-.segmented {padding:2px; background:#222; display:inline-flex; align-items:center; border-radius:8px; white-space:nowrap; position:relative;}
-.segmented .touchable {flex:1; color:#fff; padding:2px 15px; position:relative;}
-.segmented .active {color:#000; opacity:1;}
-.segmented .separator {width:1px; height:10px; background:#444;}
-.segmented-indicator {height:calc(100% - 4px); border-radius:6px; background:#fff; position:absolute; left:0; top:2px; outline:2px solid #222;}
+.segmented {padding:2px; background:var(--segmented-background); display:inline-flex; align-items:center; border-radius:8px; white-space:nowrap; position:relative;}
+.segmented .touchable {flex:1; color:var(--segmented-text); padding:2px 15px; position:relative;}
+.segmented .active {color:var(--segmented-active-text); opacity:1;}
+.segmented .separator {width:1px; height:10px; background:rgba(128, 128, 128, .1);}
+.segmented-indicator {height:calc(100% - 4px); border-radius:6px; background:var(--segmented-indicator); position:absolute; left:0; top:2px; outline:2px solid var(--segmented-background);}
 
 /* BREADCRUMBS */
 .breadcrumbs {white-space:nowrap; background:#323; height:36px;}

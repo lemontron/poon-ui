@@ -38,6 +38,7 @@ export const TextInput = ({
 	countries,
 	titleCase,
 	frame,
+	units,
 	ref,
 }) => {
 	const [_value, _setValue] = useState(value); // internal value
@@ -139,6 +140,7 @@ export const TextInput = ({
 			{renderIcon()}
 			{renderInput()}
 			{RightComponent}
+			{units ? <span className="meta">{units}</span> : null}
 			{renderSpinner()}
 			{renderClearButton()}
 		</div>

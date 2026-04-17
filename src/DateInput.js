@@ -61,7 +61,7 @@ export const DateInput = ({
 			</div>
 			<div className="date-input-grid">
 				{['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((label, i) => (
-					<div key={label + i} className="date-input-weekday">{label}</div>
+					<div key={label + i} className="meta date-input-weekday">{label}</div>
 				))}
 				{cells.map(date => {
 					const isCurrentMonth = date.getMonth() === visibleMonth.getMonth();
@@ -71,12 +71,13 @@ export const DateInput = ({
 						<Button
 							key={toDateInputValue(date)}
 							active={isSelected}
-							className={c('date-input-day', !isCurrentMonth && 'muted')}
+							className="date-input-day"
 							onClick={() => {
 								setVisibleMonth(new Date(date.getFullYear(), date.getMonth(), 1));
 								onChangeText(toDateInputValue(date));
 							}}
 							title={date.getDate()}
+							muted={!isCurrentMonth}
 						/>
 					);
 				})}
