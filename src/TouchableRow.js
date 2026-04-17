@@ -10,11 +10,12 @@ export const TouchableRow = ({
 	onClick,
 	target,
 	disabled,
+	inactive,
 	caret,
 	active,
 	...props
 }) => (
-	<div className={c('touchable-highlight touchable-row', disabled && 'disabled', caret && 'caret')}>
+	<div className={c('touchable-highlight touchable-row', disabled && 'disabled', inactive && 'inactive', caret && 'caret')}>
 		{LeftComponent}
 		<Touchable
 			className="touchable-row-button"

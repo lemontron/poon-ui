@@ -31,7 +31,7 @@ const SingleAlert = ({alert, isLast}) => {
 	const renderButton = (option, i) => {
 		const pressButton = () => {
 			if (option.onPress) option.onPress();
-			dismissAlert(alert, option._id || option.value);
+			dismissAlert(alert, option._id);
 		};
 		return (
 			<Touchable

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { showActionSheet } from '../overlays/ActionSheet';
 
 export const useFilterState = (initialKeys, allKeys) => {
 	const [keys, setKeys] = useState(initialKeys.length ? initialKeys : null);
@@ -25,11 +24,4 @@ export const useFilterState = (initialKeys, allKeys) => {
 	const toggleAll = () => setKeys(keys ? null : []);
 
 	return [keys, toggleKey, toggleAll];
-};
-
-export const useOptions = (title, options, defaultValue) => {
-	const [value, setValue] = useState(defaultValue);
-	const selected = options.find(r => r.value === value);
-	const change = () => showActionSheet(title, options, setValue);
-	return [selected, change];
 };

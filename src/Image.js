@@ -25,6 +25,7 @@ export const Image = ({
 	onError = () => null,
 	fit = 'cover',
 	children,
+	round,
 }) => {
 	const blobUrl = useBuffer(buffer);
 
@@ -50,7 +51,7 @@ export const Image = ({
 	};
 
 	return (
-		<div className={c('img', fit, className)} style={{aspectRatio: ar}}>
+		<div className={c('img', fit, className, round && 'round')} style={{aspectRatio: ar}}>
 			{renderImg()}
 			{children ? <div className="img-inside">{children}</div> : null}
 		</div>

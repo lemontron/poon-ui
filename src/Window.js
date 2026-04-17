@@ -23,7 +23,10 @@ export const Window = ({
 	const pan = useAnimatedValue(0);
 
 	const close = () => {
-		pan.spring(0).then(() => navigation.goBack());
+		pan.spring(0).then(() => {
+			navigation.goBack();
+			if (onClose) setTimeout(() => onClose(), 0);
+		});
 	};
 
 	useImperativeHandle(ref, () => ({
@@ -35,7 +38,7 @@ export const Window = ({
 	useEffect(() => {
 		if (!height) return;
 
-		if (isVisible || onClose) { // onClose is here because the window is in a modal if there is an onClose
+		if (isVisible) {
 			pan.spring(height);
 		} else {
 			pan.spring(0);

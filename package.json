@@ -3,23 +3,26 @@
   "version": "1.3.0",
   "description": "The provocative UI framework that's so native it's indecent!",
   "type": "module",
-  "main": "./dist/index.js",
+  "module": "./index.js",
+  "main": "./index.js",
+  "typings": "./index.d.ts",
+  "files": [
+    "dist",
+    "index.js",
+    "index.d.ts",
+    "poon.css"
+  ],
   "types": "./index.d.ts",
   "exports": {
     ".": {
       "types": "./index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./index.js",
+      "default": "./index.js"
     },
     "./poon.css": "./poon.css"
   },
   "scripts": {
-    "rollup": "rollup -c --watch",
-    "dev": "rollup -c --watch",
-    "build:js": "npx rollup -c",
-    "build:types": "node ./scripts/generate-types.mjs",
-    "build": "npm run build:js && npm run build:types",
-    "yalc:publish": "npm run build && yalc publish",
-    "yalc:push": "npm run build && yalc publish --push"
+    "rollup": "rollup -c --watch"
   },
   "keywords": [
     "react",
@@ -40,9 +43,10 @@
     "@babel/core": "^7.29.0",
     "@babel/preset-env": "^7.29.2",
     "@babel/preset-react": "^7.28.5",
+    "@types/react": "^19.2.2",
     "@rollup/plugin-babel": "^7.0.0",
-    "@rollup/plugin-multi-entry": "^7.1.0",
-    "@rollup/plugin-node-resolve": "^16.0.3"
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "poon-router": "^1.2.0"

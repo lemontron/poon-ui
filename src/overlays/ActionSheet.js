@@ -6,8 +6,13 @@ import { BottomSheet } from '../BottomSheet';
 const bus = createBus(null);
 const pan = new AnimatedValue(0);
 
-export const showActionSheet = (title, options, callback) => bus.update({title, options, callback});
-export const hideActionSheet = () => bus.update(null);
+export const showActionSheet = (title, options, callback) => {
+	bus.update({options, callback});
+};
+
+export const hideActionSheet = () => {
+	bus.update(null);
+};
 
 export const ActionSheet = () => {
 	const sheet = useBus(bus);
@@ -19,7 +24,7 @@ export const ActionSheet = () => {
 			hideActionSheet();
 			setTimeout(async () => {
 				if (option.onClick) await option.onClick();
-				if (sheet.callback) sheet.callback(option.value);
+				if (sheet.callback) sheet.callback(option._id);
 			}, 10);
 		};
 		return (
@@ -44,7 +49,7 @@ export const ActionSheet = () => {
 			onClose={hideActionSheet}
 			showShade
 		>
-			<div className="action-sheet-title">{sheet.title}</div>
+			<div className="action-sheet-title">{sheet.options.title}</div>
 			{sheet.options.map(renderOption)}
 		</BottomSheet>
 	);

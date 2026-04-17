@@ -18,7 +18,7 @@ const SegmentedItem = ({item, isLast, active, onChange, index, ref}) => (
 export const SegmentedController = ({options, value, onChange}) => {
 	const refs = useRef([]);
 	const indicator = useRef();
-	const index = options.findIndex(item => item.value === value);
+	const index = options.findIndex(item => item._id === value);
 	const left = useAnimatedValue(0);
 	const width = useAnimatedValue(0);
 

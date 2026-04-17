@@ -4,7 +4,7 @@ import { Touchable } from './Touchable';
 import { ActivityIndicator } from './ActivityIndicator';
 import { c } from './util';
 
-const autoCompleteMap = {'code': 'one-time-code'};
+const autoCompleteMap = {'code': 'one-time-code', 'password': 'current-password'};
 const typeMap = {'phone': 'tel', 'code': 'tel'};
 const placeholderMap = {'search': 'Search'};
 
@@ -80,7 +80,9 @@ export const TextInput = ({
 			'readOnly': disabled,
 			'onChange': changeText,
 			'value': renderValue(value),
-			'autoCapitalize': lowerCase && 'none',
+			'autoCapitalize': (lowerCase || type === 'email' || type === 'password') ? 'none' : undefined,
+			'autoCorrect': (type === 'email' || type === 'password' || lowerCase) ? 'off' : undefined,
+			'spellCheck': !(type === 'email' || type === 'password' || lowerCase),
 			'placeholder': placeholderMap[type] || placeholder,
 			rows,
 			onFocus,
