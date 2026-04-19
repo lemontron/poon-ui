@@ -10,7 +10,7 @@ export const Select = ({title, options, value, disabled, autoComplete, onChangeV
 		autoComplete={autoComplete}
 	>
 		{title ? <option disabled children={title}/> : null}
-		{normalizeOptions(options, title).options.map(r => (
+		{normalizeOptions(options).options.map(r => (
 			<option key={r._id} value={r._id} children={r.name}/>
 		))}
 	</select>

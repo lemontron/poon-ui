@@ -21,6 +21,7 @@ export const List = ({
 	safePadding = false,
 	well = false,
 	showCountFooter = false,
+	spacing,
 }) => {
 	if (loading) return <Loading/>;
 
@@ -40,7 +41,7 @@ export const List = ({
 				<div className="list-title">{title}</div>
 			) : null}
 			{HeaderComponent}
-			<div className="list-body">
+			<div className={c('list-body', spacing && 'spacing')}>
 				{items.map((item, i) => (
 					<Fragment key={keyExtractor(item)}>
 						{renderItem(item, i)}

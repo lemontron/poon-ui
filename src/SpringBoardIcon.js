@@ -5,7 +5,8 @@ import { setRevealOrigin } from './Reveal';
 
 const generateBgGradient = (color) => {
 	if (!color) return;
-	return `linear-gradient(rgba(255,255,255,10%), transparent), ${color}`;
+	return color;
+	// return `linear-gradient(rgba(255,255,255,10%), transparent), ${color}`;
 };
 
 export const SpringBoardIcon = ({title, icon, href, color}) => {

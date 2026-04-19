@@ -3,8 +3,19 @@ import { colorHash } from './util/oklab';
 import { Icon } from './Icon';
 import { ActivityIndicator } from './ActivityIndicator';
 import { Touchable } from './Touchable.js';
+import { toPercent } from './util/index.js';
 
-export const Tag = memo(({icon, tag, count, colorize = true, meta, color, loading, onDelete}) => {
+export const Tag = memo(({
+	icon,
+	tag,
+	count,
+	colorize = true,
+	meta,
+	color,
+	loading,
+	onDelete,
+	progress,
+}) => {
 	const fg = color || (colorize && colorHash(tag));
 	const renderCount = () => {
 		if (count === 0) return <Icon icon="add"/>;
@@ -20,6 +31,7 @@ export const Tag = memo(({icon, tag, count, colorize = true, meta, color, loadin
 				{icon ? <Icon icon={icon}/> : null}
 				{tag}
 				{renderCount()}
+				{progress ? <div className="tag-progress" style={{width: toPercent(progress)}}/> : null}
 			</div>
 			{renderRight()}
 			{onDelete ? (
