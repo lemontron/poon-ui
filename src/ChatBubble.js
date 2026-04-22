@@ -5,7 +5,6 @@ import { Icon } from './Icon.js';
 
 export const ChatBubble = ({role, text, disabled, onPressMore}) => (
 	<HStack
-		onPressMore={onPressMore}
 		disabled={disabled}
 		spacing
 		className="chat-bubble-wrapper"
