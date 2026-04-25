@@ -105,7 +105,7 @@ i.text-input-clear {font-size:18px;}
 .text:-webkit-autofill {box-shadow:0 0 0 500px var(--subtle) inset !important; background:var(--subtle) !important;}
 .text::placeholder {opacity:0.3; color:var(--input-color);}
 
-.text.select {background:var(--subtle);}
+.text.select {background:var(--subtle); border-radius:calc(var(--radius) / 2); filter:saturate(0);}
 
 /* TOUCHABLE */
 .touchable {
@@ -134,12 +134,18 @@ i.text-input-clear {font-size:18px;}
 .touchable-highlight.touched {opacity:1; background:var(--subtle);}
 
 /* TOUCHABLE ROW */
-.touchable-row {padding:0 var(--gutter-width); width:100%; min-height:44px; display:flex !important; align-items:center; justify-content:space-between; text-align:left; gap:10px; white-space:normal;}
+.touchable-row {padding:0 var(--gutter-width); width:100%; min-height:44px; display:flex !important; align-items:center; justify-content:space-between; text-align:left; gap:10px; white-space:normal; position:relative;}
 .touchable-row.caret {padding-right:calc(var(--gutter-width) / 2);}
 
 .touchable-row-button {flex:1; min-width:0; padding:10px 0; text-align:left; color:inherit; display:flex;}
 .touchable-row-button.touched {opacity:1;}
 .touchable-row:has(.touchable-row-button.touched) {background:var(--subtle);}
+.touchable-row.dragging > * {opacity:.3;}
+.touchable-row-drag-handle {flex:0 0 24px; display:flex; align-items:center; justify-content:center; color:var(--muted); cursor:grab; user-select:none; touch-action:none;}
+.touchable-row-drag-handle:active {cursor:grabbing;}
+.touchable-row.drop-before::before, .touchable-row.drop-after::after {content:''; position:absolute; left:var(--gutter-width); right:var(--gutter-width); height:2px; background:var(--accent); z-index:1;}
+.touchable-row.drop-before::before {top:0;}
+.touchable-row.drop-after::after {bottom:0;}
 
 /* META */
 .meta {color:var(--muted);}
@@ -216,6 +222,7 @@ i.text-input-clear {font-size:18px;}
 .row-header {width:100%; overflow:hidden; flex:1;}
 .row-title > .meta:before {content:"·"; margin:0 5px;}
 .row-title, .row-subtitle {text-overflow:ellipsis; overflow:hidden; white-space:nowrap;}
+.row.multi-line .row-title, .row.multi-line .row-subtitle {text-overflow:clip; overflow:visible; white-space:normal;}
 .row-subtitle {color:var(--muted);}
 .row-subtitle i {font-size:16px;}
 
@@ -352,7 +359,8 @@ i.text-input-clear {font-size:18px;}
 .padding .list {margin:0 calc(var(--gutter-width) * -1); width:calc(100% + 2 * var(--gutter-width));}
 .list > .touchable-row {border-bottom:2px solid var(--subtle); height:44px;}
 
-.list-title {padding:10px var(--gutter-width); text-transform:uppercase; font-weight:bold; color:var(--accent); border-bottom:var(--separator-height) solid var(--subtle); font-size:calc(var(--font-size) - 2px);}
+.list-header {border-bottom:var(--separator-height) solid var(--subtle); display:flex; justify-content:space-between; align-items:center; padding-right:var(--gutter-width);}
+.list-title {padding:10px var(--gutter-width); text-transform:uppercase; font-weight:bold; color:var(--accent); font-size:calc(var(--font-size) - 2px);}
 .list-footer {padding:20px 0; text-align:center; color:var(--muted);}
 
 .list.well {padding:10px var(--gutter-width);}
@@ -403,7 +411,7 @@ i.text-input-clear {font-size:18px;}
 
 /* CHECKBOX */
 .toggle-check {height:20px; width:20px; min-width:20px; display:flex; align-items:center; justify-content:center; border:2px solid var(--muted); color:#fff; border-radius:calc(var(--radius) / 2); flex-shrink:0;}
-.toggle-check.active, .toggle-check.undetermined {background-color:var(--muted); border:none;}
+.toggle-check.active, .toggle-check.undetermined {background-color:var(--accent); border:none;}
 .toggle-check .material-icons {font-size:18px;}
 
 /* CIRCLE CHECK */

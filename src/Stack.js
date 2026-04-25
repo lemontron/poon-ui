@@ -54,6 +54,7 @@ export const Row = ({
 	RightComponent,
 	onPressMore,
 	padding,
+	multiLine,
 	children,
 }) => {
 	const renderLeftIcon = () => {
@@ -63,7 +64,7 @@ export const Row = ({
 	};
 
 	return (
-		<div className={c('row', padding && 'padding', inactive && 'inactive', className)}>
+		<div className={c('row', padding && 'padding', inactive && 'inactive', multiLine && 'multi-line', className)}>
 			{LeftComponent}
 			<div className="row-left">
 				{renderLeftIcon()}
