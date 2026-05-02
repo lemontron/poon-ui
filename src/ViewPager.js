@@ -161,6 +161,7 @@ export const ViewPager = ({
 				className="pager-scroller"
 				ref={scrollerEl}
 				enabled={enableScrolling}
+				forcePointerEvents
 				onCapture={(e) => {
 					if (e.overscrolling) return false;
 					if (e.direction === orientation) {

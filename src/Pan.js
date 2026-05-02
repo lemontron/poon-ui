@@ -13,10 +13,28 @@ const getVelocity = (lastV = 0, newV, elapsedTime) => {
 let responderEl; // The element currently capturing input
 let overscrollEl; // The element currently overscrolling
 
-const getXY = (e, i = 0) => ({
-	'x': e.touches ? e.touches[i].clientX : e.clientX,
-	'y': e.touches ? e.touches[i].clientY : e.clientY,
-});
+const supportsTouchPointer = () => {
+	if (typeof window === 'undefined') return false;
+	return 'PointerEvent' in window && (
+		navigator.maxTouchPoints > 0 ||
+		window.matchMedia?.('(pointer: coarse)').matches
+	);
+};
+
+const getXY = e => ({'x': e.clientX, 'y': e.clientY});
+
+const cancelTouchable = e => {
+	e.target?.closest?.('.touchable')?.dispatchEvent(new CustomEvent('touchablecancel'));
+};
+
+const getPinch = pointers => {
+	const [t0, t1] = [...pointers.values()];
+	const dx = (t0.x - t1.x), dy = (t0.y - t1.y);
+	return {
+		'center': {'x': (t0.x + t1.x) / 2, 'y': (t0.y + t1.y) / 2},
+		'distance': Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2)),
+	};
+};
 
 export const Pan = ({
 	direction,
@@ -30,11 +48,15 @@ export const Pan = ({
 	onScroll,
 	onOverscroll,
 	enabled = true,
+	forcePointerEvents = false,
+	style,
 	ref,
 	...props
 }) => {
 	const el = ref || useRef();
 	const refs = useRef({}).current; // Internal key values
+	const pointerEventsEnabled = enabled && (forcePointerEvents || supportsTouchPointer());
+	const touchAction = direction === 'x' ? 'pan-y' : direction === 'y' ? 'pan-x' : 'none';
 
 	const logVelocity = (e) => { // Log instantaneous velocity
 		const now = e.nativeEvent.timeStamp;
@@ -48,20 +70,20 @@ export const Pan = ({
 	};
 
 	const down = (e) => {
+		if (!forcePointerEvents && e.pointerType === 'mouse') return;
+		if (e.pointerType === 'mouse' && !e.isPrimary) return;
+
 		// Prevent iOS gesture on the edges
-		// if (isIOS && e.touches.length === 1) {
-		// 	const touch = e.touches[0];
+		// if (isIOS && e.pointerType === 'touch') {
 		// 	if (
-		// 		touch.clientX < window.innerWidth * 0.1 ||
-		// 		touch.clientX > window.innerWidth * 0.9
+		// 		e.clientX < window.innerWidth * 0.1 ||
+		// 		e.clientX > window.innerWidth * 0.9
 		// 	) e.preventDefault();
 		// }
 
-		// Handle pinch second touch
-		if (e.touches.length === 2) { // The first touch already happened
-			const t0 = getXY(e, 0), t1 = getXY(e, 1); // Get two touches
-			const dx = (t0.x - t1.x), dy = (t0.y - t1.y); // Distance between touches
-			refs.pinch = {'d0': Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))};
+		if (refs.pointers?.size > 0) {
+			refs.pointers.set(e.pointerId, getXY(e));
+			if (refs.pointers.size === 2) refs.pinch = {'d0': getPinch(refs.pointers).distance};
 			return;
 		}
 
@@ -78,6 +100,8 @@ export const Pan = ({
 			'locked': false, // Direction
 			'touch': false, // Whether we've captured the touch
 			'origin': {x, y}, // Initial touch position
+			'pointerId': e.pointerId,
+			'pointers': new Map([[e.pointerId, {x, y}]]),
 			'd': {x: 0, y: 0}, // Distance
 			'v': {x: 0, y: 0}, // Velocity
 			's': {x: 0, y: 0}, // Speed
@@ -89,24 +113,29 @@ export const Pan = ({
 	};
 
 	const move = (e) => {
+		if (!refs.pointers?.has(e.pointerId)) return;
 		if (responderEl && responderEl !== el.current) return;
 
 		if (refs.pinch) { // Pinch mode
-			if (e.touches.length === 2) {
+			refs.pointers.set(e.pointerId, getXY(e));
+
+			if (refs.pointers.size === 2) {
 				refs.locked = 'pinch'; // pinch mode
 
-				const t0 = getXY(e, 0), t1 = getXY(e, 1);
-				const dx = (t0.x - t1.x), dy = (t0.y - t1.y);
-				refs.pinch.d = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+				const pinch = getPinch(refs.pointers);
+				refs.pinch.d = pinch.distance;
 
 				if (onPinch) onPinch({
-					'center': {'x': (t0.x + t1.x) / 2, 'y': (t0.y + t1.y) / 2},
+					'center': pinch.center,
 					'scale': (refs.pinch.d / refs.pinch.d0),
 				});
 			}
 		} else { // Single touch mode
+			if (e.pointerId !== refs.pointerId) return;
+
 			const {x, y} = getXY(e);
 
+			refs.pointers.set(e.pointerId, {x, y});
 			refs.x = x;
 			refs.y = y;
 			logVelocity(e);
@@ -164,11 +193,17 @@ export const Pan = ({
 
 			if (refs.overscrolling && onOverscroll && overscrollEl === el.current) { // Callback overscroll handler!
 				// console.log('overscrolling');
+				refs.suppressClick = true;
+				cancelTouchable(e);
 				onOverscroll(refs.distance - overscrollEl.overscrollStart);
 			}
 
 			if (refs.touch) {
+				e.preventDefault();
 				e.stopPropagation();
+				if (!el.current.hasPointerCapture(e.pointerId)) el.current.setPointerCapture(e.pointerId);
+				refs.suppressClick = true;
+				cancelTouchable(e);
 				responderEl = el.current; // capture event
 
 				if (onMove) onMove({
@@ -184,7 +219,11 @@ export const Pan = ({
 	};
 
 	const up = (e) => {
-		if (e.touches.length > 0) return; // Still touching, not actually up
+		if (!refs.pointers?.has(e.pointerId)) return;
+		if (el.current.hasPointerCapture(e.pointerId)) el.current.releasePointerCapture(e.pointerId);
+
+		refs.pointers.delete(e.pointerId);
+		if (refs.pointers.size > 0) return; // Still touching, not actually up
 
 		overscrollEl = null; // Reset overscroll element
 		if (onOverscroll) onOverscroll(null);
@@ -207,12 +246,26 @@ export const Pan = ({
 			if (onUp) onUp({
 				'distance': distance,
 				'flick': flick * -1, // Invert direction for use with pagers
-				'flickMs': Math.min((size - Math.abs(distance)) / speed, 300),
+				'flickMs': speed ? Math.min((size - Math.abs(distance)) / speed, 300) : 300,
 				'direction': refs.locked,
 				'velocity': velocity,
 				'size': size,
 			});
 		}
+	};
+
+	const cancel = (e) => {
+		if (refs.pointers?.has(e.pointerId)) refs.pointers.delete(e.pointerId);
+		if (el.current.hasPointerCapture(e.pointerId)) el.current.releasePointerCapture(e.pointerId);
+		overscrollEl = null;
+		if (onOverscroll) onOverscroll(null);
+	};
+
+	const click = (e) => {
+		if (!refs.suppressClick) return;
+		refs.suppressClick = false;
+		e.preventDefault();
+		e.stopPropagation();
 	};
 
 	const wheel = (e) => {
@@ -229,9 +282,12 @@ export const Pan = ({
 		<div
 			ref={el}
 			{...props}
-			onTouchStart={enabled ? down : undefined}
-			onTouchMove={enabled ? move : undefined}
-			onTouchEnd={enabled ? up : undefined}
+			style={pointerEventsEnabled ? {touchAction, ...style} : style}
+			onPointerDown={pointerEventsEnabled ? down : undefined}
+			onPointerMove={pointerEventsEnabled ? move : undefined}
+			onPointerUp={pointerEventsEnabled ? up : undefined}
+			onPointerCancel={pointerEventsEnabled ? cancel : undefined}
+			onClickCapture={pointerEventsEnabled ? click : undefined}
 			onWheel={enabled ? wheel : undefined}
 			onDoubleClick={onDoubleTap}
 		/>

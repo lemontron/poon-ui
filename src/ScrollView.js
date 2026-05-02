@@ -1,4 +1,4 @@
-import { useEffect, useRef, useImperativeHandle } from 'react';
+import { useEffect, useLayoutEffect, useRef, useImperativeHandle } from 'react';
 import { useAnimatedValue } from './util/animated';
 import { c } from './util';
 import { PullIndicator } from './PullIndicator';
@@ -12,7 +12,7 @@ export const ScrollView = ({
 	children,
 	padding,
 	pills,
-	fade,
+	stickToBottom,
 	ref,
 }) => {
 	const el = useRef();
@@ -22,14 +22,30 @@ export const ScrollView = ({
 	const scroll = useAnimatedValue(0);
 	const overscroll = useAnimatedValue(0);
 
+	const isScrolledToEnd = () => {
+		const node = el.current;
+		const scrollPos = node[horizontal ? 'scrollLeft' : 'scrollTop'];
+		const scrollSize = node[horizontal ? 'scrollWidth' : 'scrollHeight'];
+		const clientSize = node[horizontal ? 'clientWidth' : 'clientHeight'];
+		return scrollSize - clientSize - scrollPos <= 4;
+	};
+
+	const scrollToBottom = (duration = 0) => {
+		const scrollSize = el.current[horizontal ? 'scrollWidth' : 'scrollHeight'];
+		el.current[horizontal ? 'scrollLeft' : 'scrollTop'] = scrollSize;
+		scroll.spring(scrollSize, duration);
+	};
+
 	useImperativeHandle(ref, () => ({
 		scrollToTop(duration = 0) {
 			scroll.spring(0, duration);
 		},
-		scrollToBottom(duration = 0) {
-			scroll.spring(el.current.scrollHeight, duration);
-		},
+		scrollToBottom,
 	}));
+
+	useLayoutEffect(() => {
+		if (stickToBottom && refs.stickToBottom !== false) scrollToBottom();
+	});
 
 	useEffect(() => {
 		return overscroll.on(val => {
@@ -56,6 +72,7 @@ export const ScrollView = ({
 	const handleScroll = () => {
 		navigator.virtualKeyboard?.hide();
 		document.activeElement.blur();
+		if (stickToBottom) refs.stickToBottom = isScrolledToEnd();
 	};
 
 	return (

@@ -22,5 +22,5 @@ export default () => ({
 			presets: [['@babel/preset-react', {runtime: 'automatic'}]],
 		}),
 	],
-	external: ['react', 'react/jsx-runtime', 'poon-router'],
+	external: ['react', 'react/jsx-runtime', 'poon-router', 'poon-markdown'],
 });

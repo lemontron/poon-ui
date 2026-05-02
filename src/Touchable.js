@@ -1,4 +1,4 @@
-import { createElement, useState } from 'react';
+import { createElement, useEffect, useRef, useState } from 'react';
 import { navigation } from 'poon-router';
 import { c } from './util';
 
@@ -18,7 +18,20 @@ export const Touchable = ({
 	ref,
 }) => {
 	const [touched, setTouched] = useState(false);
+	const el = ref || useRef();
+	const pointerRef = useRef(null);
 	const isClickable = (href || onClick);
+
+	useEffect(() => {
+		if (!el.current) return;
+		const cancel = () => {
+			ignoreNextClick = true;
+			pointerRef.current = null;
+			setTouched(false);
+		};
+		el.current.addEventListener('touchablecancel', cancel);
+		return () => el.current?.removeEventListener('touchablecancel', cancel);
+	}, []);
 
 	const clickButton = (e) => {
 		if (ignoreNextClick) return e.preventDefault(); // Safari glitch fix
@@ -38,14 +51,39 @@ export const Touchable = ({
 	};
 
 	const touch = (e) => {
-		if (e.type === 'touchstart') ignoreNextClick = false;
 		if (e.button && e.button !== 0) return; // If mouse, only process left clicks
+		pointerRef.current = e.pointerId;
+		ignoreNextClick = false;
+		e.currentTarget.setPointerCapture(e.pointerId);
 		setTouched(true);
 	};
 
 	const leave = (e) => {
-		if (e.type === 'touchmove') ignoreNextClick = true;
+		if (e.pointerId !== pointerRef.current) return;
+		if (e.type === 'lostpointercapture') ignoreNextClick = true;
+		if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+		pointerRef.current = null;
 		setTouched(false);
+	};
+
+	const cancel = (e) => {
+		ignoreNextClick = true;
+		if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+		pointerRef.current = null;
+		setTouched(false);
+	};
+
+	const move = (e) => {
+		if (e.pointerId !== pointerRef.current) return;
+		const rect = e.currentTarget.getBoundingClientRect();
+		if (
+			e.currentTarget.hasPointerCapture(e.pointerId) &&
+			e.clientX >= rect.left &&
+			e.clientX <= rect.right &&
+			e.clientY >= rect.top &&
+			e.clientY <= rect.bottom
+		) return;
+		cancel(e);
 	};
 
 	// Determine tag name
@@ -56,12 +94,11 @@ export const Touchable = ({
 	return createElement(tagName, {
 		'className': c('touchable', className, touched && 'touched', disableMenu && 'disable-menu', active && 'active', disabled && 'disabled'),
 		'href': href,
-		'onTouchStart': isClickable && touch,
-		'onTouchMove': isClickable && leave,
-		'onTouchEnd': isClickable && leave,
-		'onMouseDown': isClickable && touch,
-		'onMouseUp': isClickable && leave,
-		'onMouseLeave': isClickable && leave,
+		'onPointerDown': isClickable && touch,
+		'onPointerMove': isClickable && move,
+		'onPointerUp': isClickable && leave,
+		'onPointerCancel': isClickable && cancel,
+		'onLostPointerCapture': isClickable && leave,
 		'onClick': isClickable && clickButton,
 		'target': target,
 		'draggable': false,
@@ -71,6 +108,6 @@ export const Touchable = ({
 		} : undefined,
 		'style': style,
 		'type': type,
-		'ref': ref,
+		'ref': el,
 	}, children);
 };

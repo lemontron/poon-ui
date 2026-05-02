@@ -6,7 +6,7 @@ import { Row } from './Stack';
 import { ListReorderContext } from './useReorder.js';
 
 export const TouchableRow = ({
-	LeftComponent,
+	LeftButton,
 	onPressMore,
 	href,
 	onClick,
@@ -31,7 +31,7 @@ export const TouchableRow = ({
 					{...reorder.onReorder}
 				/>
 			) : null}
-			{LeftComponent}
+			{LeftButton}
 			<Touchable
 				className="touchable-row-button"
 				onClick={onClick}

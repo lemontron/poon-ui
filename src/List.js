@@ -17,7 +17,6 @@ export const List = ({
 	className,
 	ListEmptyComponent,
 	HeaderComponent,
-	HeaderRightComponent,
 	children,
 	showSeparators = true,
 	safePadding = false,
@@ -45,7 +44,6 @@ export const List = ({
 			{title ? (
 				<div className="list-header">
 					<div className="list-title">{title}</div>
-					{HeaderRightComponent}
 				</div>
 			) : null}
 			{HeaderComponent}

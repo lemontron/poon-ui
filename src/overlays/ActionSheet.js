@@ -1,4 +1,4 @@
-import { createBus, useBus } from 'poon-router';
+import { createBus, useBackHandler, useBus } from 'poon-router';
 import { AnimatedValue } from '../util/animated';
 import { TouchableRow } from '../TouchableRow';
 import { BottomSheet } from '../BottomSheet';
@@ -16,6 +16,7 @@ export const hideActionSheet = () => {
 
 export const ActionSheet = () => {
 	const sheet = useBus(bus);
+	useBackHandler(!!sheet, () => pan.spring(0).then(hideActionSheet));
 
 	const renderOption = (option, i) => {
 		if (option.hidden) return null;

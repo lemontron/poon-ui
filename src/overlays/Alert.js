@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createBus, randomId, useBus } from 'poon-router';
+import { createBus, randomId, useBackHandler, useBus } from 'poon-router';
 import { c } from '../util';
 import { Touchable } from '../Touchable';
 import { ScrollView } from '../ScrollView';
@@ -92,6 +92,7 @@ const SingleAlert = ({alert, isLast}) => {
 export const Alert = () => {
 	const alerts = useBus(alertsStore);
 	const last = alerts.filter(alert => alert.visible).pop();
+	useBackHandler(!!last, () => dismissAlert(last));
 
 	if (alerts.length === 0) return null;
 	return (

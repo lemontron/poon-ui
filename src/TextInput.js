@@ -1,4 +1,4 @@
-import { createElement, useState } from 'react';
+import { createElement, useEffect, useRef, useState } from 'react';
 import { Icon } from './Icon';
 import { Touchable } from './Touchable';
 import { ActivityIndicator } from './ActivityIndicator';
@@ -39,10 +39,20 @@ export const TextInput = ({
 	titleCase,
 	frame,
 	units,
+	autoExpand,
 	ref,
 }) => {
 	const [_value, _setValue] = useState(value); // internal value
 	const isTextarea = (type === 'textarea' || rows);
+	const localRef = useRef();
+	const inputRef = ref || localRef;
+	const gesture = useRef({}).current;
+
+	useEffect(() => {
+		if (!isTextarea || !autoExpand || !inputRef.current) return;
+		inputRef.current.style.height = 'auto';
+		inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+	}, [isTextarea, autoExpand, value]);
 
 	const renderInput = () => {
 		let tagName = isTextarea ? 'textarea' : 'input';
@@ -50,6 +60,10 @@ export const TextInput = ({
 		const changeText = (e) => {
 			let value = e.target.value;
 			_setValue(value);
+			if (isTextarea && autoExpand) {
+				e.target.style.height = 'auto';
+				e.target.style.height = `${e.target.scrollHeight}px`;
+			}
 
 			if (type === 'phone') {
 				value = value.replace(/[^0-9]/g, '');
@@ -73,11 +87,19 @@ export const TextInput = ({
 			return value;
 		};
 
+		const canScroll = (el, deltaY) => {
+			const max = el.scrollHeight - el.clientHeight;
+			if (max <= 0) return false;
+			if (deltaY < 0) return el.scrollTop > 0;
+			if (deltaY > 0) return el.scrollTop < max;
+			return true;
+		};
+
 		return createElement(tagName, {
 			'type': typeMap[type] || type,
 			'autoComplete': autoCompleteMap[type],
 			'maxLength': maxLength,
-			'className': c('text', disabled && 'disabled', dnt && 'fs-hide', className, frame && 'frame'),
+			'className': c('text', disabled && 'disabled', dnt && 'fs-hide', className, frame && 'frame', isTextarea && autoExpand && 'auto-expand'),
 			'readOnly': disabled,
 			'onChange': changeText,
 			'value': renderValue(value),
@@ -90,14 +112,20 @@ export const TextInput = ({
 			onClick,
 			id,
 			autoFocus,
-			ref,
+			ref: isTextarea && autoExpand ? inputRef : ref,
 			min,
 			max,
-			'onTouchStart': isTextarea ? (e) => e.stopPropagation() : undefined,
-			'onTouchMove': isTextarea ? (e) => e.stopPropagation() : undefined,
-			'onTouchEnd': isTextarea ? (e) => e.stopPropagation() : undefined,
-			'onPointerDown': isTextarea ? (e) => e.stopPropagation() : undefined,
-			'onPointerMove': isTextarea ? (e) => e.stopPropagation() : undefined,
+			'onPointerDown': isTextarea ? e => {
+				gesture.y = e.clientY;
+			} : undefined,
+			'onPointerMove': isTextarea ? e => {
+				const deltaY = gesture.y - e.clientY;
+				gesture.y = e.clientY;
+				if (canScroll(e.currentTarget, deltaY)) e.stopPropagation();
+			} : undefined,
+			'onWheel': isTextarea ? e => {
+				if (canScroll(e.currentTarget, e.deltaY)) e.stopPropagation();
+			} : undefined,
 		});
 	};
 
