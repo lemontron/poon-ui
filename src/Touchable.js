@@ -41,7 +41,8 @@ export const Touchable = ({
 			onClick(e);
 		}
 
-		if (target === '_blank' || target === '_self' || e.metaKey || e.ctrlKey || e.defaultPrevented || !href) return;
+		const isNative = (target === '_blank' || target === '_self' || e.ctrlKey || e.defaultPrevented || !href);
+		if (isNative) return;
 
 		const url = new URL(href, location.href);
 		if (url.hostname === location.hostname) {

@@ -10,7 +10,6 @@ const getVelocity = (lastV = 0, newV, elapsedTime) => {
 	return (lastV * w0) + (newV * w1);
 };
 
-let responderEl; // The element currently capturing input
 let overscrollEl; // The element currently overscrolling
 
 const supportsTouchPointer = () => {
@@ -24,7 +23,9 @@ const supportsTouchPointer = () => {
 const getXY = e => ({'x': e.clientX, 'y': e.clientY});
 
 const cancelTouchable = e => {
-	e.target?.closest?.('.touchable')?.dispatchEvent(new CustomEvent('touchablecancel'));
+	const touchable = e.target?.closest?.('.touchable');
+	if (!touchable) return;
+	touchable.dispatchEvent(new CustomEvent('touchablecancel'));
 };
 
 const getPinch = pointers => {
@@ -58,6 +59,13 @@ export const Pan = ({
 	const pointerEventsEnabled = enabled && (forcePointerEvents || supportsTouchPointer());
 	const touchAction = direction === 'x' ? 'pan-y' : direction === 'y' ? 'pan-x' : 'none';
 
+	const resetPointer = (pointerId) => {
+		if (refs.pointers?.has(pointerId)) refs.pointers.delete(pointerId);
+		if (el.current.hasPointerCapture(pointerId)) el.current.releasePointerCapture(pointerId);
+		overscrollEl = null;
+		if (onOverscroll) onOverscroll(null);
+	};
+
 	const logVelocity = (e) => { // Log instantaneous velocity
 		const now = e.nativeEvent.timeStamp;
 		const elapsed = (now - refs.last.ts);
@@ -81,14 +89,13 @@ export const Pan = ({
 		// 	) e.preventDefault();
 		// }
 
-		if (refs.pointers?.size > 0) {
+		if (refs.pointers?.size > 0 && !e.isPrimary) {
 			refs.pointers.set(e.pointerId, getXY(e));
 			if (refs.pointers.size === 2) refs.pinch = {'d0': getPinch(refs.pointers).distance};
 			return;
 		}
 
 		// Clear previous values
-		responderEl = null;
 		for (let key in refs) delete refs[key];
 
 		const {x, y} = getXY(e);
@@ -114,7 +121,6 @@ export const Pan = ({
 
 	const move = (e) => {
 		if (!refs.pointers?.has(e.pointerId)) return;
-		if (responderEl && responderEl !== el.current) return;
 
 		if (refs.pinch) { // Pinch mode
 			refs.pointers.set(e.pointerId, getXY(e));
@@ -193,7 +199,6 @@ export const Pan = ({
 
 			if (refs.overscrolling && onOverscroll && overscrollEl === el.current) { // Callback overscroll handler!
 				// console.log('overscrolling');
-				refs.suppressClick = true;
 				cancelTouchable(e);
 				onOverscroll(refs.distance - overscrollEl.overscrollStart);
 			}
@@ -202,12 +207,10 @@ export const Pan = ({
 				e.preventDefault();
 				e.stopPropagation();
 				if (!el.current.hasPointerCapture(e.pointerId)) el.current.setPointerCapture(e.pointerId);
-				refs.suppressClick = true;
 				cancelTouchable(e);
-				responderEl = el.current; // capture event
 
 				if (onMove) onMove({
-					'captured': responderEl = el.current,
+					'captured': el.current,
 					'd': refs.d,
 					'direction': refs.locked,
 					'distance': refs.d[refs.locked],
@@ -228,7 +231,6 @@ export const Pan = ({
 		overscrollEl = null; // Reset overscroll element
 		if (onOverscroll) onOverscroll(null);
 
-		if (responderEl && responderEl !== el.current) return;
 		if (!refs.touch) return;
 
 		logVelocity(e);
@@ -255,17 +257,12 @@ export const Pan = ({
 	};
 
 	const cancel = (e) => {
-		if (refs.pointers?.has(e.pointerId)) refs.pointers.delete(e.pointerId);
-		if (el.current.hasPointerCapture(e.pointerId)) el.current.releasePointerCapture(e.pointerId);
-		overscrollEl = null;
-		if (onOverscroll) onOverscroll(null);
+		resetPointer(e.pointerId);
 	};
 
-	const click = (e) => {
-		if (!refs.suppressClick) return;
-		refs.suppressClick = false;
-		e.preventDefault();
-		e.stopPropagation();
+	const lostCapture = (e) => {
+		if (e.target !== el.current) return;
+		cancel(e);
 	};
 
 	const wheel = (e) => {
@@ -287,7 +284,7 @@ export const Pan = ({
 			onPointerMove={pointerEventsEnabled ? move : undefined}
 			onPointerUp={pointerEventsEnabled ? up : undefined}
 			onPointerCancel={pointerEventsEnabled ? cancel : undefined}
-			onClickCapture={pointerEventsEnabled ? click : undefined}
+			onLostPointerCapture={pointerEventsEnabled ? lostCapture : undefined}
 			onWheel={enabled ? wheel : undefined}
 			onDoubleClick={onDoubleTap}
 		/>
