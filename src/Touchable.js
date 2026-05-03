@@ -30,7 +30,7 @@ export const Touchable = ({
 			setTouched(false);
 		};
 		el.current.addEventListener('touchablecancel', cancel);
-		return () => el.current?.removeEventListener('touchablecancel', cancel);
+		return () => el.current.removeEventListener('touchablecancel', cancel);
 	}, []);
 
 	const clickButton = (e) => {
