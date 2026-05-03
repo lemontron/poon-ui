@@ -17,6 +17,7 @@ export const TextInput = ({
 	placeholder,
 	value = '',
 	icon,
+	LeftComponent,
 	type = 'text',
 	dnt,
 	disabled,
@@ -130,6 +131,7 @@ export const TextInput = ({
 	};
 
 	const renderIcon = () => {
+		if (LeftComponent) return LeftComponent;
 		if (icon) return <Icon className="text-input-icon" icon={icon}/>;
 		if (type === 'username') return <span className="text-input-icon">@</span>;
 		if (type === 'search') return <Icon className="text-input-icon" icon="search"/>;

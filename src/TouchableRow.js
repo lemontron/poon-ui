@@ -15,6 +15,7 @@ export const TouchableRow = ({
 	inactive,
 	caret,
 	active,
+	replaceState,
 	...props
 }) => {
 	const reorder = useContext(ListReorderContext);
@@ -38,6 +39,7 @@ export const TouchableRow = ({
 				href={href}
 				target={target}
 				active={active}
+				replaceState={replaceState}
 			>
 				<Row {...props}/>
 				{caret ? <Icon icon="chevron_right"/> : null}

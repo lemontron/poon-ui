@@ -23,7 +23,7 @@ const stackProps = (appearance, {
 			justify && `justify-${justify}`,
 			align && `align-${align}`,
 			passthrough && 'passthrough',
-			padding && 'padding',
+			padding && (typeof padding === 'string' ? `padding-${padding}` : 'padding'),
 			spacing && 'spacing',
 			safePadding && 'safe',
 			distributed && 'distributed',

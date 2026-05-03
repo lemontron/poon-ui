@@ -16,6 +16,7 @@ export const Card = ({
 	footer,
 	headerRight,
 	SearchComponent,
+	SidebarComponent,
 	disableGestures,
 	onDrop,
 	isVisible,
@@ -116,7 +117,14 @@ export const Card = ({
 				}}
 			>
 				{renderHeader()}
-				<div className="card-body" children={children}/>
+				{SidebarComponent ? (
+					<div className="card-content">
+						<div className="card-sidebar">{SidebarComponent}</div>
+						<div className="card-body" children={children}/>
+					</div>
+				) : (
+					<div className="card-body" children={children}/>
+				)}
 				{footer}
 				{dropping ? (
 					<Placeholder className="drop-zone" icon="upload" title="Upload"/>

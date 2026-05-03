@@ -1,5 +1,6 @@
 import { useRef, useImperativeHandle } from 'react';
 import { c } from './util';
+import { Touchable } from './Touchable.js';
 
 const iOS = /iPad|iPhone|iPod/.test(navigator.platform);
 const iconMap = {
@@ -24,12 +25,13 @@ export const Icon = ({icon, className, color, title, size, onClick, ref}) => {
 	}), []);
 
 	return (
-		<i className={c('material-icons', className)}
-		   style={{color, fontSize: size}}
-		   title={title}
-		   onClick={onClick}
-		   children={iconMap[icon] || icon}
-		   ref={iconRef}
+		<Touchable
+			className={c('material-icons', className)}
+			style={{color, fontSize: size}}
+			title={title}
+			onClick={onClick}
+			children={iconMap[icon] || icon}
+			ref={iconRef}
 		/>
 	);
 };

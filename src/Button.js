@@ -39,6 +39,7 @@ export const Button = ({
 	loading,
 	submit,
 	fullWidth,
+	replaceState,
 	presentation,
 	target,
 	active,
@@ -68,6 +69,7 @@ export const Button = ({
 			tabIndex={tabIndex}
 			children={renderInner()}
 			target={target}
+			replaceState={replaceState}
 		/>
 	);
 };

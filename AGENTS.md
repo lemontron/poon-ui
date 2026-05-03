@@ -11,3 +11,4 @@
 - Keep app components free of pass-through props that only exist for plumbing.
 - Prefer one event path across platforms. If pointer events solve desktop and mobile, do not keep parallel native drag/drop code.
 - Avoid chains like `normalize(getTarget(...))` when `getTarget(...)` can return the right shape.
+- Rollup is running in the background.

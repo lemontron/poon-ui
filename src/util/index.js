@@ -1,3 +1,5 @@
+// This is not a barrel, rollup uses multi entry to export all exports automatically
+
 export const c = (...rest) => rest.filter(Boolean).join(' ');
 
 export const toPercent = val => `${val * 100}%`;

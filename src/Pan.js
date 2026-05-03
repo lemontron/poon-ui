@@ -1,5 +1,4 @@
 import { useRef } from 'react';
-// import { isIOS } from './util';
 
 const FLICK_SPEED = .25; // Pixels per ms
 const CUTOFF_INTERVAL = 50; // Milliseconds
@@ -80,14 +79,6 @@ export const Pan = ({
 	const down = (e) => {
 		if (!forcePointerEvents && e.pointerType === 'mouse') return;
 		if (e.pointerType === 'mouse' && !e.isPrimary) return;
-
-		// Prevent iOS gesture on the edges
-		// if (isIOS && e.pointerType === 'touch') {
-		// 	if (
-		// 		e.clientX < window.innerWidth * 0.1 ||
-		// 		e.clientX > window.innerWidth * 0.9
-		// 	) e.preventDefault();
-		// }
 
 		if (refs.pointers?.size > 0 && !e.isPrimary) {
 			refs.pointers.set(e.pointerId, getXY(e));
