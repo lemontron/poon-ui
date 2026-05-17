@@ -6,3 +6,7 @@ export const CheckBox = ({active, undetermined}) => (
 		<Icon icon={undetermined ? 'horizontal_rule' : active ? 'check' : null}/>
 	</div>
 );
+
+export const Radio = ({active}) => (
+	<Icon icon={active ? 'radio_button_checked' : 'radio_button_unchecked'}/>
+);

@@ -1,7 +1,6 @@
-import { c } from './util';
+import { c, useMobile } from './util';
 import { Touchable } from './Touchable';
 import { Icon } from './Icon';
-// import PropTypes from 'prop-types';
 
 const stackProps = (appearance, {
 	justify,
@@ -13,8 +12,11 @@ const stackProps = (appearance, {
 	padding,
 	safePadding,
 	distributed,
+	mobileOnly,
 	...props
 }) => {
+	const isMobile = useMobile();
+	if (mobileOnly && !isMobile) return null;
 	return {
 		'className': c(
 			'stack',
@@ -36,10 +38,6 @@ const stackProps = (appearance, {
 export const VStack = (props) => (<div {...stackProps('v', props)}/>);
 export const HStack = (props) => (<div {...stackProps('h', props)}/>);
 export const ZStack = (props) => (<div {...stackProps('z', props)}/>);
-
-export const FabStack = ({children}) => (
-	<VStack align="trailing" justify="trailing" safePadding passthrough spacing="small" padding children={children}/>
-);
 
 export const Spacer = () => (<div className="spacer"/>);
 

@@ -46,7 +46,7 @@ export const Window = ({
 	}, [isVisible, height]);
 
 	useEffect(() => {
-		const cards = document.querySelectorAll('.card');
+		// const cards = document.querySelectorAll('.card, .window');
 		return pan.on(value => {
 			const percent = (value / height);
 			if (el.current) el.current.style.transform = `translateY(-${value}px)`;
@@ -54,9 +54,11 @@ export const Window = ({
 				shadeEl.current.style.display = value ? 'block' : 'none';
 				shadeEl.current.style.opacity = (value / height);
 			}
-			[...cards].forEach(el => {
-				el.parentElement.style.transform = `scale(${1 - (.04 * percent)})`;
-			});
+			// [...cards].filter(r => r !== el.current).forEach((el, i, all) => {
+			// 	console.log('Index:', i, 'Class:', el.className, 'Depth:');
+			// 	const depthScale = (all.length - i) * .04;
+			// 	el.parentElement.style.transform = `scale(${1 - ((percent * 0.04) + (depthScale * percent))})`;
+			// });
 		});
 	}, [height]);
 

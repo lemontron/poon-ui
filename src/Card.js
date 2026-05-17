@@ -14,6 +14,7 @@ export const Card = ({
 	subtitle,
 	children,
 	footer,
+	headerLeft,
 	headerRight,
 	SearchComponent,
 	SidebarComponent,
@@ -88,6 +89,7 @@ export const Card = ({
 				SearchComponent={SearchComponent}
 				onClose={close}
 				headerRight={headerRight}
+				headerLeft={headerLeft}
 			/>
 		);
 	};

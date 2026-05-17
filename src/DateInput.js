@@ -22,9 +22,19 @@ const sameDay = (a, b) => (
 	a.getDate() === b.getDate()
 );
 
+const sameWeek = (a, b) => {
+	const start = new Date(a);
+	start.setDate(start.getDate() - start.getDay());
+	start.setHours(0, 0, 0, 0);
+	const end = new Date(start);
+	end.setDate(end.getDate() + 6);
+	return b >= start && b <= end;
+};
+
 export const DateInput = ({
 	value = '',
 	onChangeText = () => null,
+	highlightWeek,
 }) => {
 	const selectedDate = parseDateInputValue(value);
 	const [visibleMonth, setVisibleMonth] = useState(
@@ -66,12 +76,13 @@ export const DateInput = ({
 				{cells.map(date => {
 					const isCurrentMonth = date.getMonth() === visibleMonth.getMonth();
 					const isSelected = sameDay(date, selectedDate);
+					const isHighlighted = highlightWeek && sameWeek(selectedDate, date);
 
 					return (
 						<Button
 							key={toDateInputValue(date)}
 							active={isSelected}
-							className="date-input-day"
+							className={c('date-input-day', isHighlighted && 'highlight-week')}
 							onClick={() => {
 								setVisibleMonth(new Date(date.getFullYear(), date.getMonth(), 1));
 								onChangeText(toDateInputValue(date));

@@ -1,12 +1,12 @@
-import { createElement, useEffect, useRef, useState } from 'react';
+import { createElement, useEffect, useLayoutEffect, useRef } from 'react';
 import { Icon } from './Icon';
 import { Touchable } from './Touchable';
 import { ActivityIndicator } from './ActivityIndicator';
 import { c } from './util';
 
-const autoCompleteMap = {'code': 'one-time-code', 'password': 'current-password'};
-const typeMap = {'phone': 'tel', 'code': 'tel'};
-const placeholderMap = {'search': 'Search'};
+const autoCompleteMap = {code: 'one-time-code', password: 'current-password'};
+const typeMap = {phone: 'tel', code: 'tel', price: 'numeric'};
+const placeholderMap = {search: 'Search'};
 
 const applyTitleCase = (value) => {
 	if (!value) return '';
@@ -41,13 +41,27 @@ export const TextInput = ({
 	frame,
 	units,
 	autoExpand,
+	fullWidth,
 	ref,
 }) => {
-	const [_value, _setValue] = useState(value); // internal value
 	const isTextarea = (type === 'textarea' || rows);
 	const localRef = useRef();
 	const inputRef = ref || localRef;
+	const selectionRef = useRef();
 	const gesture = useRef({}).current;
+
+	useLayoutEffect(() => {
+		const selection = selectionRef.current;
+		if (!selection) return;
+		if (typeof document === 'undefined') return;
+		if (document.activeElement !== selection.el) {
+			selectionRef.current = null;
+			return;
+		}
+		if (selection.el.value !== selection.value) return;
+		selectionRef.current = null;
+		selection.el.setSelectionRange(selection.start, selection.end);
+	});
 
 	useEffect(() => {
 		if (!isTextarea || !autoExpand || !inputRef.current) return;
@@ -56,11 +70,9 @@ export const TextInput = ({
 	}, [isTextarea, autoExpand, value]);
 
 	const renderInput = () => {
-		let tagName = isTextarea ? 'textarea' : 'input';
-
 		const changeText = (e) => {
 			let value = e.target.value;
-			_setValue(value);
+
 			if (isTextarea && autoExpand) {
 				e.target.style.height = 'auto';
 				e.target.style.height = `${e.target.scrollHeight}px`;
@@ -73,6 +85,15 @@ export const TextInput = ({
 				if (lowerCase) value = value.toLowerCase();
 				if (maxLength) value = value.slice(0, maxLength);
 				if (type === 'username') value = value.replace(/\s/g, '');
+			}
+			if (titleCase && e.target.setSelectionRange && e.target.selectionStart !== null) {
+				const end = value.length;
+				selectionRef.current = {
+					el: e.target,
+					value,
+					start: Math.min(e.target.selectionStart, end),
+					end: Math.min(e.target.selectionEnd, end),
+				};
 			}
 			onChangeText(value);
 		};
@@ -96,7 +117,7 @@ export const TextInput = ({
 			return true;
 		};
 
-		return createElement(tagName, {
+		return createElement(isTextarea ? 'textarea' : 'input', {
 			'type': typeMap[type] || type,
 			'autoComplete': autoCompleteMap[type],
 			'maxLength': maxLength,
@@ -134,6 +155,7 @@ export const TextInput = ({
 		if (LeftComponent) return LeftComponent;
 		if (icon) return <Icon className="text-input-icon" icon={icon}/>;
 		if (type === 'username') return <span className="text-input-icon">@</span>;
+		if (type === 'price') return <span className="text-input-icon">$</span>;
 		if (type === 'search') return <Icon className="text-input-icon" icon="search"/>;
 	};
 
@@ -148,7 +170,9 @@ export const TextInput = ({
 
 	const renderSpinner = () => {
 		if (!loading) return null;
-		return <div className="text-input-spinner"><ActivityIndicator size={18}/></div>;
+		return (
+			<div className="text-input-spinner"><ActivityIndicator size={18}/></div>
+		);
 	};
 
 	const renderCountryButton = () => {
@@ -165,7 +189,7 @@ export const TextInput = ({
 	};
 
 	return (
-		<div className={c('text-input', isTextarea && 'textarea-input')}>
+		<div className={c('text-input', isTextarea && 'textarea-input', fullWidth && 'full-width')}>
 			{type === 'phone' && renderCountryButton()}
 			{renderIcon()}
 			{renderInput()}

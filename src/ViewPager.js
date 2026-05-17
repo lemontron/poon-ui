@@ -4,6 +4,8 @@ import { c, createClamp, lerp, toPercent } from './util';
 import { useSize } from './util/size';
 import { Pan } from './Pan';
 import { Touchable } from './Touchable';
+import { List } from './List';
+import { TouchableRow } from './TouchableRow';
 
 const PagerDot = ({pan, i}) => {
 	const el = useRef();
@@ -80,6 +82,7 @@ export const ViewPager = ({
 	enableScrolling = true,
 	showDots = false,
 	showButtons = false,
+	showSidebar = false,
 	frame = false,
 	ref,
 }) => {
@@ -97,6 +100,7 @@ export const ViewPager = ({
 	const lastIndex = numPages - 1;
 	const orientation = vertical ? 'y' : 'x';
 	const clamp = createClamp(0, lastIndex);
+	const hasSidebar = showSidebar && titles;
 
 	const userInteractionChangePage = (page, flickMs) => {
 		page = clamp(page);
@@ -141,8 +145,62 @@ export const ViewPager = ({
 		});
 	}, [vertical]);
 
+	const renderScroller = () => (
+		<Pan
+			direction={vertical ? 'y' : 'x'}
+			className="pager-scroller"
+			ref={scrollerEl}
+			enabled={enableScrolling}
+			forcePointerEvents
+			onCapture={(e) => {
+				if (e.overscrolling) return false;
+				if (e.direction === orientation) {
+					if (e.distance < 0) return true; // Don't capture at the left edge
+					return (refs.initPan - (e.distance / e.size)) > 0;
+				}
+			}}
+			onDown={() => {
+				pan.end();
+				refs.currentPage = Math.round(pan.value);
+				refs.initPan = pan.value;
+			}}
+			onMove={e => {
+				const val = clamp(refs.initPan - (e.distance / e.size));
+				pan.setValue(val);
+			}}
+			onPan={components => { // ScrollWheel
+				const e = components[orientation];
+				const pos = pan.value + (e.distance / e.size);
+				pan.setValue(clamp(pos));
+			}}
+			onUp={(e) => {
+				if (e.flick) {
+					userInteractionChangePage(refs.currentPage + e.flick, e.flickMs);
+				} else { // Snap back to current page
+					userInteractionChangePage(Math.round(pan.value));
+				}
+			}}
+			onOverscroll={val => {
+				if (val === null) {
+					overscroll.spring(0);
+				} else {
+					overscroll.setValue(val);
+				}
+			}}
+			children={Children.map(children, (child, i) => (
+				<div
+					key={i}
+					className="pager-page"
+					children={child}
+					style={gap ? (vertical ? {marginBottom: gap} : {marginRight: gap}) : undefined}
+				/>
+			))}
+		/>
+	);
+
 	return (
-		<div className={c('pager', vertical ? 'vertical' : 'horizontal', frame && 'frame', className)}>
+		<div
+			className={c('pager', vertical ? 'vertical' : 'horizontal', hasSidebar && 'with-sidebar', showSidebar === 'always' && 'show-sidebar-always', frame && 'frame', className)}>
 			{titles ? (
 				<div className="pager-tabs" ref={tabsEl}>
 					{titles.map((title, i) => (
@@ -156,56 +214,23 @@ export const ViewPager = ({
 					))}
 				</div>
 			) : null}
-			<Pan
-				direction={vertical ? 'y' : 'x'}
-				className="pager-scroller"
-				ref={scrollerEl}
-				enabled={enableScrolling}
-				forcePointerEvents
-				onCapture={(e) => {
-					if (e.overscrolling) return false;
-					if (e.direction === orientation) {
-						if (e.distance < 0) return true; // Don't capture at the left edge
-						return (refs.initPan - (e.distance / e.size)) > 0;
-					}
-				}}
-				onDown={() => {
-					pan.end();
-					refs.currentPage = Math.round(pan.value);
-					refs.initPan = pan.value;
-				}}
-				onMove={e => {
-					const val = clamp(refs.initPan - (e.distance / e.size));
-					pan.setValue(val);
-				}}
-				onPan={components => { // ScrollWheel
-					const e = components[orientation];
-					const pos = pan.value + (e.distance / e.size);
-					pan.setValue(clamp(pos));
-				}}
-				onUp={(e) => {
-					if (e.flick) {
-						userInteractionChangePage(refs.currentPage + e.flick, e.flickMs);
-					} else { // Snap back to current page
-						userInteractionChangePage(Math.round(pan.value));
-					}
-				}}
-				onOverscroll={val => {
-					if (val === null) {
-						overscroll.spring(0);
-					} else {
-						overscroll.setValue(val);
-					}
-				}}
-				children={Children.map(children, (child, i) => (
-					<div
-						key={i}
-						className="pager-page"
-						children={child}
-						style={gap ? (vertical ? {marginBottom: gap} : {marginRight: gap}) : undefined}
-					/>
-				))}
-			/>
+			{hasSidebar ? (
+				<div className="pager-content">
+					<div className="card-sidebar">
+						<List
+							items={titles}
+							renderItem={(title, i) => (
+								<TouchableRow
+									key={i}
+									title={typeof title === 'string' ? title : title.title}
+									onClick={() => pan.spring(i)}
+								/>
+							)}
+						/>
+					</div>
+					{renderScroller()}
+				</div>
+			) : renderScroller()}
 			{showDots ? (
 				<div
 					className="pager-dots"

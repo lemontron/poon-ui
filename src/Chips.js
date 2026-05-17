@@ -26,8 +26,8 @@ export const Chips = ({
 		const ok = await showAlert({
 			'title': `Are you sure you want to remove ${chip}?`,
 		}, [
-			{value: false, name: 'Cancel'},
-			{value: true, name: 'Remove', destructive: true},
+			{_id: false, name: 'Cancel'},
+			{_id: true, name: 'Remove', destructive: true},
 		]);
 		if (ok) onChangeChips(chips.filter(r => r !== chip));
 	};

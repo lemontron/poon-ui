@@ -29,6 +29,7 @@ export const SegmentedController = ({options, value, onChange}) => {
 	}, []);
 
 	useEffect(() => {
+		if (index === -1) return; // value passed is not one of the options
 		const el = refs.current[index]; // element to copy attributes from
 		if (width.value === 0) {
 			left.setValue(el.offsetLeft);

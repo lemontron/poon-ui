@@ -1,6 +1,6 @@
 import { createElement, useEffect, useRef, useState } from 'react';
 import { navigation } from 'poon-router';
-import { c } from './util';
+import { c, useMobile } from './util';
 
 export const Touchable = ({
 	href,
@@ -14,12 +14,14 @@ export const Touchable = ({
 	disableMenu,
 	type = 'button',
 	replaceState,
+	mobileOnly,
 	ref,
 }) => {
 	const [touched, setTouched] = useState(false);
 	const el = ref || useRef();
 	const pointerRef = useRef(null);
 	const isClickable = (href || onClick);
+	const isMobile = useMobile();
 
 	useEffect(() => {
 		if (!el.current) return;
@@ -85,6 +87,7 @@ export const Touchable = ({
 	if (onClick) tagName = 'button';
 	if (href) tagName = 'a';
 
+	if (mobileOnly && !isMobile) return null;
 	return createElement(tagName, {
 		'className': c('touchable', className, touched && 'touched', disableMenu && 'disable-menu', active && 'active', disabled && 'disabled'),
 		'href': href,

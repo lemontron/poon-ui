@@ -1,5 +1,7 @@
 // This is not a barrel, rollup uses multi entry to export all exports automatically
 
+import { useEffect, useState } from 'react';
+
 export const c = (...rest) => rest.filter(Boolean).join(' ');
 
 export const toPercent = val => `${val * 100}%`;
@@ -29,3 +31,15 @@ export const lerp = (val, v0, v1) => {
 };
 
 export const isIOS = navigator.userAgent.match(/(iPad|iPhone|iPod)/g);
+
+export const useMobile = () => {
+	const [mobile, setMobile] = useState(window.innerWidth < 800);
+
+	useEffect(() => {
+		const resize = () => setMobile(window.innerWidth < 800);
+		window.addEventListener('resize', resize);
+		return () => window.removeEventListener('resize', resize);
+	}, []);
+
+	return mobile;
+};
