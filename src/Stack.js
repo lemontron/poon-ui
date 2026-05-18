@@ -94,5 +94,4 @@ export const Row = ({
 // 	appearance: PropTypes.oneOf(['v', 'h', 'z', 'c']),
 // 	className: PropTypes.string,
 // 	spacing: PropTypes.oneOfString(['none', 'small', 'medium', 'large']),
-// 	interactive: PropTypes.bool,
 // });

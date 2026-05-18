@@ -7,7 +7,7 @@ export const SortFilterButton = ({
 	disabled,
 	onClick,
 }) => (
-	<Touchable className="sort-filter" onClick={onClick} disabled={disabled} interactive>
+	<Touchable className="sort-filter" onClick={onClick} disabled={disabled}>
 		<div>
 			<span className="sort-filter-label">{label} </span>
 			<span className="sort-filter-value">{title}</span>

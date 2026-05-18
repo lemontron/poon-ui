@@ -12,7 +12,7 @@ export const FilterButton = ({
 	href,
 	onPress,
 }) => (
-	<Touchable className="filter-button" onClick={onPress} active={active} interactive href={href} disabled={disabled}>
+	<Touchable className="filter-button" onClick={onPress} active={active}  href={href} disabled={disabled}>
 		{LeftComponent}
 		{title ? <div className="filter-button-title">{title}</div> : null}
 		{caret ? (
