@@ -2,8 +2,6 @@ import { createElement, useState } from 'react';
 import { navigation } from 'poon-router';
 import { c, useMobile } from './util';
 
-let ignoreNextClick = false; // Safari glitch fix
-
 export const Touchable = ({
 	href,
 	onClick,
@@ -24,8 +22,6 @@ export const Touchable = ({
 	const isMobile = useMobile();
 
 	const clickButton = (e) => {
-		if (ignoreNextClick) return e.preventDefault(); // Safari glitch fix
-
 		if (onClick) {
 			if (!href) e.preventDefault();
 			onClick(e);
@@ -42,13 +38,11 @@ export const Touchable = ({
 	};
 
 	const touch = (e) => {
-		if (e.type === 'touchstart') ignoreNextClick = false;
 		if (e.button && e.button !== 0) return; // If mouse, only process left clicks
 		setTouched(true);
 	};
 
-	const leave = (e) => {
-		if (e.type === 'touchmove') ignoreNextClick = true;
+	const leave = () => {
 		setTouched(false);
 	};
 
@@ -61,12 +55,10 @@ export const Touchable = ({
 	return createElement(tagName, {
 		'className': c('touchable', className, touched && 'touched', disableMenu && 'disable-menu', active && 'active', disabled && 'disabled'),
 		'href': href,
-		'onTouchStart': isClickable && touch,
-		'onTouchMove': isClickable && leave,
-		'onTouchEnd': isClickable && leave,
-		'onMouseDown': isClickable && touch,
-		'onMouseUp': isClickable && leave,
-		'onMouseLeave': isClickable && leave,
+		'onPointerDown': isClickable && touch,
+		'onPointerUp': isClickable && leave,
+		'onPointerLeave': isClickable && leave,
+		'onPointerCancel': isClickable && leave,
 		'onClick': isClickable && clickButton,
 		'target': target,
 		'draggable': false,
